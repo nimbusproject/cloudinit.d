@@ -113,7 +113,7 @@ the svc-webserver would have the following:
 
 
     [deps]
-    database_ip: ${database}.ipaddress
+    database_ip: ${database.ipaddress}
 
 
 This tells cloud-boot to look at all the previous boot levels and search 
