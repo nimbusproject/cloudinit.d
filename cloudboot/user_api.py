@@ -118,7 +118,7 @@ class CloudBoot(object):
             self._bo = self._db.load_from_db()
 
         self._levels = []
-        self._boot_top = BootTopLevel(log=log, service_callback=self._mp_cb)
+        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb)
         for level in self._bo.levels:
             level_list = []
             for s in level.services:
@@ -134,6 +134,10 @@ class CloudBoot(object):
     def _mp_cb(self, mp, action, level_ndx):
         if self._level_callback:
             self._level_callback(self, action, level_ndx)
+
+    def _svc_cb(self, svc, action, msg):
+        if self._service_callback:
+            self._service_callback(self, CloudService(svc), action)
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
@@ -182,6 +186,7 @@ class CloudBoot(object):
         if rc:
             self._bo.status = 1
             self._db.db_commit()
+        return rc
 
     def start(self):
         """

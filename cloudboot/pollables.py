@@ -36,7 +36,7 @@ class Pollable(object):
         if self._timeout == 0:
             return False
         now = datetime.datetime.now()
-        diff = now - self._timeout
+        diff = now - datetime.timedelta(seconds=self._timeout)
         if diff.second > self._timeout:
             raise TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
         return False
@@ -281,6 +281,7 @@ class MultiLevelPollable(Pollable):
                 except Exception, ex:
                     self._level_error_ex.append(ex)
                     self._level_error_polls.append(p)
+                    raise
 
         if done:
             # see if the level had an error
@@ -304,7 +305,7 @@ class MultiLevelPollable(Pollable):
     def _execute_cb(self, action, lvl):
         if not self._callback:
             return
-        self._callback(self, action, lvl)
+        self._callback(self, action, lvl+1)
             
     def cancel(self):
         """

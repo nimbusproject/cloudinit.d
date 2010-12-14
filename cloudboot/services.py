@@ -36,10 +36,10 @@ class BootTopLevel(object):
     used for querying dependencies
     """
 
-    def __init__(self, service_callback=None, log=logging):
+    def __init__(self, level_callback=None, service_callback=None, log=logging):
         self.services = {}
         self._log = log
-        self._multi_top = MultiLevelPollable(log=log)
+        self._multi_top = MultiLevelPollable(log=log, callback=level_callback)
         self._service_callback = service_callback
 
     def add_level(self, lvl_list):
@@ -108,12 +108,12 @@ class SVCContainer(object):
 
     def _make_hostname_poller(self):
           # form all the objects needed by the service
-        if s.image and s.hostname:
+        if self._s.image and self._s.hostname:
             raise APIUsageException("You cannot specify both a hotname and an image.  Check your config file")
 
-        if s.image:
-            iaas_con = _get_connection(s.iaas_key, s.iaas_secret, s.iaas_hostname, s.iaas_port)
-            reservation = iaas_con.run_instances(s.image, instance_type=s.allocation, key_name=s.keyname)
+        if self._s.image:            
+            iaas_con = _get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+            reservation = iaas_con.run_instances(self._s.image, instance_type=self._s.allocation, key_name=self._s.keyname)
             instance = reservation.instances[0]
             self._hostname_poller = InstanceHostnamePollable(instance, self._log)
 
@@ -168,11 +168,11 @@ class SVCContainer(object):
     def _execute_callback(self, state, msg):
         if not self._callback:
             return
-        self._callback(self._cloudservice, state, msg)
+        self._callback(self, state, msg)
 
-    def poll(self, callback=None):
+    def poll(self):
         try:
-            return self._poll(callback)
+            return self._poll()
         except Exception, ex:
             self._s.last_error = str(ex)
             self._db.db_commit()
@@ -186,7 +186,7 @@ class SVCContainer(object):
             if not self._pollables:
                 self._pollables = MultiLevelPollable(log=self._log)
 
-                if self._bootconf:
+                if self._s.bootconf:
                     cmd = self._get_boot_cmd()
                     _boot_poller = PopenExecutablePollable(cmd, log=self._log)
                     self._pollables.add_level([_boot_poller])
@@ -209,7 +209,6 @@ class SVCContainer(object):
             self._vmhostname = self._hostname_poller.get_hostname()
             self._s.hostname = self._vmhostname
             self._db.db_commit()
-            self._execute_callback(callback, self.transition_state, "Acquired the hostname: %s" %(self._vmhostname))
         return False
 
     def _get_readypgm_cmd(self):

@@ -1,4 +1,14 @@
+import traceback
+
 __author__ = 'bresnaha'
+
+class CloudBootException(Exception):
+    def __init__(self, ex):
+        self._base_ex = ex
+        self._base_stack = traceback.format_tb()
+
+    def __str__(self):
+        return str(self._base_stack)
 
 
 class APIUsageException(Exception):
@@ -9,22 +19,22 @@ class TimeoutException(Exception):
     def __init__(self):
         Exception.__init__(self)
 
-class IaaSException(Exception):
-    def __init__(self):
-        Exception.__init__(self)
+class IaaSException(CloudBootException):
+    def __init__(self, ex):
+        CloudBootException.__init__(self, ex)
 
 class ConfigException(Exception):
     def __init__(self):
         Exception.__init__(self)
 
-class PollableException(Exception):
+class PollableException(CloudBootException):
     def __init__(self, p, ex):
-        Exception.__init__(self, ex)
+        CloudBootException.__init__(self, ex)
         self.pollable = p
 
 class ServiceException(PollableException):
     def __init__(self, ex, svc):
-        Exception.__init__(self, ex)
+        PollableException.__init__(self, ex)
         self._svc = svc
 
 class ProcessException(PollableException):
@@ -39,5 +49,8 @@ class MultilevelException(PollableException):
         self.level = level
         self.exception_list = exs
         self.pollable_list = pollables
+
+    def __str__(self):
+        return str(self.exception_list)
 
 

@@ -62,9 +62,11 @@ def launch_new(args, options):
     try:
         cb.block_until_complete(poll_period=0.1)
     except CloudServiceException, svcex:
-        print ex        
+        print ex
+        raise
     except MultilevelException, mex:
         print mex
+        raise
 
 def status(args):
     pass

@@ -166,7 +166,7 @@ class ServiceObject(object):
             keys_val = parser.items("deps")
             for (ka,val) in keys_val:
                 bao = BagAttrsObject(ka, val)
-                self._s.attrs.append(bao)
+                self.attrs.append(bao)
 
 class BagAttrsObject(object):
     def __init__(self, key, value):
