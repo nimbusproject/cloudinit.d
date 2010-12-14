@@ -9,7 +9,9 @@ import tempfile
 import string
 from cloudboot.persistantance import BagAttrsObject
 import ConfigParser
-
+from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException
+from cloudboot.statics import *
+import cloudboot
 
 __author__ = 'bresnaha'
 
@@ -34,13 +36,17 @@ class BootTopLevel(object):
     used for querying dependencies
     """
 
-    def __init__(self, log=logging):
+    def __init__(self, service_callback=None, log=logging):
         self.services = {}
         self._log = log
         self._multi_top = MultiLevelPollable(log=log)
+        self._service_callback = service_callback
 
     def add_level(self, lvl_list):
         self._multi_top.add_level(lvl_list)
+
+    def get_current_level(self):
+        return self._multi_top.get_level()
 
     def start(self):
         self._multi_top.start()
@@ -51,36 +57,20 @@ class BootTopLevel(object):
     def cancel(self):
         self._multi_top.cancel()
 
-    def poll(self, callback=None):
-        return self._multi_top.poll(callback=callback)
+    def poll(self):
+        return self._multi_top.poll()
 
     def new_service(self, s, db):
 
         if s.name in self.services.keys():
-            raise Exception("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
+            raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
 
         if s.image == None and s.hostname == None:
-            raise Exception("You must have an image or a hostname or there will be no VM")
+            raise APIUsageException("You must have an image or a hostname or there will be no VM")
         if s.image !=None and s.hostname != None:
-            raise Exception("Only specify hostname *OR* image")
+            raise APIUsageException("Only specify hostname *OR* image")
 
-        # form all the objects needed by the service
-        hostname_poller = None
-        if s.image:
-            iaas_con = _get_connection(s.iaas_key, s.iaas_secret, s.iaas_hostname, s.iaas_port)
-            reservation = iaas_con.run_instances(s.image, instance_type=s.allocation, key_name=s.keyname)
-            instance = reservation.instances[0]
-            hostname_poller = InstanceHostnamePollable(instance, self._log)
-
-        fabexec = "fab"
-        try:
-            if os.environ['CLOUD_BOOT_FAB']:
-                fabexec = os.environ['CLOUD_BOOT_FAB']
-        except:
-            pass
-        fabexec = fabexec + " -f %s -D -u %s -i %s " % (bootfabtasks.__file__, s.username, s.keyname)
-
-        svc = SVCContainer(db, s, self, fabexec, hostname_poller=hostname_poller, log=self._log)
+        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback)
         self.services[s.name] = svc
         return svc
 
@@ -98,43 +88,46 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, fabexec, hostname_poller=None, log=logging):
+    def __init__(self, db, s, top_level, log=logging, callback=None):
         self._vmhostname = s.hostname
-        self._hostname_poller = hostname_poller
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
         self._pollables = None
         self._readypgm = s.readypgm
-        self._fabexec = fabexec
         self._done = False
         self._s = s
         self.name = s.name
         self._db = db
         self._top_level = top_level
 
-        self.starting_state = 1
-        self.transition_state = 2
-        self.complete_state = 3
-
-        if not s.hostname and not hostname_poller:
-            raise Exception("You must provide a hostname or a hostname poller")        
-
-        for bao in s.attrs:
-            self._attr_bag[bao.key] = bao.value
-
-        self._bootconf = s.bootconf
-        if s.bootconf:
-            self._bootconf = self._fill_template(bootconf)
+        self._make_hostname_poller()
+        self._callback = callback
+       
         self._db.db_commit()
+
+    def _make_hostname_poller(self):
+          # form all the objects needed by the service
+        if s.image and s.hostname:
+            raise APIUsageException("You cannot specify both a hotname and an image.  Check your config file")
+
+        if s.image:
+            iaas_con = _get_connection(s.iaas_key, s.iaas_secret, s.iaas_hostname, s.iaas_port)
+            reservation = iaas_con.run_instances(s.image, instance_type=s.allocation, key_name=s.keyname)
+            instance = reservation.instances[0]
+            self._hostname_poller = InstanceHostnamePollable(instance, self._log)
+
+    def _get_fab_command(self):
+        fabexec = "fab"
+        try:
+            if os.environ['CLOUD_BOOT_FAB']:
+                fabexec = os.environ['CLOUD_BOOT_FAB']
+        except:
+            pass
+        return fabexec + " -f %s -D -u %s -i %s " % (bootfabtasks.__file__, s.username, s.keyname)
 
     def __str__(self):
         return self.name
-
-    def get_vm_instance(self):
-        if self._hostname_poller:
-            return self._hostname_poller.get_instance()
-        return None
 
     def get_dep(self, key):
         # first parse through the known ones, then hit the attr bag
@@ -148,37 +141,44 @@ class SVCContainer(object):
         try:
             return self._attr_bag[key]
         except:
-            raise Exception("The service %s has no attr by the name of %s.  Please check your config files" % (self._myname, key))
+            raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files" % (self._myname, key))
 
     def start(self):
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
         # values
-        if self._s.deps and self._s.contextualized == 0:
-            parser = ConfigParser.ConfigParser()
-            parser.read(self._s.deps)
-            keys_val = parser.items("deps")
 
-            pattern = re.compile('\$\{(.*?)\.(.*)\}')
-            for (ka,val) in keys_val:
-                match = pattern.search(val)
-                if match:
-                    svc_name = match.group(1)
-                    attr_name = match.group(2)
-                    val = self._top_level.find_dep(svc_name, attr_name)
-                bao = BagAttrsObject(ka, val)
-                self._s.attrs.append(bao)
+        pattern = re.compile('\$\{(.*?)\.(.*)\}')
+        for bao in self._s.attrs:                        
+            val = bao.value
+            match = pattern.search(val)
+            if match:
+                svc_name = match.group(1)
+                attr_name = match.group(2)
+                val = self._top_level.find_dep(svc_name, attr_name)
+            self._attr_bag[bao.key] = val
+
+        if self._s.bootconf:
+            self._bootconf = self._fill_template(self._s.bootconf)
 
         if self._hostname_poller:
             self._hostname_poller.start()
-        #self._execute_callback(self.starting_state, "starting the %s service." % (self._myname))
+        self._execute_callback(cloudboot.callback_action_started, "Service Started")
 
 
-    def _execute_callback(self, callback, state, msg):
-        if not callback:
+    def _execute_callback(self, state, msg):
+        if not self._callback:
             return
-        callback(self, state, msg)
+        self._callback(self._cloudservice, state, msg)
 
     def poll(self, callback=None):
+        try:
+            return self._poll(callback)
+        except Exception, ex:
+            self._s.last_error = str(ex)
+            self._db.db_commit()
+            raise ServiceException(ex, self)
+
+    def _poll(self):
         if self._done:
             return True
         # if we already have a hostname move onto polling the fab tasks
@@ -197,12 +197,12 @@ class SVCContainer(object):
                     self._pollables.add_level([_ready_poller])
                 self._pollables.start()
 
-            rc = self._pollables.poll(callback=callback)
+            rc = self._pollables.poll()
             if rc:                
                 self._done = True
                 self._s.contextualized = 1
                 self._db.db_commit()
-                self._execute_callback(callback, self.complete_state, "Service Complete")
+                self._execute_callback(cloudboot.callback_action_complete, "Service Complete")
             return rc
 
         if self._hostname_poller.poll():
@@ -227,7 +227,7 @@ class SVCContainer(object):
     def _fill_template(self, path):
 
         if not os.path.exists(path):
-            raise Exception("template file does not exist: %s" % path)
+            raise ConfigException("template file does not exist: %s" % path)
 
         f = open(path)
         doc_tpl = f.read()
@@ -237,7 +237,7 @@ class SVCContainer(object):
         try:
             document = template.substitute(self._attr_bag)
         except ValueError,e:
-            raise Exception("The file '%s' has a variable that could not be found: %s" % (path, str(e)))
+            raise ConfigException("The file '%s' has a variable that could not be found: %s" % (path, str(e)))
 
         # having the template name in the temp file name makes it easier
         # to identify

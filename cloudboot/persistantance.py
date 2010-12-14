@@ -60,6 +60,7 @@ service_table = Table('service', metadata,
     Column('iaas_key', String(64)),
     Column('iaas_secret', String(64)),    
     Column('contextualized', Integer, default=0),
+    Column('last_error', sqlalchemy.types.Text()),
     )
 
 attrbag_table = Table('attrbag', metadata,
@@ -119,6 +120,7 @@ class ServiceObject(object):
         localssh = config_get_or_none(parser, s, "localsshkeypath")
         ssh_user = config_get_or_none(parser, s, "ssh_username")
         bootconf = config_get_or_none(parser, s, "bootconf")
+        bootpgm = config_get_or_none(parser, s, "bootpgm")
         hostname = config_get_or_none(parser, s, "hostname")
         readypgm = config_get_or_none(parser, s, "ready")
         deps = config_get_or_none(parser, s, "deps")
@@ -145,6 +147,7 @@ class ServiceObject(object):
         self.name = section.replace("svc-", "")
         self.image = image
         self.bootconf = bootconf
+        self.bootpgm = bootpgm
         self.hostname = hostname
         self.readypgm = readypgm
         self.deps = deps
@@ -156,6 +159,14 @@ class ServiceObject(object):
         self.iaas_hostname = iaas_hostname
         self.iaas_secret = iaas_secret
         self.iaas_key = iaas_key
+
+        if self.deps:
+            parser = ConfigParser.ConfigParser()
+            parser.read(self.deps)
+            keys_val = parser.items("deps")
+            for (ka,val) in keys_val:
+                bao = BagAttrsObject(ka, val)
+                self._s.attrs.append(bao)
 
 class BagAttrsObject(object):
     def __init__(self, key, value):
