@@ -9,7 +9,7 @@ vals_dict = json.load(f)
 f.close()
 
 print vals_dict['message']
-cmd = "sudo echo %s > /var/www/test.txt"
+cmd = "sudo echo %s > /var/www/test.txt" % (vals_dict['message'])
 print cmd
 rc = os.system(cmd)
 sys.exit(rc)

@@ -132,7 +132,7 @@ class ServiceObject(object):
         bootconf = config_get_or_none(parser, s, "bootconf")
         bootpgm = config_get_or_none(parser, s, "bootpgm")
         hostname = config_get_or_none(parser, s, "hostname")
-        readypgm = config_get_or_none(parser, s, "ready")
+        readypgm = config_get_or_none(parser, s, "readypgm")
         deps = config_get_or_none(parser, s, "deps")
         iaas_key = config_get_or_none(parser, s, "iaas_key")
         iaas_secret = config_get_or_none(parser, s, "iaas_secret")

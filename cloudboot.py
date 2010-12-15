@@ -34,23 +34,26 @@ Boot and manage a launch plan
 
 def level_callback(cb, action, current_level):
     if action == cloudboot.callback_action_started:
-        sys.stdout.write("Booting level %d...\n" % (current_level))
+        sys.stdout.write("\nBooting level %d...\n" % (current_level))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_transition:
         pass
     elif action == cloudboot.callback_action_complete:
-        sys.stdout.write("Level %d complete.\n" % (current_level))
+        sys.stdout.write("\nLevel %d complete.\n" % (current_level))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_error:
         sys.stdout.write("Level %d complete with error.\n" % (current_level))
 
 def service_callback(cb, cloudservice, action, msg):
     if action == cloudboot.callback_action_started:
-        print "\tService %s started" % (cloudservice.name)
-    elif action == cloudboot.callback_action_transition:
-        print "\t%s : %s" %(cloudservice.name, msg)        
+        sys.stdout.write("\n\tService %s started" % (cloudservice.name))
+        sys.stdout.flush()
+    elif action == cloudboot.callback_action_transition:             
+        sys.stdout.write(".")
+        sys.stdout.flush()
     elif action == cloudboot.callback_action_complete:
-        print "\tService %s OK" % (cloudservice.name)
+        sys.stdout.write("\n\tService %s OK" % (cloudservice.name))
+        sys.stdout.flush()
     elif action == cloudboot.callback_action_error:
         print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
 

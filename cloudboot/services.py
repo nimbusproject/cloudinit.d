@@ -191,7 +191,7 @@ class SVCContainer(object):
                 stdout = self._boot_poller.get_stdout()
                 stderr = self._boot_poller.get_stderr()
             elif self._ready_poller in multiex.pollable_list:
-                msg = "Service %s error running ready program" % (self._myname, self._vmhostname)
+                msg = "Service %s error running ready program: %s" % (self._myname, self._vmhostname)
                 stdout = self._ready_poller.get_stdout()
                 stderr = self._ready_poller.get_stderr()
             raise ServiceException(multiex, self, msg, stdout, stderr)
@@ -202,7 +202,7 @@ class SVCContainer(object):
             self._db.db_commit()
             raise ServiceException(ex, self)
 
-    def context_cb(self, popen_poller, action, msg):
+    def _context_cb(self, popen_poller, action, msg):
         if action == cloudboot.callback_action_transition:
             self._execute_callback(action, msg)
 
@@ -215,16 +215,16 @@ class SVCContainer(object):
                 self._pollables = MultiLevelPollable(log=self._log)
 
                 cmd = self._get_ssh_ready_cmd()
-                self._ssh_poller = PopenExecutablePollable(cmd, log=self._log)
+                self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb)
                 self._pollables.add_level([self._ssh_poller])
                 if self._s.bootconf:
                     cmd = self._get_boot_cmd()
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1)
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb)
                     self._pollables.add_level([self._boot_poller])
 
                 if self._readypgm:
                     cmd = self._get_readypgm_cmd()
-                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1)
+                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb)
                     self._pollables.add_level([self._ready_poller])
                 self._pollables.start()
 
