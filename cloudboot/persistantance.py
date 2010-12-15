@@ -63,6 +63,7 @@ service_table = Table('service', metadata,
     Column('iaas_secret', String(64)),    
     Column('contextualized', Integer, default=0),
     Column('last_error', sqlalchemy.types.Text()),
+    Column('terminatepgm', String(1024)),
     )
 
 attrbag_table = Table('attrbag', metadata,

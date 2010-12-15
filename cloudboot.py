@@ -57,7 +57,57 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudboot.callback_action_error:
         print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
 
-def launch_new(args, options):
+def launch_new(args, options, logger=None):
+
+    cb = CloudBoot("/home/bresnaha/Dev/", config_file=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=False, boot=True, ready=True)
+    print "Starting up run %s" % (cb.run_name)
+    cb.start()
+    try:
+        cb.block_until_complete(poll_period=0.1)
+    except CloudServiceException, svcex:
+        print svcex
+    except MultilevelException, mex:
+        print mex
+
+    return (0, cb.run_name)
+
+def status(args, options, logger=None):
+
+    cb = CloudBoot("/home/bresnaha/Dev/", db_name=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=False, boot=False, ready=True)
+    print "Checking status on %s" % (cb.run_name)
+    cb.start()
+    try:
+        cb.block_until_complete(poll_period=0.1)
+    except CloudServiceException, svcex:
+        print svcex
+    except MultilevelException, mex:
+        print mex
+
+    return 0
+
+def terminate(args, options, logger=None):
+    cb = CloudBoot("/home/bresnaha/Dev/", db_name=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=True, boot=False, ready=False)
+    print "Terminating %s" % (cb.run_name)
+    cb.shutdown()
+    try:
+        cb.block_until_complete(poll_period=0.1)
+    except CloudServiceException, svcex:
+        print svcex
+    except MultilevelException, mex:
+        print mex
+
+def test_up_and_down(args, options, logger=None):
+    (rc, name) = launch_new(args, options, logger)
+    if rc != 0:
+        return 1
+    args[1] = name
+    rc = terminate(args, options, logger)
+    return rc
+
+def main(argv=sys.argv[1:]):
+    # first process options
+    (args, options) = parse_commands(argv)
+
     logger = logging.getLogger("simple_example")
     logger.setLevel(logging.WARN)
     ch = logging.StreamHandler()
@@ -66,42 +116,16 @@ def launch_new(args, options):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-    cb = CloudBoot("/home/bresnaha/Dev/", config_file=args[1], level_callback=level_callback, service_callback=service_callback, log=logger)
-    print "Starting up run %s" % (cb.run_name)
-    cb.start()
-    try:
-        cb.block_until_complete(poll_period=0.1)
-    except CloudServiceException, svcex:
-        print ex
-
-    except MultilevelException, mex:
-        print mex
-
-    return 0
-
-def status(args):
-    pass
-
-def terminate(args):
-    cb = CloudBoot("/home/bresnaha/Dev/", db_name=args[1])
-    print "Terminating run %s" %(args[1])
-
-    for i in range(1, cb.get_level_count()+1):
-        ndx = cb.get_level_count() - i
-        cs_list = cb.get_level(ndx)
-
-
-def main(argv=sys.argv[1:]):
-    # first process options
-    (args, options) = parse_commands(argv)
     # process the command
     command = args[0]
     if command == "boot":
-        rc = launch_new(args, options)
+        (rc, name) = launch_new(args, options, logger)
     elif command == "status":
-        rc = status(args, options)
+        rc = status(args, options, logger)
     elif command == "terminate":
-        rc = terminate(args, options)
+        rc = terminate(args, options, logger)
+    elif command == "test":
+        rc = test_up_and_down(args, options, logger)
     else:
         print "Invalid command.  Run with --help"
         rc = 1

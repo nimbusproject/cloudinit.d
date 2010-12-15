@@ -50,7 +50,7 @@ class CloudBoot(object):
         used for querying dependencies
     """
     
-    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None):
+    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False):
         """
         db_dir:     a path to a directories where databases can be stored.
 
@@ -81,6 +81,11 @@ class CloudBoot(object):
 
                         ["starting", "transition", "complete", "error"]
 
+        boot=True: instructs the object to contextualized the service or now
+
+        ready=True: instructs the service to run the ready program or not
+
+        terminate=False:    instructs the service to run the shutdown program or not
 
         When this object is configured with a config_file a new sqlite
         database is created under @db_dir and a new name is picked for it.
@@ -118,7 +123,7 @@ class CloudBoot(object):
             self._bo = self._db.load_from_db()
 
         self._levels = []
-        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb)
+        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb, boot=boot, ready=ready, terminate=terminate)
         for level in self._bo.levels:
             level_list = []
             for s in level.services:
@@ -211,7 +216,10 @@ class CloudBoot(object):
         self._started = True
 
     def shutdown(self, dash_nine=False):
-        pass
+        self._boot_top.reverse_order()
+        self._boot_top.start()
+        self._started = True
+
 
     def get_services(self):
         """

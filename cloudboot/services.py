@@ -1,5 +1,4 @@
 import re
-import os
 from pollables import *
 import bootfabtasks
 import boto
@@ -7,11 +6,11 @@ from boto.ec2.regioninfo import RegionInfo
 from boto.ec2.connection import EC2Connection
 import tempfile
 import string
+import cloudboot
 from cloudboot.persistantance import BagAttrsObject
-import ConfigParser
 from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudboot.statics import *
-import cloudboot
+
 
 __author__ = 'bresnaha'
 
@@ -36,11 +35,17 @@ class BootTopLevel(object):
     used for querying dependencies
     """
 
-    def __init__(self, level_callback=None, service_callback=None, log=logging):
+    def __init__(self, level_callback=None, service_callback=None, log=logging, boot=True, ready=True, terminate=False):
         self.services = {}
         self._log = log
         self._multi_top = MultiLevelPollable(log=log, callback=level_callback)
         self._service_callback = service_callback
+        self._boot = boot
+        self._ready = ready
+        self._terminate = terminate
+
+    def reverse_order(self):
+        self._multi_top.reverse_order()
 
     def add_level(self, lvl_list):
         self._multi_top.add_level(lvl_list)
@@ -66,11 +71,9 @@ class BootTopLevel(object):
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
 
         if s.image == None and s.hostname == None:
-            raise APIUsageException("You must have an image or a hostname or there will be no VM")
-        if s.image !=None and s.hostname != None:
-            raise APIUsageException("Only specify hostname *OR* image")
+            raise APIUsageException("You must have an image or a hostname or there will be no VM")    
 
-        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback)
+        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback, boot=self._boot, ready=self._ready, terminate=self._terminate)
         self.services[s.name] = svc
         return svc
 
@@ -88,7 +91,7 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, log=logging, callback=None):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None):
         self._vmhostname = s.hostname
         self._log = log
         self._attr_bag = {}
@@ -101,6 +104,14 @@ class SVCContainer(object):
         self._db = db
         self._top_level = top_level
 
+        self._do_boot = boot
+        self._do_ready = ready
+        self._do_terminate = terminate
+
+        if self._do_terminate and self._do_boot:
+            raise APIUsageException("You cannot boot and terminate at the same time.")
+
+        self._hostname_poller = None
         self._make_hostname_poller()
         self._callback = callback
        
@@ -110,10 +121,14 @@ class SVCContainer(object):
         self._ssh_poller = None
         self._ready_poller = None
         self._boot_poller = None
-
+        self._terminate_poller = None
+        self._shutdown_poller = None
 
     def _make_hostname_poller(self):
-          # form all the objects needed by the service
+
+        # if the service if already contextualized
+        if self._s.hostname and self._s.contextualized == 1:
+            return
         if self._s.image and self._s.hostname:
             raise APIUsageException("You cannot specify both a hotname and an image.  Check your config file")
 
@@ -121,7 +136,7 @@ class SVCContainer(object):
             iaas_con = _get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
             reservation = iaas_con.run_instances(self._s.image, instance_type=self._s.allocation, key_name=self._s.keyname)
             instance = reservation.instances[0]
-            self._hostname_poller = InstanceHostnamePollable(instance, self._log)
+            self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
 
     def _get_fab_command(self):
         fabexec = "fab"
@@ -194,6 +209,15 @@ class SVCContainer(object):
                 msg = "Service %s error running ready program: %s" % (self._myname, self._vmhostname)
                 stdout = self._ready_poller.get_stdout()
                 stderr = self._ready_poller.get_stderr()
+            elif self._shutdown_poller in multiex.pollable_list:
+                msg = "Service %s error running shutdown on iaas: %s" % (self._myname, self._vmhostname)
+                stdout = ""
+                stderr = ""
+            elif self._terminate_poller in multiex.pollable_list:
+                msg = "Service %s error running terminate program on: %s" % (self._myname, self._vmhostname)
+                stdout = self._terminate_poller.get_stdout()
+                stderr = self._terminate_poller.get_stderr()
+
             raise ServiceException(multiex, self, msg, stdout, stderr)
             
         except Exception, ex:
@@ -206,6 +230,59 @@ class SVCContainer(object):
         if action == cloudboot.callback_action_transition:
             self._execute_callback(action, msg)
 
+    def _make_pollers(self):
+        self._ready_poller = None
+        self._boot_poller = None
+        self._terminate_poller = None
+
+        self._pollables = MultiLevelPollable(log=self._log)
+
+        cmd = self._get_ssh_ready_cmd()
+        self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200)
+        self._pollables.add_level([self._ssh_poller])
+
+        if self._do_boot:
+            if self._s.contextualized == 1:
+                cloudboot.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
+            else:
+                if self._s.bootconf:
+                    cmd = self._get_boot_cmd()
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                    self._pollables.add_level([self._boot_poller])
+                else:
+                    cloudboot.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
+        else:
+            cloudboot.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
+
+        if self._do_ready:
+            if self._s.readypgm:
+                cmd = self._get_readypgm_cmd()
+                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                self._pollables.add_level([self._ready_poller])
+            else:
+                cloudboot.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))
+        else:
+            cloudboot.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
+        self._pollables.start()
+
+        if self._do_terminate:
+            if self._s.terminatepgm:
+                cmd = self._get_readypgm_cmd()
+                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb, timeout=1200)
+                self._pollables.add_level([self._terminate_poller])
+            else:
+                cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
+            if self._s.instance_id:
+                iaas_con = _get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+                reservations = iaas_con.get_all_instances([self._s.instance_id,])
+                instance = reservations[0].instances[0]
+                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
+                self._pollables.add_level([self._shutdown_poller])
+            else:
+                cloudboot.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
+        else:
+            cloudboot.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
+
     def _poll(self):
         if self._done:
             return True
@@ -217,14 +294,19 @@ class SVCContainer(object):
                 cmd = self._get_ssh_ready_cmd()
                 self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb)
                 self._pollables.add_level([self._ssh_poller])
-                if self._s.bootconf:
-                    cmd = self._get_boot_cmd()
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb)
-                    self._pollables.add_level([self._boot_poller])
+                if self._s.contextualized == 1:
+                    cloudboot.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
+                else:
+                    if self._s.bootconf:
+                        cmd = self._get_boot_cmd()
+                        self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb)
+                        self._pollables.add_level([self._boot_poller])
+                    else:
+                        cloudboot.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
 
                 if self._readypgm:
                     cmd = self._get_readypgm_cmd()
-                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb)
+                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb)
                     self._pollables.add_level([self._ready_poller])
                 self._pollables.start()
 
@@ -234,7 +316,6 @@ class SVCContainer(object):
                 self._s.contextualized = 1
                 self._db.db_commit()
                 self._execute_callback(cloudboot.callback_action_complete, "Service Complete")
-                cloudboot.log(self._log, logging.DEBUG, self._boot_poller.get_output())
             return rc
 
         if self._hostname_poller.poll():

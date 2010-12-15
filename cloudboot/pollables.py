@@ -43,6 +43,26 @@ class Pollable(object):
             raise TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
         return False
 
+class InstanceTerminatePollable(Pollable):
+
+    def __init__(self, instance, log=logging, timeout=600):
+        Pollable.__init__(self, timeout)
+        self._instance = instance
+        self._log = log
+        self._started = False
+
+    def start(self):
+        Pollable.start(self)
+        self._started = True
+        self._instance.terminate()
+
+    def poll(self):
+        if not self._started:
+            raise APIUsageException("You must first start the pollable object")
+        return True
+
+    def cancel(self):
+        pass
 
 class InstanceHostnamePollable(Pollable):
     """
@@ -104,7 +124,7 @@ class InstanceHostnamePollable(Pollable):
             except EC2ResponseError, ecex:
                 # We allow this error to occur once.  It takes ec2 some time
                 # to be sure of the instance id
-                if self._poll_error_count > 0:
+                if self._poll_error_count > 1:
                     # if we poll too quick sometimes aws cannot find the id
                     self.exception = IaaSException(ecex)
                     self._log.error(ecex)
@@ -267,9 +287,17 @@ class MultiLevelPollable(Pollable):
         self._level_error_ex = []
         self._level_error_polls = []
         self._callback = callback
+        self._reversed = False
 
     def get_level(self):
         return self.level_ndx + 1
+
+    def _get_callback_level(self):
+        if self._reversed:
+            ndx = len(self.levels) - self.level_ndx
+        else:
+            ndx = self.level_ndx
+        return ndx
 
     def start(self):
         Pollable.start(self)        
@@ -279,7 +307,7 @@ class MultiLevelPollable(Pollable):
         if len(self.levels) == 0:
             return
         if self._callback:
-            self._callback(self, cloudboot.callback_action_started, self.level_ndx+1)
+            self._callback(self, cloudboot.callback_action_started, self._get_callback_level())
         for p in self.levels[self.level_ndx]:
             p.start()
 
@@ -314,12 +342,12 @@ class MultiLevelPollable(Pollable):
 
             self.level_ndx = self.level_ndx + 1
             if self.level_ndx == len(self.levels):
-                self._execute_cb(cloudboot.callback_action_complete, self.level_ndx - 1)
+                self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level() - 1)
                 self._done = True
                 return True
             if self._callback:
-                self._execute_cb(cloudboot.callback_action_complete, self.level_ndx - 1)
-                self._execute_cb(cloudboot.callback_action_started, self.level_ndx)
+                self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level() - 1)
+                self._execute_cb(cloudboot.callback_action_started, self._get_callback_level())
 
             for p in self.levels[self.level_ndx]:
                 p.start()
@@ -343,3 +371,6 @@ class MultiLevelPollable(Pollable):
             raise APIUsageException("You cannot add a level after starting the poller")
         self.levels.append(pollable_list)
 
+    def reverse_order(self):
+        self.levels.reverse()
+        self._reversed = not self._reversed

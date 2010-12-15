@@ -15,8 +15,8 @@ class CloudBootException(Exception):
 
 
 class APIUsageException(Exception):
-    def __init__(self):
-        Exception.__init__(self)
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
 
 class TimeoutException(Exception):
     def __init__(self):
@@ -49,7 +49,8 @@ class ServiceException(PollableException):
 
     def __str__(self):
         s = "Error while processing the service: %s" % (self._svc.name)
-        s = s + os.linesep + self.msg
+        if self.msg:
+            s = s + os.linesep + self.msg
         s = s + os.linesep + "stdout : %s" % (self.stdout)
         s = s + os.linesep + "stderr : %s" % (self.stderr)
         return s
