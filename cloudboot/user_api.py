@@ -137,7 +137,7 @@ class CloudBoot(object):
 
     def _svc_cb(self, svc, action, msg):
         if self._service_callback:
-            self._service_callback(self, CloudService(svc), action)
+            self._service_callback(self, CloudService(svc), action, msg)
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):

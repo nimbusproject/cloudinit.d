@@ -13,13 +13,15 @@ internal pollables of specific purpose.
 """
 from boto.exception import EC2ResponseError
 import logging
-from select import select
+import select
 import subprocess
 import time
 import thread
 import datetime
 from cloudboot.exceptions import TimeoutException, IaaSException, APIUsageException, ProcessException, MultilevelException
 import cloudboot
+import traceback
+import os
 
 __author__ = 'bresnaha'
 
@@ -119,29 +121,38 @@ class PopenExecutablePollable(Pollable):
     by returning an exit code of != 0 allowed_errors number of times.
     """
 
-    def __init__(self, cmd, allowed_errors=1024, log=logging, timeout=600):
+    def __init__(self, cmd, allowed_errors=128, log=logging, timeout=600, callback=None):
         Pollable.__init__(self, timeout)
-        self.cmd = cmd
-        self._stderr = ""
-        self._stdout = ""
+        self._cmd = cmd
+        self._stderr_str = ""
+        self._stdout_str = ""
+        self._stdout_eof = False
+        self._stderr_eof = False
         self._error_count = 0
         self._allowed_errors = allowed_errors
         self._log = log
         self._started = False
         self._p = None
         self._exception = None
+        self._done = False
+        self._callback = callback
+        self._time_delay = datetime.timedelta(seconds=10)
+        self._last_run = None
 
-    def _get_stderr(self):
+    def get_stderr(self):
         """Get and reset the current stderr buffer from any (and all) execed programs.  Good for logging"""
         s = self._stderr_str
-        self._stderr_str = ""
+
         return s
 
-    def _get_stdout(self):
+    def get_stdout(self):
         """Get and reset the current stdout buffer from any (and all) execed programs.  Good for logging"""
         s = self._stdout_str
-        self._stdout_str = ""
+        
         return s
+
+    def get_output(self):
+        return self.get_stderr() + os.linesep + self.get_stdout()
 
     def start(self):
         Pollable.start(self)
@@ -163,7 +174,7 @@ class PopenExecutablePollable(Pollable):
             self._exception = toex
             raise
         except Exception, ex:
-            self._exception = ProcessException(ex, self._stdout_str, self._stderr_str)
+            self._exception = ProcessException(self, ex, self._stdout_str, self._stderr_str)
             raise self._exception
 
     def cancel(self):
@@ -173,20 +184,34 @@ class PopenExecutablePollable(Pollable):
         self._p.terminate()
         self._error_count = self._allowed_errors
 
+    def _execute_cb(self, action, msg):
+        if not self._callback:
+            return
+        self._callback(self, action, msg)
+
     def _poll(self):
         """pool to see of the process has completed.  If incomplete None is returned.  Otherwise the latest return code is sent"""
+        if self._last_run:
+            now = datetime.datetime.now()
+            if now - self._last_run < self._time_delay:
+                return False
+            self._last_run = None
+            self._execute_cb(cloudboot.callback_action_transition, "retrying the command")
+            self._run()
 
         rc = self._poll_process()
         if rc == None:
             return False
+        self._log.info("process return code %d" % (rc))
         if rc != 0:
             self._error_count = self._error_count + 1
-            if self._error_count < self._allowed_errors:
+            if self._error_count >= self._allowed_errors:
                 raise ProcessException("Process exceeded the allowed number of failures: %s" % (self._cmd))
-            self._run()
+            self._last_run = datetime.datetime.now()     
             return False
         self._final_rc = rc
         self._done = True
+        self._execute_cb(cloudboot.callback_action_complete, "Pollable complete")
         return True
 
     def _poll_process(self, poll_period=0.1):
@@ -206,21 +231,22 @@ class PopenExecutablePollable(Pollable):
         (rlist,wlist,elist) = select.select(selectors, [], [], poll_period)
         for f in rlist:
             line = f.readline()
+            self._log.info(line)
             if f == p.stdout:
                 # we assume there will be a full line or eof
-                # not the fastest str concat, but this is small
+                # not the fastest str concat, but this is small                
                 self._stdout_str = self._stdout_str + line
-                if line == "":
+                if not line:
                     self._stdout_eof = True
             else:
                 self._stderr_str = self._stderr_str + line
-                if line == "":
+                if not line:
                     self._stderr_eof = True
 
         return self._stderr_eof and self._stdout_eof
 
     def _run(self):
-        self._log.debug(self._cmd)
+        cloudboot.log(self._log, logging.DEBUG, "running the command %s" % (str(self._cmd)))
         self._p = subprocess.Popen(self._cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
 
@@ -235,9 +261,6 @@ class MultiLevelPollable(Pollable):
         self.levels = []
         self.level_ndx = -1
         self._log = log
-        self.starting_state = 1
-        self.transition_state = 2
-        self.complete_state = 3
         self._timeout = timeout
         self.exception = None
         self._done = False
@@ -256,7 +279,7 @@ class MultiLevelPollable(Pollable):
         if len(self.levels) == 0:
             return
         if self._callback:
-            self._callback(self, cloudboot.callback_action_started, self.level_ndx)
+            self._callback(self, cloudboot.callback_action_started, self.level_ndx+1)
         for p in self.levels[self.level_ndx]:
             p.start()
 
@@ -281,7 +304,7 @@ class MultiLevelPollable(Pollable):
                 except Exception, ex:
                     self._level_error_ex.append(ex)
                     self._level_error_polls.append(p)
-                    raise
+                    cloudboot.log(self._log, logging.ERROR, "Multilevel poll error %s" % (str(ex)), traceback)
 
         if done:
             # see if the level had an error

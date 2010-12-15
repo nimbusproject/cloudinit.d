@@ -9,7 +9,7 @@ import tempfile
 import string
 from cloudboot.persistantance import BagAttrsObject
 import ConfigParser
-from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException
+from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudboot.statics import *
 import cloudboot
 
@@ -105,6 +105,12 @@ class SVCContainer(object):
         self._callback = callback
        
         self._db.db_commit()
+        self._bootconf = None
+
+        self._ssh_poller = None
+        self._ready_poller = None
+        self._boot_poller = None
+
 
     def _make_hostname_poller(self):
           # form all the objects needed by the service
@@ -124,7 +130,9 @@ class SVCContainer(object):
                 fabexec = os.environ['CLOUD_BOOT_FAB']
         except:
             pass
-        return fabexec + " -f %s -D -u %s -i %s " % (bootfabtasks.__file__, s.username, s.keyname)
+        fabfile = bootfabtasks.__file__.replace("pyc", "py")
+        cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
+        return cmd
 
     def __str__(self):
         return self.name
@@ -173,10 +181,30 @@ class SVCContainer(object):
     def poll(self):
         try:
             return self._poll()
+        except MultilevelException, multiex:
+            if self._ssh_poller in multiex.pollable_list:
+                msg = "Service %s error getting ssh access to %s" % (self._myname, self._vmhostname)
+                stdout = self._ssh_poller.get_stdout()
+                stderr = self._ssh_poller.get_stderr()
+            elif self._boot_poller in multiex.pollable_list:
+                msg = "Service %s error configuring for boot: %s" % (self._myname, self._vmhostname)
+                stdout = self._boot_poller.get_stdout()
+                stderr = self._boot_poller.get_stderr()
+            elif self._ready_poller in multiex.pollable_list:
+                msg = "Service %s error running ready program" % (self._myname, self._vmhostname)
+                stdout = self._ready_poller.get_stdout()
+                stderr = self._ready_poller.get_stderr()
+            raise ServiceException(multiex, self, msg, stdout, stderr)
+            
         except Exception, ex:
+            cloudboot.log(self._log, logging.ERROR, "%s" %(str(ex)), traceback)
             self._s.last_error = str(ex)
             self._db.db_commit()
             raise ServiceException(ex, self)
+
+    def context_cb(self, popen_poller, action, msg):
+        if action == cloudboot.callback_action_transition:
+            self._execute_callback(action, msg)
 
     def _poll(self):
         if self._done:
@@ -186,15 +214,18 @@ class SVCContainer(object):
             if not self._pollables:
                 self._pollables = MultiLevelPollable(log=self._log)
 
+                cmd = self._get_ssh_ready_cmd()
+                self._ssh_poller = PopenExecutablePollable(cmd, log=self._log)
+                self._pollables.add_level([self._ssh_poller])
                 if self._s.bootconf:
                     cmd = self._get_boot_cmd()
-                    _boot_poller = PopenExecutablePollable(cmd, log=self._log)
-                    self._pollables.add_level([_boot_poller])
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1)
+                    self._pollables.add_level([self._boot_poller])
 
                 if self._readypgm:
                     cmd = self._get_readypgm_cmd()
-                    _ready_poller = PopenExecutablePollable(cmd, log=self._log)
-                    self._pollables.add_level([_ready_poller])
+                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1)
+                    self._pollables.add_level([self._ready_poller])
                 self._pollables.start()
 
             rc = self._pollables.poll()
@@ -203,24 +234,26 @@ class SVCContainer(object):
                 self._s.contextualized = 1
                 self._db.db_commit()
                 self._execute_callback(cloudboot.callback_action_complete, "Service Complete")
+                cloudboot.log(self._log, logging.DEBUG, self._boot_poller.get_output())
             return rc
 
         if self._hostname_poller.poll():
             self._vmhostname = self._hostname_poller.get_hostname()
+            self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._vmhostname))
             self._s.hostname = self._vmhostname
             self._db.db_commit()
         return False
 
+    def _get_ssh_ready_cmd(self):
+        cmd = self._get_fab_command() + " alive:hosts=%s" % (self._vmhostname)
+        return cmd
+
     def _get_readypgm_cmd(self):
-        cmd = self._fabexec + " readypgm:hosts=%s,pgm=%s" % (self._vmhostname, self._readypgm)
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._vmhostname, self._s.readypgm)
         return cmd
 
     def _get_boot_cmd(self):
-        if self._myname == "provisioner":
-            boot = "bootstrap_cei"
-        else:
-            boot = "bootstrap"
-        cmd = self._fabexec + " %s:hosts=%s,rolesfile=%s" % (boot, self._vmhostname, self._bootconf)
+        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._vmhostname, self._s.bootpgm, self._bootconf)
         return cmd
 
     def _fill_template(self, path):
@@ -243,7 +276,7 @@ class SVCContainer(object):
         prefix = os.path.basename(path)
         prefix += "_"
 
-        (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True, dir=self.thisrundir)
+        (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True)
 
         f = open(newpath, 'w')
         f.write(document)

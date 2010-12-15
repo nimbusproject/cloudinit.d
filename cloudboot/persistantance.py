@@ -10,6 +10,7 @@ from sqlalchemy import Column
 import ConfigParser
 from sqlalchemy import types
 from datetime import datetime
+import os
 
 
 __author__ = 'bresnaha'
@@ -53,6 +54,7 @@ service_table = Table('service', metadata,
     Column('readypgm', String(1024)),
     Column('hostname', String(64)),
     Column('bootconf', String(1024)),
+    Column('bootpgm', String(1024)),
     Column('deps', String(1024)),
     Column('instance_id', String(64)),
     Column('iaas_hostname', String(64)),
@@ -70,6 +72,13 @@ attrbag_table = Table('attrbag', metadata,
     Column('service_id', Integer, ForeignKey('service.id'))
     )
 
+
+def _join_or_none(base1, base2):
+    if base2 == None:
+        return None
+    base1 = os.path.expanduser(base1)
+    base2 = os.path.expanduser(base2)
+    return os.path.join(base1, base2)
 
 class BootObject(object):
 
@@ -102,6 +111,7 @@ class ServiceObject(object):
         self.readypgm = None
         self.hostname = None
         self.bootconf = None
+        self.bootpgm = None
         self.deps = None
         self.instance_id = None
         self.iaas_hostname = None
@@ -110,7 +120,7 @@ class ServiceObject(object):
         self.iaas_secret = None
         self.contextualized = 0
 
-    def _load_from_conf(self, parser, section, db):
+    def _load_from_conf(self, parser, section, db, conf_dir):
         s = section
         image = config_get_or_none(parser, s, "image")
         iaas = config_get_or_none(parser, s, "iaas")
@@ -146,13 +156,13 @@ class ServiceObject(object):
 
         self.name = section.replace("svc-", "")
         self.image = image
-        self.bootconf = bootconf
-        self.bootpgm = bootpgm
+        self.bootconf = _join_or_none(conf_dir, bootconf)
+        self.bootpgm = _join_or_none(conf_dir, bootpgm)
         self.hostname = hostname
-        self.readypgm = readypgm
-        self.deps = deps
+        self.readypgm = _join_or_none(conf_dir, readypgm)
+        self.deps = _join_or_none(conf_dir, deps)
         self.username = ssh_user
-        self.localkey = localssh
+        self.localkey = _join_or_none(conf_dir, localssh)
         self.keyname = sshkey
         self.allocation = allo
         self.iaas = iaas
@@ -206,8 +216,11 @@ class CloudBootDB(object):
         return bo
 
     def load_from_conf(self, conf_file):
+        conf_file = os.path.abspath(conf_file)
         parser = ConfigParser.ConfigParser()
         parser.read(conf_file)
+
+        self._confdir = os.path.abspath(os.path.dirname(conf_file))
 
         # get the system defaults
         s = "defaults"
@@ -229,8 +242,8 @@ class CloudBootDB(object):
             # if the key has the word level in it we do something otherwise we log a warning
             ndx = key.find("level")
             if ndx == 0:
-
-                (level, order) = self.build_level(key, val)
+                level_file = os.path.join(self._confdir, val)
+                (level, order) = self.build_level(key, level_file)
                 lvl_dict[order] = level
 
         bo = BootObject(conf_file)
@@ -258,7 +271,7 @@ class CloudBootDB(object):
             ndx = s.find("svc-")
             if ndx == 0:
                 svc_db = ServiceObject()
-                svc_db._load_from_conf(parser, s, self)
+                svc_db._load_from_conf(parser, s, self, self._confdir)
                 level.services.append(svc_db)
                 self._session.add(svc_db)
         return (level, order)

@@ -44,29 +44,37 @@ def level_callback(cb, action, current_level):
     elif action == cloudboot.callback_action_error:
         sys.stdout.write("Level %d complete with error.\n" % (current_level))
 
-def service_callback(cb, cloudservice, action):
+def service_callback(cb, cloudservice, action, msg):
     if action == cloudboot.callback_action_started:
-        print "Service %s started" % (cloudservice.name)
+        print "\tService %s started" % (cloudservice.name)
     elif action == cloudboot.callback_action_transition:
-        sys.stdout.write(".")
-        sys.stdout.flush()
+        print "\t%s : %s" %(cloudservice.name, msg)        
     elif action == cloudboot.callback_action_complete:
-        print "Service %s OK" % (cloudservice.name)
+        print "\tService %s OK" % (cloudservice.name)
     elif action == cloudboot.callback_action_error:
         print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
 
 def launch_new(args, options):
-    cb = CloudBoot("/home/bresnaha/Dev/", config_file=args[1], level_callback=level_callback, service_callback=service_callback)
+    logger = logging.getLogger("simple_example")
+    logger.setLevel(logging.WARN)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARN)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    cb = CloudBoot("/home/bresnaha/Dev/", config_file=args[1], level_callback=level_callback, service_callback=service_callback, log=logger)
     print "Starting up run %s" % (cb.run_name)
     cb.start()
     try:
         cb.block_until_complete(poll_period=0.1)
     except CloudServiceException, svcex:
         print ex
-        raise
+
     except MultilevelException, mex:
         print mex
-        raise
+
+    return 0
 
 def status(args):
     pass
