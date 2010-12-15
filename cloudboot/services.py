@@ -15,6 +15,12 @@ from cloudboot.statics import *
 __author__ = 'bresnaha'
 
 def _get_connection(key, secret, iaashostname=None, iaasport=None):
+    if key.find("env.") == 0:
+        env_key = key[4:]
+        key = os.environ[env_key]
+    if secret.find("env.") == 0:
+        env_key = secret[4:]
+        secret = os.environ[env_key]
     # see comments in validate()
     if not iaashostname:
         con = EC2Connection(key, secret)
@@ -247,7 +253,7 @@ class SVCContainer(object):
             else:
                 if self._s.bootconf:
                     cmd = self._get_boot_cmd()
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200)
                     self._pollables.add_level([self._boot_poller])
                 else:
                     cloudboot.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
