@@ -101,6 +101,9 @@ def test_up_and_down(args, options, logger=None):
     if rc != 0:
         return 1
     args[1] = name
+    rc = status(args, options, logger)
+    if rc != 0:
+        return 1
     rc = terminate(args, options, logger)
     return rc
 

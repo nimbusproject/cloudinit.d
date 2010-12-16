@@ -106,8 +106,8 @@ class InstanceHostnamePollable(Pollable):
         if self._thread:
             self._thread.join()
 
-    def get_instance(self):
-        return self._instance
+    def get_instance_id(self):
+        return self._instance.id
 
     def get_hostname(self):
         return self._instance.public_dns_name
@@ -294,7 +294,7 @@ class MultiLevelPollable(Pollable):
 
     def _get_callback_level(self):
         if self._reversed:
-            ndx = len(self.levels) - self.level_ndx
+            ndx = len(self.levels) - self.level_ndx - 1
         else:
             ndx = self.level_ndx
         return ndx
@@ -306,8 +306,7 @@ class MultiLevelPollable(Pollable):
         self.level_ndx = 0
         if len(self.levels) == 0:
             return
-        if self._callback:
-            self._callback(self, cloudboot.callback_action_started, self._get_callback_level())
+        self._execute_cb(cloudboot.callback_action_started, self._get_callback_level())       
         for p in self.levels[self.level_ndx]:
             p.start()
 
@@ -340,14 +339,12 @@ class MultiLevelPollable(Pollable):
                 self.exception = MultilevelException(self._level_error_ex, self._level_error_polls, self.level_ndx)
                 raise self.exception
 
+            self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level())
             self.level_ndx = self.level_ndx + 1
             if self.level_ndx == len(self.levels):
-                self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level() - 1)
                 self._done = True
                 return True
-            if self._callback:
-                self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level() - 1)
-                self._execute_cb(cloudboot.callback_action_started, self._get_callback_level())
+            self._execute_cb(cloudboot.callback_action_started, self._get_callback_level())
 
             for p in self.levels[self.level_ndx]:
                 p.start()

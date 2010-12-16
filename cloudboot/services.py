@@ -269,7 +269,6 @@ class SVCContainer(object):
                 cloudboot.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))
         else:
             cloudboot.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
-        self._pollables.start()
 
         if self._do_terminate:
             if self._s.terminatepgm:
@@ -288,6 +287,8 @@ class SVCContainer(object):
                 cloudboot.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
         else:
             cloudboot.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
+        self._pollables.start()
+
 
     def _poll(self):
         if self._done:
@@ -295,27 +296,7 @@ class SVCContainer(object):
         # if we already have a hostname move onto polling the fab tasks
         if self._vmhostname and self._vmhostname != "":
             if not self._pollables:
-                self._pollables = MultiLevelPollable(log=self._log)
-
-                cmd = self._get_ssh_ready_cmd()
-                self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb)
-                self._pollables.add_level([self._ssh_poller])
-                if self._s.contextualized == 1:
-                    cloudboot.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
-                else:
-                    if self._s.bootconf:
-                        cmd = self._get_boot_cmd()
-                        self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb)
-                        self._pollables.add_level([self._boot_poller])
-                    else:
-                        cloudboot.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
-
-                if self._readypgm:
-                    cmd = self._get_readypgm_cmd()
-                    self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb)
-                    self._pollables.add_level([self._ready_poller])
-                self._pollables.start()
-
+                self._make_pollers()
             rc = self._pollables.poll()
             if rc:                
                 self._done = True
@@ -328,6 +309,7 @@ class SVCContainer(object):
             self._vmhostname = self._hostname_poller.get_hostname()
             self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._vmhostname))
             self._s.hostname = self._vmhostname
+            self._s.instance_id = self._hostname_poller.get_instance_id()
             self._db.db_commit()
         return False
 
