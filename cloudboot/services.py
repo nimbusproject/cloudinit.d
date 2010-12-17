@@ -247,11 +247,11 @@ class SVCContainer(object):
 
         self._pollables = MultiLevelPollable(log=self._log)
 
-        cmd = self._get_ssh_ready_cmd()
-        self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200)
-        self._pollables.add_level([self._ssh_poller])
-
         if self._do_boot:
+            cmd = self._get_ssh_ready_cmd()
+            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200)
+            self._pollables.add_level([self._ssh_poller])
+
             if self._s.contextualized == 1:
                 cloudboot.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
             else:
@@ -277,7 +277,7 @@ class SVCContainer(object):
         if self._do_terminate:
             if self._s.terminatepgm:
                 cmd = self._get_readypgm_cmd()
-                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb, timeout=1200)
+                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                 self._pollables.add_level([self._terminate_poller])
             else:
                 cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
