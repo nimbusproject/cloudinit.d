@@ -12,7 +12,6 @@ import cloudboot
 import os
 
 __author__ = 'bresnaha'
-Version = "0.1"
 
 
 # setup and validate options
@@ -20,7 +19,7 @@ def parse_commands(argv):
     u = """[options] <launch | status | terminate> <run name> [<top level launch plan> | <runame>]
 Boot and manage a launch plan
 """
-    version = "%prog " + (Version)
+    version = "%prog " + (cloudboot.Version)
     parser = OptionParser(usage=u, version=version)
 
     opt = bootOpts("database", "d", "Path to the db directory", None)
