@@ -49,7 +49,7 @@ def service_callback(cb, cloudservice, action, msg):
         sys.stdout.write("\n\tService %s started" % (cloudservice.name))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_transition:             
-        sys.stdout.write("%s\n" % (msg))
+        sys.stdout.write(".")
         sys.stdout.flush()
     elif action == cloudboot.callback_action_complete:
         sys.stdout.write("\n\tService %s OK" % (cloudservice.name))

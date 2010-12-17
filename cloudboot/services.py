@@ -172,12 +172,11 @@ class SVCContainer(object):
         except:
             raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files" % (self._myname, key))
 
-    def start(self):
-        # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
-        # values
-
+    def _do_attr_bag(self):
+        if not self._do_boot:
+            return
         pattern = re.compile('\$\{(.*?)\.(.*)\}')
-        for bao in self._s.attrs:                        
+        for bao in self._s.attrs:
             val = bao.value
             match = pattern.search(val)
             if match:
@@ -188,6 +187,11 @@ class SVCContainer(object):
 
         if self._s.bootconf:
             self._bootconf = self._fill_template(self._s.bootconf)
+            
+    def start(self):
+        # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
+        # values
+        self._do_attr_bag()
 
         if self._hostname_poller:
             self._hostname_poller.start()

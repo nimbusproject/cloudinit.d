@@ -12,7 +12,9 @@ f.close()
 print vals_dict['message']
 print vals_dict['webserver']
 
-f = urllib.urlopen("http://%s/test.txt" % (vals_dict['webserver']))
+url = "http://%s/test.txt" % (vals_dict['webserver'])
+print url
+f = urllib.urlopen(url)
 data = f.read().strip()
 print data
 if data != vals_dict['message']:
