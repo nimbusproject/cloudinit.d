@@ -250,7 +250,7 @@ class SVCContainer(object):
         if self._do_ready:
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
-                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb, timeout=1200)
                 self._pollables.add_level([self._ready_poller])
             else:
                 cloudboot.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))

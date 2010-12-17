@@ -106,6 +106,7 @@ class CloudBoot(object):
             db_name = str(uuid.uuid4()).split("-")[0]
 
         db_path = "/%s/cloudboot-%s.db" % (db_dir, db_name)
+        self._db_path = db_path
         if config_file == None:
             if not os.path.exists(db_path):
                 raise APIUsageException("Path to the db does not exist %s.  New dbs must be given a config file" % (db_path))
@@ -136,6 +137,9 @@ class CloudBoot(object):
         self._level_callback = level_callback
         self._service_callback = service_callback
 
+    def get_db_file(self):
+        return self._db_path
+
     def _mp_cb(self, mp, action, level_ndx):
         if self._level_callback:
             self._level_callback(self, action, level_ndx)
@@ -159,7 +163,7 @@ class CloudBoot(object):
         return len(self._levels)
 
     # poll the entire boot config until complete
-    def block_until_complete(self, poll_period=0.1):
+    def block_until_complete(self, poll_period=0.5):
         """
         poll_period:        the time to wait inbetween calls to poll()
 
@@ -170,8 +174,10 @@ class CloudBoot(object):
 
         done = False
         while not done:
-            time.sleep(poll_period)
             done = self.poll()
+            if not done:
+                time.sleep(poll_period)
+        self._db.db_commit()
 
     # poll one pass at the boot plan.
     def poll(self):
