@@ -1,19 +1,19 @@
 import sys
 import logging
 from optparse import OptionParser
-from cmd_opts import bootOpts
-from cloudboot.pollables import MultiLevelPollable
+from cloudboot.cli.cmd_opts import bootOpts
 from cloudboot.user_api import CloudBoot, CloudServiceException
-from cloudboot.exceptions import ServiceException, MultilevelException
+from cloudboot.exceptions import MultilevelException
 import cloudboot
+import os
 
 __author__ = 'bresnaha'
 Version = "0.1"
 
-g_log = logging
 
+# setup and validate options
 def parse_commands(argv):
-    u = """[options] <launch | status | terminate> <run name> <top level launch plan>
+    u = """[options] <launch | status | terminate> <run name> [<top level launch plan> | <runame>]
 Boot and manage a launch plan
 """
     version = "%prog " + (Version)
@@ -23,13 +23,40 @@ Boot and manage a launch plan
     opt.add_opt(parser)
     opt = bootOpts("logfile", "f", "Path to logfile", None)
     opt.add_opt(parser)
-    opt = bootOpts("access", "a", "IaaS access ID", None)
-    opt.add_opt(parser)
-    opt = bootOpts("secret", "s", "IaaS access secret", None)
+    opt = bootOpts("loglevel", "l", "Controls how the level of detail in the log file.", "error", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
 
     (options, args) = parser.parse_args(args=argv)
-    
+
+    if options.loglevel == "debug":
+        loglevel = logging.DEBUG
+    elif options.loglevel == "info":
+        loglevel = logging.INFO
+    elif options.loglevel == "warn":
+        loglevel = logginf.WARN
+    elif options.loglevel == "error":
+        loglevel = logging.ERROR
+
+    logger = logging.getLogger("cloudboot")
+    logger.setLevel(loglevel)
+    if options.logfile != None:
+        handler = logging.handlers.RotatingFileHandler(
+              options.logfile, maxBytes=102400, backupCount=5)
+    else:
+        handler = logging.StreamHandler()
+
+    logger.addHandler(handler)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    options.logger = logger
+
+    if not options.database:
+        dbdir = os.path.expanduser("~/.cloudboot")
+        if not os.path.exists(dbdir):
+            os.mkdir(dbdir)
+        options.database = dbdir
+
     return (args, options)
 
 def level_callback(cb, action, current_level):
@@ -57,9 +84,9 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudboot.callback_action_error:
         print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
 
-def launch_new(args, options, logger=None):
+def launch_new(options, config_file):
 
-    cb = CloudBoot("/home/bresnaha/Dev/", config_file=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=False, boot=True, ready=True)
+    cb = CloudBoot(options.database, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
     print "Starting up run %s" % (cb.run_name)
     cb.start()
     try:
@@ -71,9 +98,9 @@ def launch_new(args, options, logger=None):
 
     return (0, cb.run_name)
 
-def status(args, options, logger=None):
+def status(options, dbname):
 
-    cb = CloudBoot("/home/bresnaha/Dev/", db_name=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=False, boot=False, ready=True)
+    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True)
     print "Checking status on %s" % (cb.run_name)
     cb.start()
     try:
@@ -85,8 +112,8 @@ def status(args, options, logger=None):
 
     return 0
 
-def terminate(args, options, logger=None):
-    cb = CloudBoot("/home/bresnaha/Dev/", db_name=args[1], level_callback=level_callback, service_callback=service_callback, log=logger, terminate=True, boot=False, ready=False)
+def terminate(options, dbname):
+    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False)
     print "Terminating %s" % (cb.run_name)
     cb.shutdown()
     try:
@@ -96,39 +123,31 @@ def terminate(args, options, logger=None):
     except MultilevelException, mex:
         print mex
 
-def test_up_and_down(args, options, logger=None):
-    (rc, name) = launch_new(args, options, logger)
+def test_up_and_down(options, config_file):
+    (rc, name) = launch_new(options, config_file)
     if rc != 0:
         return 1
     args[1] = name
-    rc = status(args, options, logger)
+    rc = status(options, config_file)
     if rc != 0:
         return 1
-    rc = terminate(args, options, logger)
+    rc = terminate(options, config_file)
     return rc
 
 def main(argv=sys.argv[1:]):
     # first process options
     (args, options) = parse_commands(argv)
 
-    logger = logging.getLogger("simple_example")
-    logger.setLevel(logging.WARN)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.WARN)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
     # process the command
     command = args[0]
     if command == "boot":
-        (rc, name) = launch_new(args, options, logger)
+        (rc, name) = launch_new(options, args[1])
     elif command == "status":
-        rc = status(args, options, logger)
+        rc = status(options, args[1])
     elif command == "terminate":
-        rc = terminate(args, options, logger)
+        rc = terminate(options, args[1])
     elif command == "test":
-        rc = test_up_and_down(args, options, logger)
+        rc = test_up_and_down(options, args[1])
     else:
         print "Invalid command.  Run with --help"
         rc = 1
