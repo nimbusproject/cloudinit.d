@@ -1,6 +1,10 @@
+#!/usr/bin/env python
+
 import sys
 import logging
 from optparse import OptionParser
+import cloudboot
+import cloudboot.cli
 from cloudboot.cli.cmd_opts import bootOpts
 from cloudboot.user_api import CloudBoot, CloudServiceException
 from cloudboot.exceptions import MultilevelException
@@ -158,5 +162,4 @@ def main(argv=sys.argv[1:]):
 
 if __name__ == "__main__":
     rc = main()
-    print "PAU"
     sys.exit(rc)
