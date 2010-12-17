@@ -1,4 +1,5 @@
 import sys
+import os
 
 __author__ = 'bresnaha'
 
@@ -21,3 +22,13 @@ def log(logger, level, msg, tb=None):
         logger.log(level, stack)
         logger.log(level, "===========")
         logger.log(level, sys.exc_info()[0])
+
+def get_env_val(key):
+    if key.find("env.") == 0:
+        env_key = key[4:]
+        try:
+            key = os.environ[env_key]
+        except:
+            key = None
+    return key
+
