@@ -54,7 +54,7 @@ class BootTopLevel(object):
     def poll(self):
         return self._multi_top.poll()
 
-    def new_service(self, s, db):
+    def new_service(self, s, db, boot=None, ready=None, terminate=None):
 
         if s.name in self.services.keys():
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
@@ -62,7 +62,14 @@ class BootTopLevel(object):
         if s.image == None and s.hostname == None:
             raise APIUsageException("You must have an image or a hostname or there will be no VM")    
 
-        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback, boot=self._boot, ready=self._ready, terminate=self._terminate)
+        if boot == None:
+            boot = self._boot
+        if ready == None:
+            ready = self._ready
+        if terminate == None:
+            terminate = self._terminate
+
+        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate)
         self.services[s.name] = svc
         return svc
 
@@ -72,6 +79,7 @@ class BootTopLevel(object):
         except:
             return None
         return svc.get_dep(attr)
+
 
 
 class SVCContainer(object):
@@ -138,6 +146,9 @@ class SVCContainer(object):
         cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
         return cmd
 
+    def get_db_id(self):
+        return self._s.id
+
     def __str__(self):
         return self.name
 
@@ -170,8 +181,10 @@ class SVCContainer(object):
 
         if self._s.bootconf:
             self._bootconf = self._fill_template(self._s.bootconf)
-            
+
     def start(self):
+        if self._done:
+            raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
         # values
         self._do_attr_bag()

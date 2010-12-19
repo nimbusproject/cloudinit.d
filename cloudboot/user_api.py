@@ -28,7 +28,7 @@ import uuid
 import time
 import logging
 from cloudboot.exceptions import APIUsageException, PollableException, ServiceException
-from cloudboot.persistantance import CloudBootDB
+from cloudboot.persistantance import CloudBootDB, ServiceObject
 from cloudboot.services import BootTopLevel, SVCContainer
 import cloudboot
 
@@ -146,17 +146,17 @@ class CloudBoot(object):
 
     def _svc_cb(self, svc, action, msg):
         if self._service_callback:
-            self._service_callback(self, CloudService(svc), action, msg)
+            self._service_callback(self, CloudService(self, svc), action, msg)
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
         svc_dict = self._boot_top.get_services()
-        return CloudService(svc_dict[svc_name])
+        return CloudService(self, svc_dict[svc_name])
 
     # get a list of all the services in the given level
     def get_level(self, level_ndx):
         svc_list = self._levels[level_ndx]
-        cs_list = [CloudService(svc) for svc in svc_list]
+        cs_list = [CloudService(self, svc) for svc in svc_list]
         return cs_list
 
     def get_level_count(self):
@@ -246,10 +246,12 @@ class CloudBoot(object):
 
 class CloudService(object):
 
-    def __init__(self, svc):
+    def __init__(self, cloudbooter, svc):
         """This should only be called by the CloudBoot object"""
         self._svc = svc
         self.name = svc.name
+        self._cb = cloudbooter
+        self._db = cloudbooter._db
 
     def get_attr_from_bag(self, name):
         self._svc.get_dep(name)
@@ -265,24 +267,16 @@ class CloudService(object):
         the IaaS instance will be terminate (if the service has an
         IaaS instance.
         """
+        so = self._db.get_service_by_id(svc._s.id)
 
-    def start(self):
+
+    def restart(self):
         """
         This will restart the service, or check the results of the ready
         program if the serviceis already running.
         """
         pass
 
-    def poll(self, service_callback=None):
-        """
-        service_callback:   let the user monitor progress of the shutdown
-        or the restart.
-
-        This function returns True when complete, or False if more polling
-        is needed.  Exceptions are thrown if an error with the service
-        occurs
-        """
-        pass
 
 
 class CloudServiceException(ServiceException):

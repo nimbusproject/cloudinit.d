@@ -3,8 +3,6 @@
 import sys
 import logging
 from optparse import OptionParser
-import cloudboot
-import cloudboot.cli
 from cloudboot.cli.cmd_opts import bootOpts
 from cloudboot.user_api import CloudBoot, CloudServiceException
 from cloudboot.exceptions import MultilevelException
@@ -13,15 +11,30 @@ import os
 
 __author__ = 'bresnaha'
 
+g_verbose = 1
+
+def print_chars(lvl, msg):
+    if lvl > g_verbose:
+        return
+    sys.stdout.write(msg)
+    sys.stdout.flush()
 
 # setup and validate options
 def parse_commands(argv):
+    global g_verbose
+
     u = """[options] <launch | status | terminate> <run name> [<top level launch plan> | <runame>]
 Boot and manage a launch plan
 """
     version = "%prog " + (cloudboot.Version)
     parser = OptionParser(usage=u, version=version)
 
+    opt = bootOpts("verbose", "v", "Print more output", 1, count=True)
+    opt.add_opt(parser)
+    opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
+    opt.add_opt(parser)
+#    opt = bootOpts("version", "V", "Print the version and exit", None, flag=True)
+#    opt.add_opt(parser)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
     opt = bootOpts("logfile", "f", "Path to logfile", None)
@@ -50,8 +63,7 @@ Boot and manage a launch plan
 
     logger.addHandler(handler)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    handler.setFormatter(formatter)
     options.logger = logger
 
     if not options.database:
@@ -60,30 +72,31 @@ Boot and manage a launch plan
             os.mkdir(dbdir)
         options.database = dbdir
 
+    if options.quiet:
+        options.verbose = 0
+    g_verbose = options.verbose
+
     return (args, options)
 
 def level_callback(cb, action, current_level):
     if action == cloudboot.callback_action_started:
-        sys.stdout.write("\nBooting level %d...\n" % (current_level))
-        sys.stdout.flush()
+        print_chars(1, "\nBooting level %d...\n" % (current_level))
     elif action == cloudboot.callback_action_transition:
-        pass
+        print_chars(1, ".")
     elif action == cloudboot.callback_action_complete:
-        sys.stdout.write("\nLevel %d complete.\n" % (current_level))
-        sys.stdout.flush()
+        print_chars(1, "\nLevel %d complete.\n" % (current_level))
     elif action == cloudboot.callback_action_error:
-        sys.stdout.write("Level %d complete with error.\n" % (current_level))
+        print_chars("Level %d complete with error.\n" % (current_level))
 
 def service_callback(cb, cloudservice, action, msg):
     if action == cloudboot.callback_action_started:
-        sys.stdout.write("\n\tService %s started" % (cloudservice.name))
+        print_chars(1, "\n\tService %s started" % (cloudservice.name))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_transition:             
-        sys.stdout.write(".")
-        sys.stdout.flush()
+        print_chars(1, ".")
+        print_chars(2, "\n\t%s" % (msg))
     elif action == cloudboot.callback_action_complete:
-        sys.stdout.write("\n\tService %s OK" % (cloudservice.name))
-        sys.stdout.flush()
+        print_chars(1, "\n\tService %s OK" % (cloudservice.name))
     elif action == cloudboot.callback_action_error:
         print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
 
@@ -130,11 +143,10 @@ def test_up_and_down(options, config_file):
     (rc, name) = launch_new(options, config_file)
     if rc != 0:
         return 1
-    args[1] = name
-    rc = status(options, config_file)
+    rc = status(options, name)
     if rc != 0:
         return 1
-    rc = terminate(options, config_file)
+    rc = terminate(options, name)
     return rc
 
 def main(argv=sys.argv[1:]):
