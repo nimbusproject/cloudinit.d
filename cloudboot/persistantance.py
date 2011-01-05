@@ -55,6 +55,7 @@ service_table = Table('service', metadata,
     Column('hostname', String(64)),
     Column('bootconf', String(1024)),
     Column('bootpgm', String(1024)),
+    Column('securitygroups', String(1024)),
     Column('deps', String(1024)),
     Column('instance_id', String(64)),
     Column('iaas_hostname', String(64)),
@@ -120,6 +121,7 @@ class ServiceObject(object):
         self.iaas_key = None
         self.iaas_secret = None
         self.contextualized = 0
+        self.securitygroups = None
 
     def _load_from_conf(self, parser, section, db, conf_dir):
         s = section
@@ -137,6 +139,7 @@ class ServiceObject(object):
         deps = config_get_or_none(parser, s, "deps")
         iaas_key = config_get_or_none(parser, s, "iaas_key")
         iaas_secret = config_get_or_none(parser, s, "iaas_secret")
+        securitygroups = config_get_or_none(parser, s, "securitygroups")
 
         if not iaas:
             iaas = db.default_iaas
@@ -154,6 +157,8 @@ class ServiceObject(object):
             iaas_key = db.default_iaas_key
         if not iaas_secret:
             iaas_secret = db.default_iaas_secret
+        if not securitygroups:
+            securitygroups = db.default_securitygroups
 
         self.name = section.replace("svc-", "")
         self.image = image
@@ -171,6 +176,7 @@ class ServiceObject(object):
 
         self.iaas_secret = iaas_secret
         self.iaas_key = iaas_key
+        self.securitygroups = securitygroups
 
         if self.deps:
             parser = ConfigParser.ConfigParser()
@@ -180,6 +186,7 @@ class ServiceObject(object):
                 bao = BagAttrsObject(ka, val)
                 self.attrs.append(bao)
 
+                
 class BagAttrsObject(object):
     def __init__(self, key, value):
         self.key = key
@@ -240,6 +247,7 @@ class CloudBootDB(object):
         self.default_iaas_port = config_get_or_none(parser, s, "iaas_port", 8444)
         self.default_iaas_key = config_get_or_none(parser, s, "iaas_key")
         self.default_iaas_secret = config_get_or_none(parser, s, "iaas_secret")
+        self.default_securitygroups = config_get_or_none(parser, s, "securitygroups")
 
         lvl_dict = {}
         levels = parser.items("runlevels")

@@ -116,7 +116,7 @@ def launch_new(options, config_file):
 
 def status(options, dbname):
 
-    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True)
+    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=True)
     print "Checking status on %s" % (cb.run_name)
     cb.start()
     try:

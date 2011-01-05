@@ -25,10 +25,10 @@ class BootTopLevel(object):
     used for querying dependencies
     """
 
-    def __init__(self, level_callback=None, service_callback=None, log=logging, boot=True, ready=True, terminate=False):
+    def __init__(self, level_callback=None, service_callback=None, log=logging, boot=True, ready=True, terminate=False, continue_on_error=False):
         self.services = {}
         self._log = log
-        self._multi_top = MultiLevelPollable(log=log, callback=level_callback)
+        self._multi_top = MultiLevelPollable(log=log, callback=level_callback, continue_on_error=continue_on_error)
         self._service_callback = service_callback
         self._boot = boot
         self._ready = ready
@@ -132,7 +132,12 @@ class SVCContainer(object):
 
         if self._s.image:            
             iaas_con = self._get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
-            reservation = iaas_con.run_instances(self._s.image, instance_type=self._s.allocation, key_name=self._s.keyname)
+
+            sec_group = None
+            if self._s.securitygroups:
+                sec_group_a = iaas_con.get_all_security_groups(groupnames=[self._s.securitygroups,])
+                sec_group = sec_group_a[0]
+            reservation = iaas_con.run_instances(self._s.image, instance_type=self._s.allocation, key_name=self._s.keyname, security_groups=sec_group)
             instance = reservation.instances[0]
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
 

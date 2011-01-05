@@ -50,7 +50,7 @@ class CloudBoot(object):
         used for querying dependencies
     """
     
-    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False):
+    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False):
         """
         db_dir:     a path to a directories where databases can be stored.
 
@@ -124,7 +124,7 @@ class CloudBoot(object):
             self._bo = self._db.load_from_db()
 
         self._levels = []
-        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb, boot=boot, ready=ready, terminate=terminate)
+        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb, boot=boot, ready=ready, terminate=terminate, continue_on_error=continue_on_error)
         for level in self._bo.levels:
             level_list = []
             for s in level.services:
