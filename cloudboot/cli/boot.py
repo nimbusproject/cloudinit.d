@@ -49,7 +49,7 @@ Boot and manage a launch plan
     elif options.loglevel == "info":
         loglevel = logging.INFO
     elif options.loglevel == "warn":
-        loglevel = logginf.WARN
+        loglevel = logging.WARN
     elif options.loglevel == "error":
         loglevel = logging.ERROR
 

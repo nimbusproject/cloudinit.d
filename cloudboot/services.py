@@ -13,6 +13,7 @@ from cloudboot.persistantance import BagAttrsObject
 from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudboot.statics import *
 import logging
+from cloudboot.cb_iaas import *
 
 __author__ = 'bresnaha'
 
@@ -145,18 +146,12 @@ class SVCContainer(object):
             raise APIUsageException("You cannot specify both a hostname and an image.  Check your config file")
 
         if self._s.image:            
-            iaas_con = self._get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
-
-            sec_group = None
-            if self._s.securitygroups:
-                sec_group_a = iaas_con.get_all_security_groups(groupnames=[self._s.securitygroups,])
-                sec_group = sec_group_a[0]
+            iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
             if self._s.instance_id:
                 # XXX what if the instance is not there?  need some repair mechaisms
-                reservation = iaas_con.get_all_instances(instance_ids=[self._s.instance_id,])
+                instance = iaas_find_instance(iaas_con, self._s.instance_id)
             else:
-                reservation = iaas_con.run_instances(self._s.image, instance_type=self._s.allocation, key_name=self._s.keyname, security_groups=sec_group)
-            instance = reservation.instances[0]
+                instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._s.instance_id = instance.id
             self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
@@ -297,9 +292,8 @@ class SVCContainer(object):
             else:
                 cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
             if self._s.instance_id:
-                iaas_con = self._get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
-                reservations = iaas_con.get_all_instances([self._s.instance_id,])
-                instance = reservations[0].instances[0]
+                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+                instance = iaas_find_instance(iaas_con, self._s.instance_id)
                 self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
                 self._pollables.add_level([self._shutdown_poller])
             else:
@@ -414,23 +408,3 @@ class SVCContainer(object):
     def cancel(self):
         return self._pollables.cancel()
 
-    def _get_connection(self, key, secret, iaashostname=None, iaasport=None):
-        orig_key = key
-        orig_secret = secret
-        # look up key and secret in env if needed
-        key = cloudboot.get_env_val(key)
-        secret = cloudboot.get_env_val(secret)
-        if not key:
-            raise ConfigException("IaaS key %s not in env" % (orig_key))
-        if not secret:
-            raise ConfigException("IaaS key %s not in env" % (orig_secret))
-        # see comments in validate()
-        if not iaashostname:
-            con = EC2Connection(key, secret)
-        else:
-            region = RegionInfo(iaashostname)
-            if not iaasport:
-                con =  boto.connect_ec2(key, secret, region=region)
-            else:
-                con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
-        return con

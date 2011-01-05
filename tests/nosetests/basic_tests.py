@@ -1,5 +1,6 @@
 from cloudboot.user_api import CloudBoot
 import tempfile
+import logging
 
 __author__ = 'bresnaha'
 
