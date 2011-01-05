@@ -18,7 +18,7 @@ import subprocess
 import time
 import thread
 import datetime
-from cloudboot.exceptions import TimeoutException, IaaSException, APIUsageException, ProcessException, MultilevelException
+from cloudboot.exceptions import TimeoutException, IaaSException, APIUsageException, ProcessException, MultilevelException, PollableException
 import cloudboot
 import traceback
 import os
@@ -30,6 +30,10 @@ class Pollable(object):
 
     def __init__(self, timeout=0):
         self._timeout = timeout
+        self._exception = None
+
+    def get_exception(self):
+        return self._exception
 
     def start(self):
         self._start_time = datetime.datetime.now()
@@ -40,7 +44,8 @@ class Pollable(object):
         now = datetime.datetime.now()
         diff = now - datetime.timedelta(seconds=self._timeout)
         if diff.second > self._timeout:
-            raise TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
+            self._exception = TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
+            raise self._exception
         return False
 
 class InstanceTerminatePollable(Pollable):
@@ -276,7 +281,7 @@ class MultiLevelPollable(Pollable):
     pollables in a list are complete, the next level is polled.  When all levels are completed this pollable is
     considered complete
     """
-    def __init__(self, log=logging, timeout=0, callback=None):
+    def __init__(self, log=logging, timeout=0, callback=None, continue_on_error=False):
         Pollable.__init__(self, timeout)
         self.levels = []
         self.level_ndx = -1
@@ -285,9 +290,13 @@ class MultiLevelPollable(Pollable):
         self.exception = None
         self._done = False
         self._level_error_ex = []
+        self._all_level_error_exs = []
+        self._exception_occurred = False
+        self._continue_on_error = continue_on_error
         self._level_error_polls = []
         self._callback = callback
         self._reversed = False
+        self.last_exception = None
 
     def get_level(self):
         return self.level_ndx + 1
@@ -311,7 +320,7 @@ class MultiLevelPollable(Pollable):
             p.start()
 
     def poll(self):
-        if self.exception:
+        if self.exception and not self._continue_on_error:
             raise self.exception
         if self.level_ndx < 0:
             raise APIUsageException("You must call start before calling poll.")
@@ -329,18 +338,26 @@ class MultiLevelPollable(Pollable):
                     if not rc:
                         done = False
                 except Exception, ex:
-                    self._level_error_ex.append(ex)
+                    self._exception_occurred = True
+                    self.last_exception = PollableException(p, ex)
+                    self._level_error_ex.append(self.last_exception)
                     self._level_error_polls.append(p)
                     cloudboot.log(self._log, logging.ERROR, "Multilevel poll error %s" % (str(ex)), traceback)
+                    self._execute_cb(cloudboot.callback_action_error, self._get_callback_level())
 
         if done:
             # see if the level had an error
             if len(self._level_error_polls) > 0:
-                self.exception = MultilevelException(self._level_error_ex, self._level_error_polls, self.level_ndx)
-                raise self.exception
+                exception = MultilevelException(self._level_error_ex, self._level_error_polls, self.level_ndx)
+                self.last_exception = exception
+                if not self._continue_on_error:
+                    self.exception = exception
+                    raise exception
+                self._all_level_error_exs.append(self._level_error_ex)
 
             self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level())
             self.level_ndx = self.level_ndx + 1
+
             if self.level_ndx == len(self.levels):
                 self._done = True
                 return True

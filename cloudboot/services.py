@@ -1,5 +1,7 @@
+import traceback
+import os
 import re
-from pollables import *
+from cloudboot.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable
 import bootfabtasks
 import boto
 from boto.ec2.regioninfo import RegionInfo
@@ -10,10 +12,9 @@ import cloudboot
 from cloudboot.persistantance import BagAttrsObject
 from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudboot.statics import *
-
+import logging
 
 __author__ = 'bresnaha'
-
 
 
 class BootTopLevel(object):
@@ -127,7 +128,7 @@ class SVCContainer(object):
         if self._s.hostname and self._s.contextualized == 1:
             return
         if self._s.image and self._s.hostname:
-            raise APIUsageException("You cannot specify both a hotname and an image.  Check your config file")
+            raise APIUsageException("You cannot specify both a hostname and an image.  Check your config file")
 
         if self._s.image:            
             iaas_con = self._get_connection(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
@@ -203,24 +204,25 @@ class SVCContainer(object):
         try:
             return self._poll()
         except MultilevelException, multiex:
+            msg = ""
             if self._ssh_poller in multiex.pollable_list:
                 msg = "Service %s error getting ssh access to %s" % (self._myname, self._vmhostname)
                 stdout = self._ssh_poller.get_stdout()
                 stderr = self._ssh_poller.get_stderr()
-            elif self._boot_poller in multiex.pollable_list:
-                msg = "Service %s error configuring for boot: %s" % (self._myname, self._vmhostname)
+            if self._boot_poller in multiex.pollable_list:
+                msg = "Service %s error configuring for boot: %s\n%s" % (self._myname, self._vmhostname, msg)
                 stdout = self._boot_poller.get_stdout()
                 stderr = self._boot_poller.get_stderr()
-            elif self._ready_poller in multiex.pollable_list:
-                msg = "Service %s error running ready program: %s" % (self._myname, self._vmhostname)
+            if self._ready_poller in multiex.pollable_list:
+                msg = "Service %s error running ready program: %s\n%s" % (self._myname, self._vmhostname, msg)
                 stdout = self._ready_poller.get_stdout()
                 stderr = self._ready_poller.get_stderr()
-            elif self._shutdown_poller in multiex.pollable_list:
-                msg = "Service %s error running shutdown on iaas: %s" % (self._myname, self._vmhostname)
+            if self._shutdown_poller in multiex.pollable_list:
+                msg = "Service %s error running shutdown on iaas: %s\n%s" % (self._myname, self._vmhostname, msg)
                 stdout = ""
                 stderr = ""
-            elif self._terminate_poller in multiex.pollable_list:
-                msg = "Service %s error running terminate program on: %s" % (self._myname, self._vmhostname)
+            if self._terminate_poller in multiex.pollable_list:
+                msg = "Service %s error running terminate program on: %s\n%s" % (self._myname, self._vmhostname, msg)
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
 
