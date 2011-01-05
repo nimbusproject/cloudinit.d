@@ -48,6 +48,17 @@ class Pollable(object):
             raise self._exception
         return False
 
+class NullPollable(Pollable):
+
+    def __init__(self, log=logging):
+        Pollable.__init__(self)
+
+    def start(self):
+        Pollable.start(self)
+
+    def poll(self):
+        return True
+
 class InstanceTerminatePollable(Pollable):
 
     def __init__(self, instance, log=logging, timeout=600):
@@ -113,6 +124,9 @@ class InstanceHostnamePollable(Pollable):
 
     def get_instance_id(self):
         return self._instance.id
+
+    def get_instance(self):
+        return self._instance
 
     def get_hostname(self):
         return self._instance.public_dns_name

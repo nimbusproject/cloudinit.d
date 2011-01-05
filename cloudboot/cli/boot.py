@@ -129,7 +129,7 @@ def status(options, dbname):
     return 0
 
 def terminate(options, dbname):
-    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False)
+    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
     print "Terminating %s" % (cb.run_name)
     cb.shutdown()
     try:

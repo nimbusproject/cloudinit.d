@@ -29,6 +29,7 @@ import time
 import logging
 from cloudboot.exceptions import APIUsageException, PollableException, ServiceException
 from cloudboot.persistantance import CloudBootDB, ServiceObject
+from cloudboot.pollables import NullPollable, MultiLevelPollable
 from cloudboot.services import BootTopLevel, SVCContainer
 import cloudboot
 
@@ -150,8 +151,8 @@ class CloudBoot(object):
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
-        svc_dict = self._boot_top.get_services()
-        return CloudService(self, svc_dict[svc_name])
+        svc = self._boot_top.get_service(svc_name)
+        return CloudService(self, svc)
 
     # get a list of all the services in the given level
     def get_level(self, level_ndx):
@@ -257,7 +258,7 @@ class CloudService(object):
         self._svc.get_dep(name)
     # need various methods for monitoring state. values from attr bag and from db
 
-    def shutdown(self, dash_nine=False):
+    def shutdown(self, callback=None):
         """
         This will call the remote shutdown program associate with the
         service.  It is called asynchronously.  Poll just be called
@@ -266,16 +267,19 @@ class CloudService(object):
         if dash_nine is True the shutdown function will be skipped and
         the IaaS instance will be terminate (if the service has an
         IaaS instance.
+
+        returns an pollable object
         """
-        so = self._db.get_service_by_id(svc._s.id)
+        self._svc.restart(boot=False, ready=False, terminate=True, callback=callback)
+        return self._svc
 
-
-    def restart(self):
+    def restart(self, callback=None):
         """
         This will restart the service, or check the results of the ready
         program if the serviceis already running.
         """
-        pass
+        self._svc.restart(self, boot=True, ready=True, terminate=True, callback=callback)
+        return self._svc
 
 
 
@@ -283,3 +287,4 @@ class CloudServiceException(ServiceException):
     def __init__(self, ex, svc):
         ServiceException.__init__(self, ex, svc)
         self.service = CloudService(svc)
+
