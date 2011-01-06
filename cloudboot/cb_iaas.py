@@ -103,6 +103,6 @@ def _real_iaas_run_instance(con, image, instance_type, key_name, security_groupn
     return instance
 
 def _real_find_instance(con, instance_id):
-    reservation = con.get_all_instances(instance_ids=[self._s.instance_id,])
-    instance = reservation.instances[0]
+    reservation = con.get_all_instances(instance_ids=[instance_id,])
+    instance = reservation[0].instances[0]
     return instance

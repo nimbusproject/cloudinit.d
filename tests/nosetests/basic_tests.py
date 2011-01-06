@@ -46,7 +46,17 @@ class BasicUserAPITests(unittest.TestCase):
         tst_name = "terminate"
         self._start_one(tst_name)
 
-
+    def test_makesure_is_real(self):
+        tmp = os.environ['CLOUDBOOT_TESTENV']
+        fab = os.environ['CLOUD_BOOT_FAB']
+        try:
+            os.environ.pop('CLOUDBOOT_TESTENV')
+            os.environ.pop('CLOUD_BOOT_FAB')
+            tst_name = "terminate"
+            self._start_one(tst_name)
+        finally:
+            os.environ['CLOUDBOOT_TESTENV'] = tmp
+            os.environ['CLOUD_BOOT_FAB'] = fab
 
 
 if __name__ == '__main__':
