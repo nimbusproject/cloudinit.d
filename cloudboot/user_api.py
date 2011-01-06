@@ -35,13 +35,6 @@ import cloudboot
 
 __author__ = 'bresnaha'
 
-def config_get_or_none(parser, s, v):
-    try:
-        x = parser.get(s, v)
-        return x
-    except:
-        return None
-
 
 class CloudBoot(object):
     """
@@ -228,21 +221,6 @@ class CloudBoot(object):
         self._started = True
 
 
-    def get_services(self):
-        """
-        Return an ordered lists of levels.  Each level is a list of
-        of CloudService objects.  Users can interspect state with this
-        """
-        pass
-
-    def error_status(self):
-        """
-        Like get services, only return just the services that had errors.
-        If a level had no errors an empty list will be returned in that
-        slot.
-        """
-        pass
-    
 
 
 class CloudService(object):
@@ -278,7 +256,7 @@ class CloudService(object):
         This will restart the service, or check the results of the ready
         program if the serviceis already running.
         """
-        self._svc.restart(self, boot=True, ready=True, terminate=True, callback=callback)
+        self._svc.restart(boot=True, ready=True, terminate=True, callback=callback)
         return self._svc
 
 

@@ -16,7 +16,7 @@ import logging
 import select
 import subprocess
 import time
-import thread
+from threading import Thread
 import datetime
 from cloudboot.exceptions import TimeoutException, IaaSException, APIUsageException, ProcessException, MultilevelException, PollableException
 import cloudboot
@@ -80,6 +80,15 @@ class InstanceTerminatePollable(Pollable):
     def cancel(self):
         pass
 
+
+class HostnameCheckThread(Thread):
+    def __init__(self, host_poller):
+        Thread.__init__(self)
+        self.host_poller = host_poller
+
+    def run(self):
+        self.host_poller._thread_poll()
+
 class InstanceHostnamePollable(Pollable):
     """
     Async poll a IaaS service via boto.  Once the VM has an associated hostname, the Pollable object is considered
@@ -98,7 +107,8 @@ class InstanceHostnamePollable(Pollable):
 
     def start(self):
         Pollable.start(self)
-        self._thread = thread.start_new_thread(self._thread_poll, (0.1,))        
+        self._thread = HostnameCheckThread(self)
+        self._thread.start()
 
     def poll(self):
         if self.exception:
@@ -132,7 +142,6 @@ class InstanceHostnamePollable(Pollable):
         return self._instance.public_dns_name
 
     def _thread_poll(self, poll_period=0.1):
-
         while not self._done:
             try:
                 self._state = self._instance.update()
@@ -187,7 +196,6 @@ class PopenExecutablePollable(Pollable):
     def get_stdout(self):
         """Get and reset the current stdout buffer from any (and all) execed programs.  Good for logging"""
         s = self._stdout_str
-        
         return s
 
     def get_output(self):
@@ -217,7 +225,7 @@ class PopenExecutablePollable(Pollable):
             raise self._exception
 
     def cancel(self):
-        if not self._done:
+        if self._done or not self._started:
             return
         # kill it and set the error count to past the max so that it is not retried
         self._p.terminate()
@@ -245,7 +253,8 @@ class PopenExecutablePollable(Pollable):
         if rc != 0:
             self._error_count = self._error_count + 1
             if self._error_count >= self._allowed_errors:
-                raise ProcessException("Process exceeded the allowed number of failures: %s" % (self._cmd))
+                ex = Exception("Process exceeded the allowed number of failures: %s" % (self._cmd))
+                raise ProcessException(ex, self._stdout_str, self._stderr_str, rc)
             self._last_run = datetime.datetime.now()     
             return False
         self._final_rc = rc
@@ -311,6 +320,7 @@ class MultiLevelPollable(Pollable):
         self._callback = callback
         self._reversed = False
         self.last_exception = None
+        self._canceled = False
 
     def get_level(self):
         return self.level_ndx + 1
@@ -386,13 +396,14 @@ class MultiLevelPollable(Pollable):
             return
         self._callback(self, action, lvl+1)
             
-    def cancel(self):
-        """
-        Simply call cancel on all the objects this one owns
-        """
-        for level in self.level_ndx:
-            for p in level:
-                p.cancel()        
+    #def cancel(self):
+    # table this for now
+    #    """
+    #    Simply call cancel on all the objects this one owns
+    #    """
+    #    for level in self.levels:
+    #        for p in level:
+    #            p.cancel()
 
     def add_level(self, pollable_list):
         if self.level_ndx >= 0:

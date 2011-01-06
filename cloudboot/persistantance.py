@@ -224,11 +224,6 @@ class CloudBootDB(object):
         bo = self._session.query(BootObject).first()
         return bo
 
-    def get_service_by_id(self, id):
-        so = self.session.query(ServiceObject).filter(ServiceObject.id == id).first()
-        return so
-        
-
     def load_from_conf(self, conf_file):
         conf_file = os.path.abspath(conf_file)
         parser = ConfigParser.ConfigParser()

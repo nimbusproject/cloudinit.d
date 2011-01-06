@@ -21,4 +21,4 @@ export CLOUD_BOOT_FAB=$source_dir/fakefab.sh
 
 
 cd nosetests
-nosetests "${@}"
+nosetests --cover-package=cloudboot --with-coverage "${@}"

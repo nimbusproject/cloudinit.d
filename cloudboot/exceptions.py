@@ -19,17 +19,14 @@ class APIUsageException(Exception):
         Exception.__init__(self, msg)
 
 class TimeoutException(Exception):
-    def __init__(self):
-        Exception.__init__(self)
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
 
 class IaaSException(CloudBootException):
     def __init__(self, ex):
         CloudBootException.__init__(self, ex)
 
 class ConfigException(Exception):
-    def __init__(self):
-        Exception.__init__(self)
-
     def __init__(self, msg):
         Exception.__init__(self, msg)
 
@@ -40,7 +37,7 @@ class PollableException(CloudBootException):
         self.pollable = p
 
 class ServiceException(PollableException):
-    def __init__(self, ex, svc, msg=None, stdout=None, stderr=None):
+    def __init__(self, ex, svc, msg=None, stdout="", stderr=""):
         PollableException.__init__(self, svc, ex)
         self._svc = svc
         self.stdout = stdout
@@ -56,10 +53,11 @@ class ServiceException(PollableException):
         return s
 
 class ProcessException(PollableException):
-    def __init__(self, pollable, ex, stdout, stderr):
+    def __init__(self, pollable, ex, stdout, stderr, rc=None):
         PollableException.__init__(self, pollable, ex)
         self.stdout = stdout
         self.stderr = stderr
+        self.exit_code = rc
 
 class MultilevelException(PollableException):
     def __init__(self, exs, pollables, level):

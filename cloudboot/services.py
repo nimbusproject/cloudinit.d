@@ -117,25 +117,15 @@ class SVCContainer(object):
         self._shutdown_poller = None
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
-        if boot and self._s.contextualized == 1:
+        if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service")
         self._do_boot = boot
         self._do_ready = ready
         self._do_terminate = terminate
-        if terminate and boot:
-            raise APIUsageException("You cannot boot and terminate at the same time.")
-
         self._hostname_poller = None
         self._make_hostname_poller()
         self._callback = callback
         self._running = False
-
-        
-
-    def get_instance_id(self):
-        if not self._hostname_poller:
-            return None
-        return self._hostname_poller.get_instance_id()
 
     def _make_hostname_poller(self):
 
