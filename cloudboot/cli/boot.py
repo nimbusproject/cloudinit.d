@@ -12,6 +12,7 @@ import os
 __author__ = 'bresnaha'
 
 g_verbose = 1
+g_action = ""
 
 def print_chars(lvl, msg):
     if lvl > g_verbose:
@@ -23,18 +24,18 @@ def print_chars(lvl, msg):
 def parse_commands(argv):
     global g_verbose
 
-    u = """[options] <launch | status | terminate> <run name> [<top level launch plan> | <runame>]
+    u = """[options] <boot | status | terminate> <run name> [<top level launch plan> | <runame> | <clean>]
 Boot and manage a launch plan
 """
-    version = "%prog " + (cloudboot.Version)
+    version = "cloudboot " + (cloudboot.Version)
     parser = OptionParser(usage=u, version=version)
 
     opt = bootOpts("verbose", "v", "Print more output", 1, count=True)
     opt.add_opt(parser)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
-#    opt = bootOpts("version", "V", "Print the version and exit", None, flag=True)
-#    opt.add_opt(parser)
+    opt = bootOpts("name", "n", "Set the run name, only relevant for boot (by default the system picks)", None)
+    opt.add_opt(parser)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
     opt = bootOpts("logfile", "f", "Path to logfile", None)
@@ -55,15 +56,18 @@ Boot and manage a launch plan
 
     logger = logging.getLogger("cloudboot")
     logger.setLevel(loglevel)
-    if options.logfile != None:
-        handler = logging.handlers.RotatingFileHandler(
-              options.logfile, maxBytes=102400, backupCount=5)
-    else:
+    if options.logfile == None:
+        options.logfile = "/dev/null"
+    if options.logfile == "-":
         handler = logging.StreamHandler()
+    else:
+        handler = logging.handlers.RotatingFileHandler(
+          options.logfile, maxBytes=102400, backupCount=5)
 
     logger.addHandler(handler)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
+        
     options.logger = logger
 
     if not options.database:
@@ -79,18 +83,22 @@ Boot and manage a launch plan
     return (args, options)
 
 def level_callback(cb, action, current_level):
+    global g_action
+
     if action == cloudboot.callback_action_started:
-        print_chars(1, "\nBooting level %d...\n" % (current_level))
+        print_chars(1, "\n%s level %d...\n" % (g_action, current_level))
     elif action == cloudboot.callback_action_transition:
         print_chars(1, ".")
     elif action == cloudboot.callback_action_complete:
         print_chars(1, "\nLevel %d complete.\n" % (current_level))
     elif action == cloudboot.callback_action_error:
-        print_chars("Level %d complete with error.\n" % (current_level))
+        print_chars(1, "\nLevel %d complete with error.\n" % (current_level))
 
 def service_callback(cb, cloudservice, action, msg):
+    global g_action
+    
     if action == cloudboot.callback_action_started:
-        print_chars(1, "\n\tService %s started" % (cloudservice.name))
+        print_chars(1, "\n\tService %s %s started" % (g_action, cloudservice.name))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_transition:             
         print_chars(1, ".")
@@ -98,12 +106,12 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudboot.callback_action_complete:
         print_chars(1, "\n\tService %s OK" % (cloudservice.name))
     elif action == cloudboot.callback_action_error:
-        print "Service %s error: %s" % (cloudservice.name, str(cloudservice.get_error()))
+        print_chars(0, "\n\tService %s error: %s" % (cloudservice.name, msg))
 
 def launch_new(options, config_file):
 
-    cb = CloudBoot(options.database, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
-    print "Starting up run %s" % (cb.run_name)
+    cb = CloudBoot(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
+    print_chars(1, "Starting up run %s\n" % (cb.run_name))
     cb.start()
     try:
         cb.block_until_complete(poll_period=0.1)
@@ -139,35 +147,62 @@ def terminate(options, dbname):
     except MultilevelException, mex:
         print mex
 
-def test_up_and_down(options, config_file):
-    (rc, name) = launch_new(options, config_file)
-    if rc != 0:
-        return 1
-    rc = status(options, name)
-    if rc != 0:
-        return 1
-    rc = terminate(options, name)
-    return rc
+def clean(options, dbname):
+    try:
+        print_chars(1, "Attempting to terminate %s\n" % (dbname))
+        terminate(options, dbname)
+    except Exception, ex:
+        print_chars(1, "Termination for %s failed: %s" % (dbname, str(ex)))
+    path = "%s/cloudboot-%s.db" % (options.database, dbname)
+    print_chars(1, "deleting the db file %s\n" % (path))
+    if not os.path.exists(path):
+        raise Exception("That DB does not seem to exist: %s" % (path))
+    os.remove(path)
+    return 0
+
+def list(options):
+    l = os.listdir(options.database)
+
+    for db in l:
+        if db.find("cloudboot-") == 0:
+            name = db.replace("cloudboot-", "")
+            print_chars(0, name[:-3] + "\n")
+
+
 
 def main(argv=sys.argv[1:]):
     # first process options
+    if len(argv) == 0:
+        argv.append("--help")
     (args, options) = parse_commands(argv)
 
     # process the command
+    global g_action
     command = args[0]
-    if command == "boot":
-        (rc, name) = launch_new(options, args[1])
-    elif command == "status":
-        rc = status(options, args[1])
-    elif command == "terminate":
-        rc = terminate(options, args[1])
-    elif command == "test":
-        rc = test_up_and_down(options, args[1])
-    else:
-        print "Invalid command.  Run with --help"
+    g_action = command
+    try:
+        if command == "boot":
+            (rc, name) = launch_new(options, args[1])
+        elif command == "status":
+            rc = status(options, args[1])
+        elif command == "terminate":
+            rc = terminate(options, args[1])
+        elif command == "clean":
+            rc = clean(options, args[1])
+        elif command == "list":
+            rc = list(options)
+        else:
+            print "Invalid command.  Run with --help"
+            rc = 1
+        print ""
+    except SystemExit:
+        raise
+    except Exception, ex:
+        print_chars(0, str(ex))
+        print_chars(0, "\n")
+        if options.verbose > 1:
+            raise
         rc = 1
-    print ""
-
     return rc
 
 

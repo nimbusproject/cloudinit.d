@@ -8,7 +8,7 @@ except ImportError:
     from distutils.core import setup
 
 import sys
-from cloudboot import Version
+Version = "0.1"
 
 if float("%d.%d" % sys.version_info[:2]) < 2.5:
     sys.stderr.write("Your Python version %d.%d.%d is not supported.\n" % sys.version_info[:3])
@@ -37,5 +37,5 @@ means launching and configuring all of the VMs needed for each service in the le
 booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
-      install_requires = ["boto"],
+      install_requires = ["boto", "sqlalchemy", "fabric"],
      )

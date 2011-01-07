@@ -217,8 +217,9 @@ class SVCContainer(object):
             if self._hostname_poller:
                 self._hostname_poller.start()
             self._execute_callback(cloudboot.callback_action_started, "Service Started")
-        except:
+        except Exception, ex:
             self._running = False
+            self._execute_callback(cloudboot.callback_action_error, str(ex))
             raise
 
     def _execute_callback(self, state, msg):
@@ -255,6 +256,7 @@ class SVCContainer(object):
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
             self._running = False
+            self._execute_callback(cloudboot.callback_action_error, msg)
             raise ServiceException(multiex, self, msg, stdout, stderr)
             
         except Exception, ex:
@@ -262,6 +264,7 @@ class SVCContainer(object):
             self._s.last_error = str(ex)
             self._db.db_commit()
             self._running = False
+            self._execute_callback(cloudboot.callback_action_error, str(ex))
             raise ServiceException(ex, self)
 
     def _context_cb(self, popen_poller, action, msg):
