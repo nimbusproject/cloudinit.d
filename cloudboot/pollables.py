@@ -59,28 +59,6 @@ class NullPollable(Pollable):
     def poll(self):
         return True
 
-class InstanceTerminatePollable(Pollable):
-
-    def __init__(self, instance, log=logging, timeout=600):
-        Pollable.__init__(self, timeout)
-        self._instance = instance
-        self._log = log
-        self._started = False
-
-    def start(self):
-        Pollable.start(self)
-        self._started = True
-        self._instance.terminate()
-
-    def poll(self):
-        if not self._started:
-            raise APIUsageException("You must first start the pollable object")
-        return True
-
-    def cancel(self):
-        pass
-
-
 class HostnameCheckThread(Thread):
     def __init__(self, host_poller):
         Thread.__init__(self)
@@ -88,6 +66,50 @@ class HostnameCheckThread(Thread):
 
     def run(self):
         self.host_poller._thread_poll()
+
+class InstanceTerminatePollable(Pollable):
+
+    def __init__(self, instance, log=logging, timeout=600):
+        Pollable.__init__(self, timeout)
+        self._instance = instance
+        self._log = log
+        self._started = False
+        self._done = False
+        self.exception = None
+        self._thread = None
+
+    def start(self):
+        Pollable.start(self)
+        self._started = True
+        self._instance.terminate()
+        # not sure if we need to wait for terminate or not, it seems we do not
+        #self._thread = HostnameCheckThread(self)
+        #self._thread.start()
+
+    def poll(self):
+        if not self._started:
+            raise APIUsageException("You must first start the pollable object")
+        return True
+        #if self._done:
+        #    self._thread.join()
+        #return self._done
+    
+    def _thread_poll(self, poll_period=1.0):
+        while not self._done:
+            try:
+                self._state = self._instance.update()
+                if self._state == "terminated":
+                    self._done = True
+                else:
+                    time.sleep(poll_period)
+            except Exception, ex:
+                self.exception = IaaSException(ex)
+                self._done = True
+
+
+    def cancel(self):
+        pass
+
 
 class InstanceHostnamePollable(Pollable):
     """
@@ -367,19 +389,24 @@ class MultiLevelPollable(Pollable):
                     self._level_error_ex.append(self.last_exception)
                     self._level_error_polls.append(p)
                     cloudboot.log(self._log, logging.ERROR, "Multilevel poll error %s" % (str(ex)), traceback)
-                    self._execute_cb(cloudboot.callback_action_error, self._get_callback_level())
 
         if done:
             # see if the level had an error
+            cb_action = cloudboot.callback_action_complete
             if len(self._level_error_polls) > 0:
+                cb_action = cloudboot.callback_action_error
                 exception = MultilevelException(self._level_error_ex, self._level_error_polls, self.level_ndx)
                 self.last_exception = exception
                 if not self._continue_on_error:
+                    self._execute_cb(cloudboot.callback_action_error, self._get_callback_level())
                     self.exception = exception
                     raise exception
-                self._all_level_error_exs.append(self._level_error_ex)
 
-            self._execute_cb(cloudboot.callback_action_complete, self._get_callback_level())
+                self._all_level_error_exs.append(self._level_error_ex)
+                self._level_error_polls = []
+                self._level_error_ex = []
+
+            self._execute_cb(cb_action, self._get_callback_level())
             self.level_ndx = self.level_ndx + 1
 
             if self.level_ndx == len(self.levels):

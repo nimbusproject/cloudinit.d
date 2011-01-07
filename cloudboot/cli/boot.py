@@ -8,18 +8,16 @@ from cloudboot.user_api import CloudBoot, CloudServiceException
 from cloudboot.exceptions import MultilevelException
 import cloudboot
 import os
+import cloudboot.cli.output
 
 __author__ = 'bresnaha'
 
 g_verbose = 1
 g_action = ""
 
-def print_chars(lvl, msg):
-    if lvl > g_verbose:
-        return
-    sys.stdout.write(msg)
-    sys.stdout.flush()
-
+def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False):
+    cloudboot.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline)
+    
 # setup and validate options
 def parse_commands(argv):
     global g_verbose
@@ -86,27 +84,34 @@ def level_callback(cb, action, current_level):
     global g_action
 
     if action == cloudboot.callback_action_started:
-        print_chars(1, "\n%s level %d...\n" % (g_action, current_level))
+        print_chars(2, "Begin %s level %d...\n" % (g_action, current_level))
     elif action == cloudboot.callback_action_transition:
-        print_chars(1, ".")
+        #print_chars(1, ".")
+        pass
     elif action == cloudboot.callback_action_complete:
-        print_chars(1, "\nLevel %d complete.\n" % (current_level))
+        print_chars(1, "SUCCESS", color="green", bold=True)
+        print_chars(1, " level %d\n" % (current_level))
     elif action == cloudboot.callback_action_error:
-        print_chars(1, "\nLevel %d complete with error.\n" % (current_level))
+        print_chars(1, "Level %d ERROR.\n" % (current_level), color="red", bold=True)
 
 def service_callback(cb, cloudservice, action, msg):
     global g_action
     
     if action == cloudboot.callback_action_started:
-        print_chars(1, "\n\tService %s %s started" % (g_action, cloudservice.name))
+        print_chars(3, "\tStarted %s on service %s\n" % (g_action, cloudservice.name))
         sys.stdout.flush()
     elif action == cloudboot.callback_action_transition:             
-        print_chars(1, ".")
-        print_chars(2, "\n\t%s" % (msg))
+        print_chars(5, "\t%s\n" % (msg))
     elif action == cloudboot.callback_action_complete:
-        print_chars(1, "\n\tService %s OK" % (cloudservice.name))
+        print_chars(2, "\tSUCCESS", color="green")
+        print_chars(2, " service %s %s\n" % (cloudservice.name, g_action))
+        print_chars(4, "\t\thostname: %s\n" % (cloudservice.get_attr_from_bag("hostname")))
+        print_chars(4, "\t\tinstance: %s\n" % (cloudservice.get_attr_from_bag("instance_id")))
+
     elif action == cloudboot.callback_action_error:
-        print_chars(0, "\n\tService %s error: %s" % (cloudservice.name, msg))
+        print_chars(1, "\tService %s ERROR\n" % (cloudservice.name), color="red", bold=True)
+        print_chars(1, "%s\n" % (msg))
+
 
 def launch_new(options, config_file):
 
@@ -125,7 +130,7 @@ def launch_new(options, config_file):
 def status(options, dbname):
 
     cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=True)
-    print "Checking status on %s" % (cb.run_name)
+    print_chars(1, "Checking status on %s\n" % (cb.run_name))
     cb.start()
     try:
         cb.block_until_complete(poll_period=0.1)
@@ -138,7 +143,7 @@ def status(options, dbname):
 
 def terminate(options, dbname):
     cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
-    print "Terminating %s" % (cb.run_name)
+    print_chars(1, "Terminating %s\n" % (cb.run_name))
     cb.shutdown()
     try:
         cb.block_until_complete(poll_period=0.1)
@@ -167,8 +172,6 @@ def list(options):
         if db.find("cloudboot-") == 0:
             name = db.replace("cloudboot-", "")
             print_chars(0, name[:-3] + "\n")
-
-
 
 def main(argv=sys.argv[1:]):
     # first process options

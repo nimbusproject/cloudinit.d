@@ -233,7 +233,7 @@ class CloudService(object):
         self._db = cloudbooter._db
 
     def get_attr_from_bag(self, name):
-        self._svc.get_dep(name)
+        return self._svc.get_dep(name)
     # need various methods for monitoring state. values from attr bag and from db
 
     def shutdown(self, callback=None):

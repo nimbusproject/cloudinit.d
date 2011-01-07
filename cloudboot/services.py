@@ -166,7 +166,7 @@ class SVCContainer(object):
     def get_dep(self, key):
         # first parse through the known ones, then hit the attr bag
         if key == "hostname":
-            return self._vmhostname
+            return self._s.hostname
         elif key == "instance_id":
             return self._s.instance_id
         try:
@@ -353,9 +353,9 @@ class SVCContainer(object):
 
         if self._hostname_poller.poll():
             self._vmhostname = self._hostname_poller.get_hostname()
-            self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._vmhostname))
             self._s.hostname = self._vmhostname
             self._db.db_commit()
+            self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._vmhostname))
         return False
 
     def _get_ssh_ready_cmd(self):
