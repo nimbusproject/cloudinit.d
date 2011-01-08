@@ -14,6 +14,7 @@ __author__ = 'bresnaha'
 
 g_verbose = 1
 g_action = ""
+g_repair = False
 
 def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False):
     cloudboot.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline)
@@ -40,6 +41,9 @@ Boot and manage a launch plan
     opt.add_opt(parser)
     opt = bootOpts("loglevel", "l", "Controls how the level of detail in the log file.", "error", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
+    opt = bootOpts("repair", "r", "restart all failed services, only relevant for the status command", False, flag=True)
+    opt.add_opt(parser)
+
 
     (options, args) = parser.parse_args(args=argv)
 
@@ -111,6 +115,10 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudboot.callback_action_error:
         print_chars(1, "\tService %s ERROR\n" % (cloudservice.name), color="red", bold=True)
         print_chars(1, "%s\n" % (msg))
+        global g_repair
+        if g_repair:
+            return cloudboot.callback_return_restart
+    return cloudboot.callback_return_default
 
 
 def launch_new(options, config_file):
@@ -128,6 +136,9 @@ def launch_new(options, config_file):
     return (0, cb.run_name)
 
 def status(options, dbname):
+    global g_repair
+
+    g_repair = options.repair
 
     cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=True)
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
@@ -147,10 +158,30 @@ def terminate(options, dbname):
     cb.shutdown()
     try:
         cb.block_until_complete(poll_period=0.1)
+        return 0
     except CloudServiceException, svcex:
         print svcex
     except MultilevelException, mex:
         print mex
+    return 1
+
+def reboot(options, dbname):
+    cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
+    print_chars(1, "Rebooting %s\n" % (cb.run_name))
+    cb.shutdown()
+    try:
+        print_chars(1, "Terminating all services %s\n" % (cb.run_name))
+        cb.block_until_complete(poll_period=0.1)
+        cb = CloudBoot(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, continue_on_error=False)
+        print_chars(1, "Booting all services %s\n" % (cb.run_name))
+        cb.start()
+        cb.block_until_complete(poll_period=0.1)
+        return 0
+    except CloudServiceException, svcex:
+        print svcex
+    except MultilevelException, mex:
+        print mex
+    return 1
 
 def clean(options, dbname):
     try:
@@ -185,13 +216,30 @@ def main(argv=sys.argv[1:]):
     g_action = command
     try:
         if command == "boot":
+            if len(args) < 2:
+                print "The boot command requires a top level file.  See --help"
+                return 1
             (rc, name) = launch_new(options, args[1])
         elif command == "status":
+            if len(args) < 2:
+                print "The %s command requires a run name.  See --help" % (command)
+                return 1
             rc = status(options, args[1])
         elif command == "terminate":
+            if len(args) < 2:
+                print "The %s command requires a run name.  See --help" % (command)
+                return 1
             rc = terminate(options, args[1])
         elif command == "clean":
+            if len(args) < 2:
+                print "The %s command requires a run name.  See --help" % (command)
+                return 1
             rc = clean(options, args[1])
+        elif command == "reboot":
+            if len(args) < 2:
+                print "The %s command requires a run name.  See --help" % (command)
+                return 1
+            rc = reboot(options, args[1])
         elif command == "list":
             rc = list(options)
         else:

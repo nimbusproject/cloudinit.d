@@ -1,12 +1,12 @@
 #/bin/bash
 
-if [ "X" == "X$AWS_ACCESS_KEY_ID" ]; then
-    echo "The env AWS_ACCESS_KEY_ID must be set"
+if [ "X" == "X$CLOUDBOOT_IAAS_ACCESS_KEY_ID" ]; then
+    echo "The env CLOUDBOOT_IAAS_ACCESS_KEY_ID must be set"
     exit 1
 fi
 
-if [ "X" == "X$AWS_SECRET_ACCESS_KEY" ]; then
-    echo "The env AWS_SECRET_ACCESS_KEY must be set"
+if [ "X" == "X$CLOUDBOOT_IAAS_SECRET_ACCESS_KEY" ]; then
+    echo "The env CLOUDBOOT_IAAS_SECRET_ACCESS_KEY must be set"
     exit 1
 fi
 

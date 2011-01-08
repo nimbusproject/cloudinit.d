@@ -6,7 +6,7 @@ from boto.ec2.connection import EC2Connection
 from boto.regioninfo import RegionInfo, RegionInfo
 import os
 import cloudboot
-from cloudboot.exceptions import ConfigException
+from cloudboot.exceptions import ConfigException, IaaSException
 import time
 
 __author__ = 'bresnaha'
@@ -104,5 +104,12 @@ def _real_iaas_run_instance(con, image, instance_type, key_name, security_groupn
 
 def _real_find_instance(con, instance_id):
     reservation = con.get_all_instances(instance_ids=[instance_id,])
+    if len(reservation) < 1:
+        raise IaaSException(Exception("There is no instance %s" % (instance_id)))
+    if len(reservation[0].instances) < 1:
+        ex = IaaSException(Exception("There is no instance %s" % (instance_id)))
+        print ex
+        raise ex
     instance = reservation[0].instances[0]
+
     return instance

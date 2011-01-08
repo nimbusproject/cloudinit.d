@@ -36,6 +36,7 @@ import cloudboot
 __author__ = 'bresnaha'
 
 
+
 class CloudBoot(object):
     """
         This class is the top level boot description. It holds the parent Multilevel boot object which contains a set
@@ -139,8 +140,10 @@ class CloudBoot(object):
             self._level_callback(self, action, level_ndx)
 
     def _svc_cb(self, svc, action, msg):
+        rc = cloudboot.callback_return_default
         if self._service_callback:
-            self._service_callback(self, CloudService(self, svc), action, msg)
+            rc = self._service_callback(self, CloudService(self, svc), action, msg)
+        return rc
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
@@ -171,6 +174,8 @@ class CloudBoot(object):
             done = self.poll()
             if not done:
                 time.sleep(poll_period)
+
+
         self._db.db_commit()
 
     # poll one pass at the boot plan.
@@ -251,12 +256,12 @@ class CloudService(object):
         self._svc.restart(boot=False, ready=False, terminate=True, callback=callback)
         return self._svc
 
-    def restart(self, callback=None):
+    def restart(self):
         """
         This will restart the service, or check the results of the ready
-        program if the serviceis already running.
+        program if the service is already running.
         """
-        self._svc.restart(boot=True, ready=True, terminate=True, callback=callback)
+        self._svc.restart(boot=True, ready=True, terminate=True)
         return self._svc
 
 

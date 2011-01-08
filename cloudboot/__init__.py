@@ -9,6 +9,7 @@ from cloudboot.statics import *
 
 Version = "0.1"
 
+
 def log(logger, level, msg, tb=None):
 
     if logger == None:

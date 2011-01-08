@@ -94,11 +94,13 @@ class SVCContainer(object):
     """
 
     def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None):
-        self._vmhostname = s.hostname
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
-        self._pollables = None
+
+        # we need to separate out pollables.  bootconf and ready cannot be run until the instances has a hostname
+        # terminate will be run first (for restarts only)
+        # first pollable set is terminate, then hostname.  next is bootconf, then ready
         self._readypgm = s.readypgm
         self._s = s
         self.name = s.name
@@ -110,11 +112,6 @@ class SVCContainer(object):
         self._db.db_commit()
         self._bootconf = None
 
-        self._ssh_poller = None
-        self._ready_poller = None
-        self._boot_poller = None
-        self._terminate_poller = None
-        self._shutdown_poller = None
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
@@ -123,12 +120,46 @@ class SVCContainer(object):
         self._do_ready = ready
         self._do_terminate = terminate
         self._hostname_poller = None
-        self._make_hostname_poller()
+        self._term_host_pollers = None
+        self._pollables = None
+        self._make_first_pollers()
         self._callback = callback
         self._running = False
+        self._ssh_poller = None
+        self._ready_poller = None
+        self._boot_poller = None
+        self._terminate_poller = None
+        self._shutdown_poller = None
+        self._restart_limit = 2
+        self._restart_count = 0
 
-    def _make_hostname_poller(self):
+    def _make_first_pollers(self):
 
+        self._term_host_pollers = MultiLevelPollable(log=self._log)
+        if self._do_terminate:
+            if self._s.terminatepgm:
+                cmd = self._get_readypgm_cmd()
+                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                self._term_host_pollers.add_level([self._terminate_poller])
+            else:
+                cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
+            if self._s.instance_id:
+                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+                instance = iaas_find_instance(iaas_con, self._s.instance_id)
+                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
+                self._term_host_pollers.add_level([self._shutdown_poller])
+            else:
+                cloudboot.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
+
+            # i should be able to clear the db state right now.
+            self._s.hostname = None
+            self._s.instance_id = None
+            self._db.db_commit()
+        else:
+            cloudboot.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
+
+        if not self._do_boot:
+            return
         # if the service if already contextualized
         if self._s.hostname:
             return
@@ -145,6 +176,7 @@ class SVCContainer(object):
             self._s.instance_id = instance.id
             self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
+            self._term_host_pollers.add_level([self._hostname_poller])
 
     def _get_fab_command(self):
         fabexec = "fab"
@@ -214,18 +246,26 @@ class SVCContainer(object):
             # values
             self._do_attr_bag()
 
-            if self._hostname_poller:
-                self._hostname_poller.start()
+            if self._term_host_pollers:
+                self._term_host_pollers.start()
             self._execute_callback(cloudboot.callback_action_started, "Service Started")
         except Exception, ex:
             self._running = False
-            self._execute_callback(cloudboot.callback_action_error, str(ex))
-            raise
+            if not self._execute_callback(cloudboot.callback_action_error, str(ex)):
+                raise
 
     def _execute_callback(self, state, msg):
         if not self._callback:
-            return
-        self._callback(self, state, msg)
+            return False
+        rc = self._callback(self, state, msg)
+        if state != cloudboot.callback_action_error:
+            return False
+        if rc == cloudboot.callback_return_restart and self._restart_count < self._restart_limit:
+            self._running = False
+            self.restart(boot=True, ready=True, terminate=True, callback=self._callback)
+            self._restart_count = self._restart_count + 1
+            return True
+        return False
 
     def poll(self):
         try:
@@ -236,36 +276,37 @@ class SVCContainer(object):
         except MultilevelException, multiex:
             msg = ""
             if self._ssh_poller in multiex.pollable_list:
-                msg = "Service %s error getting ssh access to %s" % (self._myname, self._vmhostname)
+                msg = "Service %s error getting ssh access to %s" % (self._myname, self._s.hostname)
                 stdout = self._ssh_poller.get_stdout()
                 stderr = self._ssh_poller.get_stderr()
             if self._boot_poller in multiex.pollable_list:
-                msg = "Service %s error configuring for boot: %s\n%s" % (self._myname, self._vmhostname, msg)
+                msg = "Service %s error configuring for boot: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._boot_poller.get_stdout()
                 stderr = self._boot_poller.get_stderr()
             if self._ready_poller in multiex.pollable_list:
-                msg = "Service %s error running ready program: %s\n%s" % (self._myname, self._vmhostname, msg)
+                msg = "Service %s error running ready program: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._ready_poller.get_stdout()
                 stderr = self._ready_poller.get_stderr()
             if self._shutdown_poller in multiex.pollable_list:
-                msg = "Service %s error running shutdown on iaas: %s\n%s" % (self._myname, self._vmhostname, msg)
+                msg = "Service %s error running shutdown on iaas: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = ""
                 stderr = ""
             if self._terminate_poller in multiex.pollable_list:
-                msg = "Service %s error running terminate program on: %s\n%s" % (self._myname, self._vmhostname, msg)
+                msg = "Service %s error running terminate program on: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
             self._running = False
-            self._execute_callback(cloudboot.callback_action_error, msg)
-            raise ServiceException(multiex, self, msg, stdout, stderr)
-            
+            if not self._execute_callback(cloudboot.callback_action_error, msg):
+                raise ServiceException(multiex, self, msg, stdout, stderr)
+            return False
         except Exception, ex:
             cloudboot.log(self._log, logging.ERROR, "%s" %(str(ex)), traceback)
             self._s.last_error = str(ex)
             self._db.db_commit()
             self._running = False
-            self._execute_callback(cloudboot.callback_action_error, str(ex))
-            raise ServiceException(ex, self)
+            if not self._execute_callback(cloudboot.callback_action_error, str(ex)):
+                raise ServiceException(ex, self)
+            return False
 
     def _context_cb(self, popen_poller, action, msg):
         if action == cloudboot.callback_action_transition:
@@ -277,22 +318,7 @@ class SVCContainer(object):
         self._terminate_poller = None
 
         self._pollables = MultiLevelPollable(log=self._log)
-        if self._do_terminate:
-            if self._s.terminatepgm:
-                cmd = self._get_readypgm_cmd()
-                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
-                self._pollables.add_level([self._terminate_poller])
-            else:
-                cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
-            if self._s.instance_id:
-                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
-                instance = iaas_find_instance(iaas_con, self._s.instance_id)
-                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
-                self._pollables.add_level([self._shutdown_poller])
-            else:
-                cloudboot.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
-        else:
-            cloudboot.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
+
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
@@ -331,7 +357,7 @@ class SVCContainer(object):
         if not self._running:
             return True
         # if we already have a hostname move onto polling the fab tasks
-        if self._vmhostname and self._vmhostname != "":
+        if not self._term_host_pollers:
             if not self._pollables:
                 self._make_pollers()
             rc = self._pollables.poll()
@@ -341,7 +367,7 @@ class SVCContainer(object):
                     self._s.contextualized = 0
                     self._s.hostname = None
                     self._s.instance_id = None
-                    self._vmhostname = None
+                    self._s.hostname = None
                 else:
                     # if it was not terminating then we can set to contextualzied
                     self._s.contextualized = 1
@@ -351,23 +377,24 @@ class SVCContainer(object):
                 self._execute_callback(cloudboot.callback_action_complete, "Service Complete")
             return rc
 
-        if self._hostname_poller.poll():
-            self._vmhostname = self._hostname_poller.get_hostname()
-            self._s.hostname = self._vmhostname
-            self._db.db_commit()
-            self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._vmhostname))
+        if self._term_host_pollers.poll():
+            if self._hostname_poller:
+                self._s.hostname = self._hostname_poller.get_hostname()
+                self._db.db_commit()
+                self._execute_callback(cloudboot.callback_action_transition, "Have hostname %s" %(self._s.hostname))
+            self._term_host_pollers = None
         return False
 
     def _get_ssh_ready_cmd(self):
-        cmd = self._get_fab_command() + " alive:hosts=%s" % (self._vmhostname)
+        cmd = self._get_fab_command() + " alive:hosts=%s" % (self._s.hostname)
         return cmd
 
     def _get_readypgm_cmd(self):
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._vmhostname, self._s.readypgm)
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._s.hostname, self._s.readypgm)
         return cmd
 
     def _get_boot_cmd(self):
-        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._vmhostname, self._s.bootpgm, self._bootconf)
+        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf)
         return cmd
 
     def _fill_template(self, path):
@@ -399,5 +426,8 @@ class SVCContainer(object):
         return newpath
 
     def cancel(self):
-        return self._pollables.cancel()
+        if self._pollables:
+            self._pollables.cancel()
+        if self._term_host_pollers:
+            self._term_host_pollers.cancel()
 
