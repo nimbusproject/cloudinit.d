@@ -145,6 +145,10 @@ class CloudBoot(object):
             rc = self._service_callback(self, CloudService(self, svc), action, msg)
         return rc
 
+    def cancel(self):
+        self._boot_top.cancel()
+
+
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
         svc = self._boot_top.get_service(svc_name)

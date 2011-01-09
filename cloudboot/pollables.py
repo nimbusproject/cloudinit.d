@@ -440,3 +440,14 @@ class MultiLevelPollable(Pollable):
     def reverse_order(self):
         self.levels.reverse()
         self._reversed = not self._reversed
+
+    def cancel(self):
+        if self._canceled:
+            return
+
+        for i in range(0, self.level_ndx):
+            lvl = self.levels[i]
+            for p in lvl:
+                p.cancel()
+                
+        self._canceled = True

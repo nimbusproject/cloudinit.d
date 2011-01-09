@@ -132,6 +132,9 @@ def launch_new(options, config_file):
         print svcex
     except MultilevelException, mex:
         print mex
+    except KeyboardInterrupt:
+        print_chars(1, "Canceling (this will not clean up already launched services)...")
+        cb.cancel()
 
     return (0, cb.run_name)
 
@@ -163,6 +166,9 @@ def terminate(options, dbname):
         print svcex
     except MultilevelException, mex:
         print mex
+    except KeyboardInterrupt:
+        print_chars(1, "Canceling...")
+        cb.cancel()
     return 1
 
 def reboot(options, dbname):
@@ -181,6 +187,9 @@ def reboot(options, dbname):
         print svcex
     except MultilevelException, mex:
         print mex
+    except KeyboardInterrupt:
+        print_chars(1, "Canceling...")
+        cb.cancel()
     return 1
 
 def clean(options, dbname):
@@ -189,6 +198,9 @@ def clean(options, dbname):
         terminate(options, dbname)
     except Exception, ex:
         print_chars(1, "Termination for %s failed: %s" % (dbname, str(ex)))
+    except KeyboardInterrupt:
+        print_chars(1, "Canceling...")
+        cb.cancel()
     path = "%s/cloudboot-%s.db" % (options.database, dbname)
     print_chars(1, "deleting the db file %s\n" % (path))
     if not os.path.exists(path):
