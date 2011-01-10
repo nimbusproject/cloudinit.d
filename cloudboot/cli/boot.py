@@ -23,9 +23,8 @@ def print_chars(lvl, msg, color="default", bg_color="default", bold=False, under
 def parse_commands(argv):
     global g_verbose
 
-    u = """[options] <boot | status | terminate> <run name> [<top level launch plan> | <runame> | <clean>]
-Boot and manage a launch plan
-"""
+    u = """[options] <boot | status | terminate> <run name> [<top level launch plan> | <run name> | <clean>]
+Boot and manage a launch plan"""
     version = "cloudboot " + (cloudboot.Version)
     parser = OptionParser(usage=u, version=version)
 
@@ -39,9 +38,9 @@ Boot and manage a launch plan
     opt.add_opt(parser)
     opt = bootOpts("logfile", "f", "Path to logfile", None)
     opt.add_opt(parser)
-    opt = bootOpts("loglevel", "l", "Controls how the level of detail in the log file.", "error", vals=["debug", "info", "warn", "error"])
+    opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "error", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
-    opt = bootOpts("repair", "r", "restart all failed services, only relevant for the status command", False, flag=True)
+    opt = bootOpts("repair", "r", "Restart all failed services, only relevant for the status command", False, flag=True)
     opt.add_opt(parser)
 
 
