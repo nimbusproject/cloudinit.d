@@ -3,6 +3,7 @@
 import sys
 import logging
 from optparse import OptionParser
+import stat
 from cloudboot.cli.cmd_opts import bootOpts
 from cloudboot.user_api import CloudBoot, CloudServiceException
 from cloudboot.exceptions import MultilevelException
@@ -75,6 +76,7 @@ Boot and manage a launch plan"""
         dbdir = os.path.expanduser("~/.cloudboot")
         if not os.path.exists(dbdir):
             os.mkdir(dbdir)
+        os.chmod(dbdir, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR)
         options.database = dbdir
 
     if options.quiet:

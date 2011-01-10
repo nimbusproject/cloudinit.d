@@ -27,6 +27,7 @@ import os
 import uuid
 import time
 import logging
+import stat
 from cloudboot.exceptions import APIUsageException, PollableException, ServiceException
 from cloudboot.persistantance import CloudBootDB, ServiceObject
 from cloudboot.pollables import NullPollable, MultiLevelPollable
@@ -112,7 +113,7 @@ class CloudBoot(object):
         dburl = "sqlite://%s" % (db_path)
 
         self._db = CloudBootDB(dburl)
-
+        os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
         if config_file != None:
             self._bo = self._db.load_from_conf(config_file)
         else:

@@ -2,12 +2,12 @@
 
 if [ "X" == "X$CLOUDBOOT_IAAS_ACCESS_KEY" ]; then
     echo "The env CLOUDBOOT_IAAS_ACCESS_KEY must be set"
-    exit 1
+    echo "One of the tests will fail without this"
 fi
 
 if [ "X" == "X$CLOUDBOOT_IAAS_SECRET_KEY" ]; then
     echo "The env CLOUDBOOT_IAAS_SECRET_KEY must be set"
-    exit 1
+    echo "One of the tests will fail without this"
 fi
 
 source_dir=`dirname $0`
