@@ -17,8 +17,8 @@ g_verbose = 1
 g_action = ""
 g_repair = False
 
-def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False):
-    cloudboot.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline)
+def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False, inverse=False):
+    cloudboot.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline, inverse=inverse)
     
 # setup and validate options
 def parse_commands(argv):
@@ -42,6 +42,8 @@ Boot and manage a launch plan"""
     opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "error", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
     opt = bootOpts("repair", "r", "Restart all failed services, only relevant for the status command", False, flag=True)
+    opt.add_opt(parser)
+    opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
 
 
@@ -125,7 +127,8 @@ def service_callback(cb, cloudservice, action, msg):
 def launch_new(options, config_file):
 
     cb = CloudBoot(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
-    print_chars(1, "Starting up run %s\n" % (cb.run_name))
+    print_chars(1, "Starting up run ")
+    print_chars(1, "%s\n" % (cb.run_name), inverse=True, color="green", bold=True)
     cb.start()
     try:
         cb.block_until_complete(poll_period=0.1)
@@ -153,6 +156,9 @@ def status(options, dbname):
         print svcex
     except MultilevelException, mex:
         print mex
+    except KeyboardInterrupt:
+        print_chars(1, "Canceling...")
+        cb.cancel()
 
     return 0
 
@@ -162,6 +168,13 @@ def terminate(options, dbname):
     cb.shutdown()
     try:
         cb.block_until_complete(poll_period=0.1)
+        if not options.noclean:
+            path = "%s/cloudboot-%s.db" % (options.database, dbname)
+            print_chars(1, "deleting the db file %s\n" % (path))
+            if not os.path.exists(path):
+                raise Exception("That DB does not seem to exist: %s" % (path))
+            os.remove(path)
+
         return 0
     except CloudServiceException, svcex:
         print svcex
@@ -192,22 +205,6 @@ def reboot(options, dbname):
         print_chars(1, "Canceling...")
         cb.cancel()
     return 1
-
-def clean(options, dbname):
-    try:
-        print_chars(1, "Attempting to terminate %s\n" % (dbname))
-        terminate(options, dbname)
-    except Exception, ex:
-        print_chars(1, "Termination for %s failed: %s" % (dbname, str(ex)))
-    except KeyboardInterrupt:
-        print_chars(1, "Canceling...")
-        cb.cancel()
-    path = "%s/cloudboot-%s.db" % (options.database, dbname)
-    print_chars(1, "deleting the db file %s\n" % (path))
-    if not os.path.exists(path):
-        raise Exception("That DB does not seem to exist: %s" % (path))
-    os.remove(path)
-    return 0
 
 def list(options):
     l = os.listdir(options.database)
@@ -243,11 +240,6 @@ def main(argv=sys.argv[1:]):
                 print "The %s command requires a run name.  See --help" % (command)
                 return 1
             rc = terminate(options, args[1])
-        elif command == "clean":
-            if len(args) < 2:
-                print "The %s command requires a run name.  See --help" % (command)
-                return 1
-            rc = clean(options, args[1])
         elif command == "reboot":
             if len(args) < 2:
                 print "The %s command requires a run name.  See --help" % (command)

@@ -29,7 +29,7 @@ import time
 import logging
 import stat
 from cloudboot.exceptions import APIUsageException, PollableException, ServiceException
-from cloudboot.persistantance import CloudBootDB, ServiceObject
+from cloudboot.persistence import CloudBootDB, ServiceObject
 from cloudboot.pollables import NullPollable, MultiLevelPollable
 from cloudboot.services import BootTopLevel, SVCContainer
 import cloudboot

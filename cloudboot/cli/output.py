@@ -49,7 +49,7 @@ g_background_dict['default'] = '\x1b[49m'
 
 
 
-def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", bold=False, underline=False, strikethrough=False):
+def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", bold=False, underline=False, strikethrough=False, inverse=False):
     global g_colors_dict
     global g_background_dict
     global g_operations_dict
@@ -65,6 +65,8 @@ def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", 
             msg = g_operations_dict['underline'] + msg
         if strikethrough:
             msg = g_operations_dict['strikethrough'] + msg
+        if inverse:
+            msg = g_operations_dict['inverse'] + msg
 
 
     sys.stdout.write(str(msg))

@@ -9,7 +9,7 @@ from boto.ec2.connection import EC2Connection
 import tempfile
 import string
 import cloudboot
-from cloudboot.persistantance import BagAttrsObject
+from cloudboot.persistence import BagAttrsObject
 from cloudboot.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudboot.statics import *
 import logging
