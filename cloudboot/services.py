@@ -189,6 +189,16 @@ class SVCContainer(object):
         cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
         return cmd
 
+    def _get_ssh_command(self, host):
+        sshexec = "ssh"
+        try:
+            if os.environ['CLOUD_BOOT_SSH']:
+                sshexec = os.environ['CLOUD_BOOT_SSH']
+        except:
+            pass
+        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -i %s %s@%s" % (self._s.localkey, self._s.username, host)
+        return cmd
+
     def get_db_id(self):
         return self._s.id
 
@@ -386,7 +396,8 @@ class SVCContainer(object):
         return False
 
     def _get_ssh_ready_cmd(self):
-        cmd = self._get_fab_command() + " alive:hosts=%s" % (self._s.hostname)
+        cmd = self._get_ssh_command(self._s.hostname) + " /bin/true"
+        cloudboot.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
 
     def _get_readypgm_cmd(self):

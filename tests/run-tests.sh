@@ -18,6 +18,7 @@ export CLOUDBOOT_TEST_PLAN_DIR="$source_dir/plans"
 export PYTHONPATH=$source_dir/../
 export CLOUDBOOT_TESTENV=1
 export CLOUD_BOOT_FAB=$source_dir/fakefab.sh
+export CLOUD_BOOT_SSH=/bin/true
 
 
 cd nosetests

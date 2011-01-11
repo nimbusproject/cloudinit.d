@@ -1,3 +1,4 @@
+import logging
 import sqlalchemy
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relation
@@ -11,6 +12,7 @@ import ConfigParser
 from sqlalchemy import types
 from datetime import datetime
 import os
+import cloudboot
 
 
 __author__ = 'bresnaha'
@@ -114,7 +116,6 @@ class ServiceObject(object):
         self.hostname = None
         self.bootconf = None
         self.bootpgm = None
-        self.deps = None
         self.instance_id = None
         self.iaas_hostname = None
         self.iaas_port = None
@@ -124,22 +125,20 @@ class ServiceObject(object):
         self.securitygroups = None
 
     def _load_from_conf(self, parser, section, db, conf_dir):
-        s = section
-        image = config_get_or_none(parser, s, "image")
-        iaas = config_get_or_none(parser, s, "iaas")
-        iaas_hostname = config_get_or_none(parser, s, "iaas_hostname")
-        allo = config_get_or_none(parser, s, "allocation")
-        sshkey = config_get_or_none(parser, s, "sshkeyname")
-        localssh = config_get_or_none(parser, s, "localsshkeypath")
-        ssh_user = config_get_or_none(parser, s, "ssh_username")
-        bootconf = config_get_or_none(parser, s, "bootconf")
-        bootpgm = config_get_or_none(parser, s, "bootpgm")
-        hostname = config_get_or_none(parser, s, "hostname")
-        readypgm = config_get_or_none(parser, s, "readypgm")
-        deps = config_get_or_none(parser, s, "deps")
-        iaas_key = config_get_or_none(parser, s, "iaas_key")
-        iaas_secret = config_get_or_none(parser, s, "iaas_secret")
-        securitygroups = config_get_or_none(parser, s, "securitygroups")
+        image = config_get_or_none(parser, section, "image")
+        iaas = config_get_or_none(parser, section, "iaas")
+        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
+        allo = config_get_or_none(parser, section, "allocation")
+        sshkey = config_get_or_none(parser, section, "sshkeyname")
+        localssh = config_get_or_none(parser, section, "localsshkeypath")
+        ssh_user = config_get_or_none(parser, section, "ssh_username")
+        bootconf = config_get_or_none(parser, section, "bootconf")
+        bootpgm = config_get_or_none(parser, section, "bootpgm")
+        hostname = config_get_or_none(parser, section, "hostname")
+        readypgm = config_get_or_none(parser, section, "readypgm")
+        iaas_key = config_get_or_none(parser, section, "iaas_key")
+        iaas_secret = config_get_or_none(parser, section, "iaas_secret")
+        securitygroups = config_get_or_none(parser, section, "securitygroups")
 
         if not iaas:
             iaas = db.default_iaas
@@ -166,7 +165,6 @@ class ServiceObject(object):
         self.bootpgm = _join_or_none(conf_dir, bootpgm)
         self.hostname = hostname
         self.readypgm = _join_or_none(conf_dir, readypgm)
-        self.deps = _join_or_none(conf_dir, deps)
         self.username = ssh_user
         self.localkey = _join_or_none(conf_dir, localssh)
         self.keyname = sshkey
@@ -178,13 +176,25 @@ class ServiceObject(object):
         self.iaas_key = iaas_key
         self.securitygroups = securitygroups
 
-        if self.deps:
-            parser = ConfigParser.ConfigParser()
-            parser.read(self.deps)
-            keys_val = parser.items("deps")
-            for (ka,val) in keys_val:
-                bao = BagAttrsObject(ka, val)
-                self.attrs.append(bao)
+        item_list = parser.items(section)
+        deps_list = []
+        for (ka,val) in item_list:
+            ndx = ka.find("deps")
+            if ndx == 0:
+                deps_list.append(ka)
+        deps_list.sort()
+        for i in deps_list:
+            deps = config_get_or_none(parser, section, i)
+            deps_file = _join_or_none(conf_dir, deps)
+
+            if deps_file:
+                parser2 = ConfigParser.ConfigParser()
+                parser2.read(deps_file)
+                keys_val = parser2.items("deps")
+                for (ka,val) in keys_val:
+                    bao = BagAttrsObject(ka, val)
+                    self.attrs.append(bao)
+            
 
                 
 class BagAttrsObject(object):

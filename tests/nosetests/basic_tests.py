@@ -49,14 +49,17 @@ class BasicUserAPITests(unittest.TestCase):
     def test_makesure_is_real(self):
         tmp = os.environ['CLOUDBOOT_TESTENV']
         fab = os.environ['CLOUD_BOOT_FAB']
+        ssh = os.environ['CLOUD_BOOT_SSH']
         try:
             os.environ.pop('CLOUDBOOT_TESTENV')
             os.environ.pop('CLOUD_BOOT_FAB')
+            os.environ.pop('CLOUD_BOOT_SSH')
             tst_name = "terminate"
             self._start_one(tst_name)
         finally:
             os.environ['CLOUDBOOT_TESTENV'] = tmp
             os.environ['CLOUD_BOOT_FAB'] = fab
+            os.environ['CLOUD_BOOT_SSH'] = ssh
 
 
 if __name__ == '__main__':

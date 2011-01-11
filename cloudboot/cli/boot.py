@@ -48,7 +48,7 @@ Boot and manage a launch plan"""
 
 
     (options, args) = parser.parse_args(args=argv)
-
+    
     if options.loglevel == "debug":
         loglevel = logging.DEBUG
     elif options.loglevel == "info":
