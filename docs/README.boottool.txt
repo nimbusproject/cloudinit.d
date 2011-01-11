@@ -154,6 +154,22 @@ sample-top.conf for details).  here is an example:
 This is a very basic configuration file that lists the run levels in 
 order by pointing at the configuration file for each level.
 
+bootpgm and readypgm
+--------------------
 
+There are no restrictions imposed upon these programs.  The 
+responsibility of creating safe programs that do the intended function 
+is entirely upon the user.  The programs are uploaded to the VMs /tmp 
+directory and run as root. Cloudboot expects that bootpgm will 
+contextualize the system (anyway it wants) and it expects the readypgm 
+to return a 0 or a 1 stating if the system is ready or not.
+
+The value for each program can be a single executable file, or it can be 
+tarball.  If the filename ends in 'tar.gz' cloudboot will upload it, 
+then run tar -zxf on it.  It expects the tarball to contain a single 
+root with the same name as itself, without the tar.gz extension.  It 
+further expects all of the files to be under that directory including an 
+executable named 'run.sh'.  As soon as the expansion of the tarball is 
+complete 'run.sh' is executed.
 
 
