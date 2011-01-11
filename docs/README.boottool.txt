@@ -172,4 +172,13 @@ further expects all of the files to be under that directory including an
 executable named 'run.sh'.  As soon as the expansion of the tarball is 
 complete 'run.sh' is executed.
 
+The bootpgm program can take advantage of the bootconf json file.  This 
+file can be full of variables from values determined by the given 
+services dependencies.  The user creates the template for this file and 
+uses the plan configuration value 'bootconf' to tell cloudboot where the 
+template is.  Cloudboot then uses all the values it has from the 
+services 'deps' file to fill in the template. This file is always 
+uploaded to: /tmp/nimbusconf/bootconf.json.  The users bootconf program 
+can read it in to determine the needed values.
+
 
