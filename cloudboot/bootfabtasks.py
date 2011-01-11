@@ -4,9 +4,6 @@ import os
 import sys
 from fabric.api import env, run, put, sudo
 
-def alive():
-    run("/bin/true")
-
 def readypgm(pgm=None):
     readydir = '/tmp/nimbusready'
     env.warn_only = True
