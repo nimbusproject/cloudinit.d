@@ -66,7 +66,7 @@ Boot and manage a launch plan"""
         handler = logging.StreamHandler()
     else:
         handler = logging.handlers.RotatingFileHandler(
-          options.logfile, maxBytes=102400, backupCount=5)
+          options.logfile, maxBytes=100*1024*1024, backupCount=5)
 
     logger.addHandler(handler)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")

@@ -1,7 +1,6 @@
 __author__ = 'bresnaha'
 
 import os
-import sys
 from fabric.api import env, run, put, sudo
 
 def readypgm(pgm=None):

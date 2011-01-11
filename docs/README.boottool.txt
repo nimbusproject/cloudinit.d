@@ -54,13 +54,15 @@ launched, configured, and tested.  Below is a sample service section:
     [svc-webserver]
     image: ami-blahblah
     iaas: ec2-east
+    ssh_username: ubuntu
     allocation: m1.small
     sshkeyname: ooi
     localsshkeypath: ~/.ssh/ooi.pem
+    readypgm: /opt/sample/sample-test.sh
+    bootpgm: setuphost.sh
     bootconf: sample.json
-    ready: /opt/sample/sample-test.sh
-    ready_timeout: 0
-    deps: sample-deps.conf
+    deps1: sample-deps.conf
+    deps2: <other dep files>
 
 
 Here cloud-boot it instructed to launch the image 'ami-blahblah' in the 
@@ -70,22 +72,25 @@ Allocation is the type (or size) of the instance required.  All of those
 values are the information needed just to launch an image in the cloud 
 and the security handles to access it.
 
-XXXX still being worked out XXXX 
-The last four values are cloud-boot specific.  bootconf is a path to a 
-file that is used as input to chef solo.  Chef solo is responsible for 
-configuring the system env.  This combined with the image ID creates a 
-fully configured virtual machine.
+The last four values are used to setup the VM once it is launched.  
+Often times it is of value to launch a standard VM and customize it 
+(install needed software, setup user accounts, etc) after it has begun.  
+The bootpgm key points to a file that is uploaded to the VM and run as 
+root via sudo (this implies that the ssh_username account must be able 
+to run sudo without a password).  The intention of the bootpgm is to set 
+up the VM.  The user can run any command it likes at their own risk.  
+The remaining keys allow the user to pass variable information from on 
+VM to another and are described in the next section.
 
-The next parameter 'ready' is a path to a localfile that tests to see if 
-the VM is ready for use.  Once the VM is launched and configured with 
-chef, this file is transfered to it and run.  The program should check 
-to see that all services needed by this host are running properly and 
-thus the machine is ready to be used.  The program should block until 
-either it determines that machine and all of its services have booted 
-and are ready to go, or it determines that the boot definitively failed.  
-The read_timeout parameter describes in seconds how long to wait for the 
-VM to be ready before timing out and thus considering the boot a 
-failure.
+The next parameter 'readypgm' is a path to a localfile that tests to see 
+if the VM is ready for use.  Once the VM is launched and configured this 
+file is transfered to it and run.  The program should check to see that 
+all services needed by this host are running properly and thus the 
+machine is ready to be used.  The program should block until either it 
+determines that machine and all of its services have booted and are 
+ready to go, or it determines that the boot definitively failed.  The 
+read_timeout parameter describes in seconds how long to wait for the VM 
+to be ready before timing out and thus considering the boot a failure.
 
 The final value, deps is a list of key value pairs both needed by this 
 VM and provided by this VM to other VMs.  This parameter will be 
@@ -118,10 +123,8 @@ the svc-webserver would have the following:
 
 This tells cloud-boot to look at all the previous boot levels and search 
 for a service named [svc-database].  Once found it is told to ask that 
-service the value of its variable 'ipaddress'.  This information is then 
-used with chef solo and the bootconf file to properly launch the 
-[svc-webserver]. * exactly how this information is passed around will be 
-discussed later
+service the value of its variable 'ipaddress'.  This information can 
+then be used by the bootpgm to properly launch the [svc-webserver].
 
 Boot-level Files
 ---------------
