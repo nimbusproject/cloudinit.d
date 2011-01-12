@@ -23,8 +23,12 @@ class TimeoutException(Exception):
         Exception.__init__(self, msg)
 
 class IaaSException(CloudBootException):
-    def __init__(self, ex):
-        CloudBootException.__init__(self, ex)
+    def __init__(self, msg):
+        CloudBootException.__init__(self, msg)
+        self.msg = msg
+
+    def __str__(self):
+        return str(self.msg)
 
 class ConfigException(Exception):
     def __init__(self, msg):

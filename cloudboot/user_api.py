@@ -98,6 +98,9 @@ class CloudBoot(object):
         if not os.path.exists(db_dir):
             raise APIUsageException("Path to the give db does not exist: %s" % (db_name))
 
+        self._level_callback = level_callback
+        self._service_callback = service_callback
+
         if db_name == None:
             db_name = str(uuid.uuid4()).split("-")[0]
 
@@ -130,8 +133,6 @@ class CloudBoot(object):
             self._boot_top.add_level(level_list)
             self._levels.append(level_list)
 
-        self._level_callback = level_callback
-        self._service_callback = service_callback
 
     def get_db_file(self):
         return self._db_path

@@ -122,7 +122,6 @@ class SVCContainer(object):
         self._hostname_poller = None
         self._term_host_pollers = None
         self._pollables = None
-        self._make_first_pollers()
         self._callback = callback
         self._running = False
         self._ssh_poller = None
@@ -174,6 +173,7 @@ class SVCContainer(object):
             else:
                 instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._s.instance_id = instance.id
+            self._execute_callback(cloudboot.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
             self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
             self._term_host_pollers.add_level([self._hostname_poller])
@@ -252,6 +252,7 @@ class SVCContainer(object):
     def _start(self):
         try:
             self._running = True
+            self._make_first_pollers()
             # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
             # values
             self._do_attr_bag()
