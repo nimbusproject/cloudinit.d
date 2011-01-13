@@ -11,8 +11,7 @@ class CloudBootException(Exception):
         self._base_stack = traceback.format_tb(exc_traceback)
 
     def __str__(self):
-        return repr(self._base_stack)
-
+        return str(self._base_stack)
 
 class APIUsageException(Exception):
     def __init__(self, msg):
@@ -40,6 +39,9 @@ class PollableException(CloudBootException):
         CloudBootException.__init__(self, ex)
         self.pollable = p
 
+    def __str__(self):
+        return CloudBootException.__str__(self)
+
 class ServiceException(PollableException):
     def __init__(self, ex, svc, msg=None, stdout="", stderr=""):
         PollableException.__init__(self, svc, ex)
@@ -54,6 +56,7 @@ class ServiceException(PollableException):
             s = s + os.linesep + self.msg
         s = s + os.linesep + "stdout : %s" % (self.stdout)
         s = s + os.linesep + "stderr : %s" % (self.stderr)
+        s = s + os.linesep + str(self._base_ex)
         return s
 
 class ProcessException(PollableException):
@@ -71,6 +74,7 @@ class MultilevelException(PollableException):
         self.pollable_list = pollables
 
     def __str__(self):
+        PollableException.__str__(self)
         s = "["
         d = ""
         for ex in self.exception_list:

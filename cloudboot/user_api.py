@@ -150,6 +150,10 @@ class CloudBoot(object):
     def cancel(self):
         self._boot_top.cancel()
 
+    def get_all_services(self):
+        svc_list = self._boot_top.get_services()
+        cs_list = [CloudService(self, svc) for svc in svc_list]
+        return cs_list
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
