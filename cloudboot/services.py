@@ -143,7 +143,7 @@ class SVCContainer(object):
             else:
                 cloudboot.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
             if self._s.instance_id:
-                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
                 instance = iaas_find_instance(iaas_con, self._s.instance_id)
                 self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
                 self._term_host_pollers.add_level([self._shutdown_poller])
@@ -166,7 +166,7 @@ class SVCContainer(object):
             raise APIUsageException("You cannot specify both a hostname and an image.  Check your config file")
 
         if self._s.image:            
-            iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port)
+            iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
             if self._s.instance_id:
                 # XXX what if the instance is not there?  need some repair mechaisms
                 instance = iaas_find_instance(iaas_con, self._s.instance_id)

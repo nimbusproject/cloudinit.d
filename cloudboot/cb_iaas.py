@@ -3,11 +3,10 @@ import datetime
 import uuid
 import boto
 from boto.ec2.connection import EC2Connection
-from boto.regioninfo import RegionInfo, RegionInfo
+from boto.regioninfo import RegionInfo
 import os
 import cloudboot
 from cloudboot.exceptions import ConfigException, IaaSException
-import time
 
 __author__ = 'bresnaha'
 
@@ -56,11 +55,11 @@ def iaas_find_instance(con, instance_id):
     else:
         return _real_find_instance(con, instance_id)
 
-def iaas_get_con(key, secret, iaashostname=None, iaasport=None):
+def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
     if 'CLOUDBOOT_TESTENV' in os.environ:
         return IaaSTestCon()
     else:
-        return _real_iaas_get_con(key, secret, iaashostname, iaasport)
+        return _real_iaas_get_con(key, secret, iaashostname, iaasport, iaas)
 
 def iaas_run_instance(con, image, instance_type, key_name, security_groupname=None):
     if type(con) == IaaSTestCon:
@@ -69,7 +68,7 @@ def iaas_run_instance(con, image, instance_type, key_name, security_groupname=No
     else:
         return _real_iaas_run_instance(con, image, instance_type, key_name, security_groupname)
         
-def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None):
+def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
 
     orig_key = key
     orig_secret = secret
@@ -80,9 +79,14 @@ def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None):
         raise ConfigException("IaaS key %s not in env" % (orig_key))
     if not secret:
         raise ConfigException("IaaS key %s not in env" % (orig_secret))
-    # see comments in validate()
+    
     if not iaashostname:
-        con = EC2Connection(key, secret)
+        if not iaas:
+            raise ConfigException("There is no 'iaas' or 'iaas_hostname' configuration, you need one of these.")
+        region = boto.ec2.get_region(iaas)
+        if not region:
+            raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
+        con =  boto.connect_ec2(key, secret, region=region)
     else:
         region = RegionInfo(iaashostname)
         if not iaasport:
