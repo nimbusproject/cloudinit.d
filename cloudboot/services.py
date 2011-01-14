@@ -185,8 +185,14 @@ class SVCContainer(object):
                 fabexec = os.environ['CLOUD_BOOT_FAB']
         except:
             pass
-        fabfile = bootfabtasks.__file__.replace("pyc", "py")
+        fabfile = str(bootfabtasks.__file__).strip()
+        cloudboot.log(self._log, logging.DEBUG, "raw fabfileis: |%s|" % (fabfile))
+        if fabfile[-4:] == ".pyc":
+            fabfile = fabfile[0:-4] + ".py"
+            cloudboot.log(self._log, logging.DEBUG, "modfiled fabfile is: %s" % (fabfile))
+
         cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
+        cloudboot.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
     def _get_ssh_command(self, host):
@@ -403,10 +409,12 @@ class SVCContainer(object):
 
     def _get_readypgm_cmd(self):
         cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._s.hostname, self._s.readypgm)
+        cloudboot.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
     def _get_boot_cmd(self):
         cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf)
+        cloudboot.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
     def _fill_template(self, path):

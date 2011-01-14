@@ -1,3 +1,5 @@
+import cloudboot
+import cloudboot.nosetests
 from cloudboot.user_api import CloudBoot
 import tempfile
 import logging
@@ -9,11 +11,11 @@ import os
 
 class BasicUserAPITests(unittest.TestCase):
 
-    def setup(self):
-        self.plan_basedir = ""
+    def setUp(self):
+        self.plan_basedir = cloudboot.nosetests.g_plans_dir
 
     def _start_one(self, conf_file):
-        self.plan_basedir = os.environ['CLOUDBOOT_TEST_PLAN_DIR']
+        self.plan_basedir = cloudboot.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()
         conf_file = self.plan_basedir + "/" + conf_file + "/top.conf"
         cb = CloudBoot(dir, conf_file, terminate=False, boot=True, ready=True)
@@ -45,22 +47,6 @@ class BasicUserAPITests(unittest.TestCase):
     def test_terminate(self):
         tst_name = "terminate"
         self._start_one(tst_name)
-
-    def test_makesure_is_real(self):
-        tmp = os.environ['CLOUDBOOT_TESTENV']
-        fab = os.environ['CLOUD_BOOT_FAB']
-        ssh = os.environ['CLOUD_BOOT_SSH']
-        try:
-            os.environ.pop('CLOUDBOOT_TESTENV')
-            os.environ.pop('CLOUD_BOOT_FAB')
-            os.environ.pop('CLOUD_BOOT_SSH')
-            tst_name = "terminate"
-            self._start_one(tst_name)
-        finally:
-            os.environ['CLOUDBOOT_TESTENV'] = tmp
-            os.environ['CLOUD_BOOT_FAB'] = fab
-            os.environ['CLOUD_BOOT_SSH'] = ssh
-
 
 if __name__ == '__main__':
     unittest.main()

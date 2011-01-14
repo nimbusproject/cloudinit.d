@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env pythonv
+import os
 
 __author__ = 'bresnaha'
 
@@ -15,19 +16,39 @@ if float("%d.%d" % sys.version_info[:2]) < 2.5:
     sys.stderr.write("cloudboot requires Python 2.5 or newer.\n")
     sys.exit(1)
 
+#get test plan list
+def plans_list_dirs(p):
+
+    files = []
+    l = os.listdir(p)
+    for f in l:
+        this_d = os.path.join(p, f)
+        if os.path.isdir(this_d):
+            sub_l = plans_list_dirs(this_d)
+            files = files + sub_l
+        else:
+            files.append((p, [this_d,],))
+
+    return files
+
+basepath = os.path.dirname(__file__)
+test_plans = plans_list_dirs(os.path.join(basepath, "tests/plans"))
+print test_plans
+
 setup(name='cloudboot',
       version=Version,
       description='An Open Source bootstrap tool for services in the cloud.',
       author='Nimbus Development Team',
       author_email='workspace-user@globus.org',
       url='http://www.nimbusproject.org/',
-      packages=[ 'cloudboot', 'cloudboot.cli' ],
+      packages=[ 'cloudboot', 'cloudboot.cli', 'cloudboot.nosetests' ],
        entry_points = {
         'console_scripts': [
             'cloud-boot = cloudboot.cli.boot:main',
-        ]
-      },
+        ],
 
+      },
+      data_files=test_plans,
       long_description="""
 This package can be considered the /etc/rc.d of the cloud!
 

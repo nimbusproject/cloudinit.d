@@ -13,6 +13,7 @@ from sqlalchemy import types
 from datetime import datetime
 import os
 import cloudboot
+from cloudboot.exceptions import APIUsageException
 
 
 __author__ = 'bresnaha'
@@ -237,9 +238,16 @@ class CloudBootDB(object):
     def load_from_conf(self, conf_file):
         conf_file = os.path.abspath(conf_file)
         parser = ConfigParser.ConfigParser()
-        parser.read(conf_file)
+
 
         self._confdir = os.path.abspath(os.path.dirname(conf_file))
+        if not os.path.exists(self._confdir):
+            raise APIUsageException("the path %s does not exist" % (self._confdir))
+        conf_file = os.path.join(self._confdir, conf_file)
+        if not os.path.exists(conf_file):
+            raise APIUsageException("the path %s does not exist" % (conf_file))
+        parser.read(conf_file)
+
 
         # get the system defaults
         s = "defaults"

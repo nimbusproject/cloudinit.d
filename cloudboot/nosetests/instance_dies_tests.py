@@ -1,5 +1,7 @@
 import time
 import unittest
+import cloudboot
+import cloudboot.nosetests
 from cloudboot.exceptions import APIUsageException
 from cloudboot.user_api import CloudBoot
 import tempfile
@@ -9,8 +11,11 @@ __author__ = 'bresnaha'
 
 
 class InstanceDiesTests(unittest.TestCase):
+    def setUp(self):
+        self.plan_basedir = cloudboot.nosetests.g_plans_dir
+
     def _start_one(self, conf_file):
-        self.plan_basedir = os.environ['CLOUDBOOT_TEST_PLAN_DIR']
+
         dir = tempfile.mkdtemp()
         conf_file = self.plan_basedir + "/" + conf_file + "/top.conf"
         cb = CloudBoot(dir, conf_file, terminate=False, boot=True, ready=True)
@@ -77,7 +82,7 @@ class InstanceDiesTests(unittest.TestCase):
         self._terminate(dir, cb.run_name)
 
     def test_poll_to_soon_error(self):
-        self.plan_basedir = os.environ['CLOUDBOOT_TEST_PLAN_DIR']
+        self.plan_basedir = self.plan_basedir = cloudboot.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()
         conf_file = self.plan_basedir + "/simplelevels/top.conf"
         cb = CloudBoot(dir, conf_file, terminate=False, boot=True, ready=True)
