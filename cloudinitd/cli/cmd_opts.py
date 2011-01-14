@@ -1,7 +1,6 @@
 import os
 import sys
 from optparse import OptionParser
-from optparse import SUPPRESS_HELP
 
 class bootOpts(object):
 

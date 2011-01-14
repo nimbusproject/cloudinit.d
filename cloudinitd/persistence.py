@@ -124,11 +124,11 @@ class ServiceObject(object):
         self.contextualized = 0
         self.securitygroups = None
 
-    def _load_from_conf(self, parser, section, db, conf_dir):
-        image = config_get_or_none(parser, section, "image")
+    def _load_from_conf(self, parser, section, db, conf_dir, cloud_confs):
+
         iaas = config_get_or_none(parser, section, "iaas")
         iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
-        allo = config_get_or_none(parser, section, "allocation")
+
         sshkey = config_get_or_none(parser, section, "sshkeyname")
         localssh = config_get_or_none(parser, section, "localsshkeypath")
         ssh_user = config_get_or_none(parser, section, "ssh_username")
@@ -139,6 +139,32 @@ class ServiceObject(object):
         iaas_key = config_get_or_none(parser, section, "iaas_key")
         iaas_secret = config_get_or_none(parser, section, "iaas_secret")
         securitygroups = config_get_or_none(parser, section, "securitygroups")
+
+        allo = config_get_or_none(parser, section, "allocation")
+        image = config_get_or_none(parser, section, "image")
+        cloudconf = config_get_or_none(parser, section, "cloud")
+        if cloudconf:
+            try:
+                conf = cloud_confs[cloudconf]
+            except:
+                raise APIUsageException("%s is not a valud cloud description in this plan" % (cloudconf))
+
+            if not iaas:
+                iaas = conf.iaas
+            if not iaas_hostname:
+                iaas_hostname = conf.iaas_hostname
+            if not sshkey:
+                sshkey = conf.sshkey
+            if not localssh:
+                localssh = conf.localssh
+            if not ssh_user:
+                ssh_user = conf.ssh_user
+            if not iaas_key:
+                iaas_key = conf.iaas_key
+            if not iaas_secret:
+                iaas_secret = conf.iaas_secret
+            if not securitygroups:
+                securitygroups = conf.securitygroups
 
         if not iaas:
             iaas = db.default_iaas
@@ -210,10 +236,27 @@ mapper(LevelObject, level_table, properties={
 mapper(BootObject, boot_table, properties={
     'levels': relation(LevelObject)})
 
+class CloudConfSection(object):
+
+    def __init__(self, parser, section):
+
+        self.name = section
+        self.iaas = config_get_or_none(parser, section, "iaas")
+        self.sshkey = config_get_or_none(parser, section, "sshkeyname")
+        self.localssh = config_get_or_none(parser, section, "localsshkeypath")
+        self.ssh_user = config_get_or_none(parser, section, "ssh_username")
+        self.iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
+        self.iaas_port = config_get_or_none(parser, section, "iaas_port", 8444)
+        self.iaas_key = config_get_or_none(parser, section, "iaas_key")
+        self.iaas_secret = config_get_or_none(parser, section, "iaas_secret")
+        self.securitygroups = config_get_or_none(parser, section, "securitygroups")
+
 
 class CloudInitDDB(object):
 
     def __init__(self, dburl, module=None):
+
+        self._cloudconf_sections = {}
 
         if module == None:
             self._engine = sqlalchemy.create_engine(dburl)
@@ -238,7 +281,6 @@ class CloudInitDDB(object):
         conf_file = os.path.abspath(conf_file)
         parser = ConfigParser.ConfigParser()
 
-
         self._confdir = os.path.abspath(os.path.dirname(conf_file))
         if not os.path.exists(self._confdir):
             raise APIUsageException("the path %s does not exist" % (self._confdir))
@@ -246,7 +288,6 @@ class CloudInitDDB(object):
         if not os.path.exists(conf_file):
             raise APIUsageException("the path %s does not exist" % (conf_file))
         parser.read(conf_file)
-
 
         # get the system defaults
         s = "defaults"
@@ -260,6 +301,14 @@ class CloudInitDDB(object):
         self.default_iaas_key = config_get_or_none(parser, s, "iaas_key")
         self.default_iaas_secret = config_get_or_none(parser, s, "iaas_secret")
         self.default_securitygroups = config_get_or_none(parser, s, "securitygroups")
+
+        all_sections = parser.sections()
+        for s in all_sections:
+            ndx = s.find("cloud-")
+            if ndx == 0:
+                cloudconf = CloudConfSection(parser, s)
+                self._cloudconf_sections[s] = cloudconf
+        
 
         lvl_dict = {}
         levels = parser.items("runlevels")
@@ -298,7 +347,7 @@ class CloudInitDDB(object):
             ndx = s.find("svc-")
             if ndx == 0:
                 svc_db = ServiceObject()
-                svc_db._load_from_conf(parser, s, self, self._confdir)
+                svc_db._load_from_conf(parser, s, self, self._confdir, self._cloudconf_sections)
                 level.services.append(svc_db)
                 self._session.add(svc_db)
         return (level, order)

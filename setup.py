@@ -58,5 +58,5 @@ means launching and configuring all of the VMs needed for each service in the le
 booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
-      install_requires = ["boto", "sqlalchemy", "fabric"],
+      install_requires = ["boto >= 1.9", "sqlalchemy >= 0.6", "fabric >= 0.9"],
      )

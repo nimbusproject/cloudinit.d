@@ -10,14 +10,19 @@ from cloudinitd.exceptions import MultilevelException
 import cloudinitd
 import os
 import cloudinitd.cli.output
+from optparse import SUPPRESS_HELP
 
 __author__ = 'bresnaha'
 
 g_verbose = 1
 g_action = ""
 g_repair = False
+g_outfile = None
 
 def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False, inverse=False):
+    global g_outfile
+    if g_outfile:
+        g_outfile.write(msg)
     cloudinitd.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline, inverse=inverse)
     
 # setup and validate options
@@ -45,7 +50,8 @@ Boot and manage a launch plan"""
     opt.add_opt(parser)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
-
+    opt = bootOpts("outstream", "O", SUPPRESS_HELP, None)
+    opt.add_opt(parser)
 
     (options, args) = parser.parse_args(args=argv)
     
@@ -84,6 +90,10 @@ Boot and manage a launch plan"""
     if options.quiet:
         options.verbose = 0
     g_verbose = options.verbose
+
+    if options.outstream:
+        global g_outfile
+        g_outfile = open(options.outstream, "w")
 
     return (args, options)
 
@@ -213,6 +223,7 @@ def list(options):
         if db.find("cloudinitd-") == 0:
             name = db.replace("cloudinitd-", "")
             print_chars(0, name[:-3] + "\n")
+    return 0
 
 def main(argv=sys.argv[1:]):
     # first process options
@@ -259,6 +270,9 @@ def main(argv=sys.argv[1:]):
         if options.verbose > 1:
             raise
         rc = 1
+    finally:
+        if g_outfile:
+            g_outfile.close()
     return rc
 
 

@@ -48,5 +48,9 @@ class BasicUserAPITests(unittest.TestCase):
         tst_name = "terminate"
         self._start_one(tst_name)
 
+    def test_cloudconf(self):
+        tst_name = "cloudconf"
+        self._start_one(tst_name)
+
 if __name__ == '__main__':
     unittest.main()
