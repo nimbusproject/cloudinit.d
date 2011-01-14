@@ -13,7 +13,7 @@ Version = "0.1"
 
 if float("%d.%d" % sys.version_info[:2]) < 2.5:
     sys.stderr.write("Your Python version %d.%d.%d is not supported.\n" % sys.version_info[:3])
-    sys.stderr.write("cloudboot requires Python 2.5 or newer.\n")
+    sys.stderr.write("cloudinitd requires Python 2.5 or newer.\n")
     sys.exit(1)
 
 #get test plan list
@@ -35,16 +35,16 @@ basepath = os.path.dirname(__file__)
 test_plans = plans_list_dirs(os.path.join(basepath, "tests/plans"))
 print test_plans
 
-setup(name='cloudboot',
+setup(name='cloudinitd',
       version=Version,
       description='An Open Source bootstrap tool for services in the cloud.',
       author='Nimbus Development Team',
       author_email='workspace-user@globus.org',
       url='http://www.nimbusproject.org/',
-      packages=[ 'cloudboot', 'cloudboot.cli', 'cloudboot.nosetests' ],
+      packages=[ 'cloudinitd', 'cloudinitd.cli', 'cloudinitd.nosetests' ],
        entry_points = {
         'console_scripts': [
-            'cloud-boot = cloudboot.cli.boot:main',
+            'cloudinitd = cloudinitd.cli.boot:main',
         ],
 
       },
