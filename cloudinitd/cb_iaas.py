@@ -2,6 +2,7 @@ from datetime import timedelta
 import datetime
 import uuid
 import boto
+import boto.ec2
 try:
     from boto.regioninfo import RegionInfo
 except:
