@@ -48,6 +48,7 @@ setup(name='cloudinitd',
         ],
 
       },
+      keywords = "cloud boot tool initialize services",
       data_files=test_plans,
       long_description="""
 This package can be considered the /etc/rc.d of the cloud!
@@ -59,4 +60,20 @@ booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
       install_requires = ["boto >= 1.9", "sqlalchemy >= 0.6", "fabric >= 0.9"],
+
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Intended Audience :: End Users/Desktop',
+          'Intended Audience :: Developers',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: Apache Software License',
+          'Operating System :: MacOS :: MacOS X',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: POSIX',
+          'Operating System :: POSIX :: Linux',
+          'Programming Language :: Python',
+          'Topic :: System :: Clustering',
+          'Topic :: System :: Distributed Computing',
+          ],
      )
