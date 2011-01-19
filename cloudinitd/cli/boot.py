@@ -98,6 +98,8 @@ Run with the command 'commands' to see a list of all possible commands
     if options.outstream:
         global g_outfile
         g_outfile = open(options.outstream, "w")
+    else:
+        g_outfile = None
 
     return (args, options)
 
@@ -155,13 +157,20 @@ def launch_new(options, args):
         cb.block_until_complete(poll_period=0.1)
     except CloudServiceException, svcex:
         print svcex
+        return 1
     except MultilevelException, mex:
         print mex
+        return 1
     except KeyboardInterrupt:
         print_chars(1, "Canceling (this will not clean up already launched services)...")
         cb.cancel()
-
-    return 0
+    ex = cb.get_exception()
+    if ex == None:
+        rc = 0
+    else:
+        print_chars(4, "An error occured %s" % (str(ex)))
+        rc = 1
+    return rc
 
 def status(options, args):
     """
@@ -183,13 +192,20 @@ def status(options, args):
         cb.block_until_complete(poll_period=0.1)
     except CloudServiceException, svcex:
         print svcex
+        return 1
     except MultilevelException, mex:
         print mex
+        return 1
     except KeyboardInterrupt:
         print_chars(1, "Canceling...")
         cb.cancel()
-
-    return 0
+    ex = cb.get_exception()
+    if ex == None:
+        rc = 0
+    else:
+        print_chars(4, "An error occured %s" % (str(ex)))
+        rc = 1
+    return rc
 
 def terminate(options, args):
     """

@@ -131,6 +131,7 @@ class CloudInitD(object):
 
             self._boot_top.add_level(level_list)
             self._levels.append(level_list)
+        self._exception = None
 
 
     def get_db_file(self):
@@ -145,6 +146,8 @@ class CloudInitD(object):
 
     def _svc_cb(self, svc, action, msg):
         rc = cloudinitd.callback_return_default
+        if action == cloudinitd.callback_action_error:
+            self._exception = svc.last_exception
         if self._service_callback:
             rc = self._service_callback(self, CloudService(self, svc), action, msg)
         return rc
@@ -249,6 +252,8 @@ class CloudInitD(object):
         self._boot_top.start()
         self._started = True
 
+    def get_exception(self):
+        return self._exception
 
 
 

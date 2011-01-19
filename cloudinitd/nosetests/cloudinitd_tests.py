@@ -1,9 +1,11 @@
 import tempfile
 import unittest
 import uuid
+from cloudinitd.user_api import CloudInitD
 import os
 import cloudinitd
 import cloudinitd.cli.boot
+import  time
 __author__ = 'bresnaha'
 
 
@@ -141,5 +143,26 @@ class CloudInitDTests(unittest.TestCase):
         line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
 
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def check_status_error_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        dir = os.path.expanduser("~/.cloudinitd/")
+        conf_file = self.plan_basedir + "/terminate/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        runname = cb.run_name
+        svc = cb.get_service("sampleservice")
+        p = svc.shutdown()
+        rc = p.poll()
+        while not rc:
+            rc = p.poll()
+            time.sleep(0.1)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)

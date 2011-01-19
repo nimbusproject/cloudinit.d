@@ -79,6 +79,8 @@ class BootTopLevel(object):
             return None
         return svc.get_dep(attr)
 
+    def get_exception(self):
+        return self._multi_top._exception
 
 
 class SVCContainer(object):
@@ -262,15 +264,16 @@ class SVCContainer(object):
             self._execute_callback(cloudinitd.callback_action_started, "Service Started")
         except Exception, ex:
             self._running = False
-            if not self._execute_callback(cloudinitd.callback_action_error, str(ex)):
+            if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
                 raise
 
-    def _execute_callback(self, state, msg):
+    def _execute_callback(self, state, msg, ex=None):
         if not self._callback:
             return False
         rc = self._callback(self, state, msg)
         if state != cloudinitd.callback_action_error:
             return False
+        self.last_exception = ex
         if rc == cloudinitd.callback_return_restart and self._restart_count < self._restart_limit:
             self._running = False
             self.restart(boot=True, ready=True, terminate=True, callback=self._callback)
@@ -307,7 +310,7 @@ class SVCContainer(object):
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
             self._running = False
-            if not self._execute_callback(cloudinitd.callback_action_error, msg):
+            if not self._execute_callback(cloudinitd.callback_action_error, msg, multiex):
                 raise ServiceException(multiex, self, msg, stdout, stderr)
             return False
         except Exception, ex:
@@ -315,7 +318,7 @@ class SVCContainer(object):
             self._s.last_error = str(ex)
             self._db.db_commit()
             self._running = False
-            if not self._execute_callback(cloudinitd.callback_action_error, str(ex)):
+            if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
                 raise ServiceException(ex, self)
             return False
 
