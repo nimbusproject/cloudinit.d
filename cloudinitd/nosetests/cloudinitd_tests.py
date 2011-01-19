@@ -16,18 +16,22 @@ class CloudInitDTests(unittest.TestCase):
     def _find_str(self, filename, needle):
 
         file = open(filename, "r")
-        found = False
-        while not found:
-            line = file.readline()
-            if not line:
-                return None
-            ndx = line.find(needle)
-            if ndx >= 0:
-                return line
+        try:
+            found = False
+            while not found:
+                line = file.readline()
+                if not line:
+                    return None
+                ndx = line.find(needle)
+                if ndx >= 0:
+                    return line
+        finally:
+            file.close()
 
     def _dump_output(self, filename):
         file = open(filename, "r")  
         print file.readlines()
+        file.close()
 
     def test_basic(self):
         (osf, outfile) = tempfile.mkstemp()
@@ -92,8 +96,6 @@ class CloudInitDTests(unittest.TestCase):
         self.assertNotEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["reboot",  "%s" % (runname)])
         self.assertNotEqual(rc, 0)
-        rc = cloudinitd.cli.boot.main([])
-        self.assertNotEqual(rc, 0)
 
     def check_boot_output_test(self):
         (osf, outfile) = tempfile.mkstemp()
@@ -104,15 +106,40 @@ class CloudInitDTests(unittest.TestCase):
         runname = self._get_runname(outfile)
 
         n = "instance:"
-        line = self._find_str(fname, n)
+        line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
         n = "hostname:"
-        line = self._find_str(fname, n)
+        line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
 
         n = "SUCCESS"
-        line = self._find_str(fname, n)
+        line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
 
-        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def check_status_output_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "instance:"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        n = "hostname:"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        n = "SUCCESS"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
