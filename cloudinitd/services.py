@@ -354,6 +354,11 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
 
         if self._do_ready:
+            print "DOING READY!"
+            cmd = self._get_ssh_ready_cmd()
+            print cmd
+            ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb)
+            self._pollables.add_level([ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
                 self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb, timeout=1200)
