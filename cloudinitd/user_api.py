@@ -134,6 +134,9 @@ class CloudInitD(object):
 
 
     def get_db_file(self):
+        """
+        Return the path to the db file in use.
+        """
         return self._db_path
 
     def _mp_cb(self, mp, action, level_ndx):
@@ -147,15 +150,27 @@ class CloudInitD(object):
         return rc
 
     def cancel(self):
+        """
+        Request to cancel the running shutdown or start action.  The cancel is nonblocking and the user should
+        continue to call poll()
+        """
         self._boot_top.cancel()
 
     def get_all_services(self):
+        """
+        Get a list of all CloudServices associated with this boot plan.  A CloudService object can be used to
+        inspect the state of a specific service in the plan.
+        """
         svc_list = self._boot_top.get_services()
         cs_list = [CloudService(self, svc) for svc in svc_list]
         return cs_list
 
     # return a booting service for inspection by the user
     def get_service(self, svc_name):
+        """
+        Get a specific CloudService object by name.  The name corresponds to the section [svc-<name>] in
+        the plan.
+        """
         svc = self._boot_top.get_service(svc_name)
         return CloudService(self, svc)
 
@@ -171,7 +186,7 @@ class CloudInitD(object):
     # poll the entire boot config until complete
     def block_until_complete(self, poll_period=0.5):
         """
-        poll_period:        the time to wait inbetween calls to poll()
+        poll_period:        the time to wait in between calls to poll()
 
         This method is just a convenience loop around calls to poll.
         """

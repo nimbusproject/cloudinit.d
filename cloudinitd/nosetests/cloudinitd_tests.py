@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import uuid
 import os
 import cloudinitd
 import cloudinitd.cli.boot
@@ -45,6 +46,13 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def _get_runname(self, fname):
+        n = "Starting up run"
+        line = self._find_str(fname, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        return runname
 
     def test_list_simple(self):
         (osf, outfile) = tempfile.mkstemp()
@@ -53,11 +61,7 @@ class CloudInitDTests(unittest.TestCase):
         self._dump_output(outfile)
         self.assertEqual(rc, 0)
 
-        n = "Starting up run"
-        line = self._find_str(outfile, n)
-        self.assertNotEqual(line, None)
-        runname = line[len(n):].strip()
-        print "run name is %s" % (runname)
+        runname = self._get_runname(outfile)
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "list"])
         self.assertEqual(rc, 0)
@@ -72,15 +76,43 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertEqual(rc, 0)
-
-        n = "Starting up run"
-        line = self._find_str(outfile, n)
-        self.assertNotEqual(line, None)
-        runname = line[len(n):].strip()
-        print "run name is %s" % (runname)
+        runname = self._get_runname(outfile)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "reboot",  "%s" % (runname)])
         self.assertEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "status",  "%s" % (runname)])
         self.assertEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def bad_name_tests(self):
+        runname = str(uuid.uuid4()).split("-")[0]
+        rc = cloudinitd.cli.boot.main(["status",  "%s" % (runname)])
+        self.assertNotEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
+        self.assertNotEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["reboot",  "%s" % (runname)])
+        self.assertNotEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main([])
+        self.assertNotEqual(rc, 0)
+
+    def check_boot_output_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-v","-v","-v","-v", "-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+
+        n = "instance:"
+        line = self._find_str(fname, n)
+        self.assertNotEqual(line, None)
+        n = "hostname:"
+        line = self._find_str(fname, n)
+        self.assertNotEqual(line, None)
+
+        n = "SUCCESS"
+        line = self._find_str(fname, n)
+        self.assertNotEqual(line, None)
+
+        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)

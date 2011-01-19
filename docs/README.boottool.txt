@@ -53,7 +53,7 @@ launched, configured, and tested.  Below is a sample service section:
 
     [svc-webserver]
     image: ami-blahblah
-    iaas: ec2-east
+    iaas: us-east-1
     ssh_username: ubuntu
     allocation: m1.small
     sshkeyname: ooi
@@ -66,7 +66,7 @@ launched, configured, and tested.  Below is a sample service section:
 
 
 Here cloud-boot it instructed to launch the image 'ami-blahblah' in the 
-cloud 'ec2-east'.  The sshkeyname is the security handle known by the 
+cloud 'us-east-1'.  The sshkeyname is the security handle known by the 
 cloud and localsshkeypath is the path a key on the local file system.  
 Allocation is the type (or size) of the instance required.  All of those 
 values are the information needed just to launch an image in the cloud 

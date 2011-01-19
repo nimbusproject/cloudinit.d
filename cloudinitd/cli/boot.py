@@ -19,6 +19,8 @@ g_action = ""
 g_repair = False
 g_outfile = None
 
+g_commands = {}
+
 def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False, inverse=False):
     global g_outfile
     if g_outfile:
@@ -29,8 +31,10 @@ def print_chars(lvl, msg, color="default", bg_color="default", bold=False, under
 def parse_commands(argv):
     global g_verbose
 
-    u = """[options] <boot | status | terminate> <run name> [<top level launch plan> | <run name> | <clean>]
-Boot and manage a launch plan"""
+    u = """[options] <command> [<top level launch plan> | <run name>]
+Boot and manage a launch plan
+Run with the command 'commands' to see a list of all possible commands
+"""
     version = "cloudinitd " + (cloudinitd.Version)
     parser = OptionParser(usage=u, version=version)
 
@@ -134,8 +138,15 @@ def service_callback(cb, cloudservice, action, msg):
     return cloudinitd.callback_return_default
 
 
-def launch_new(options, config_file):
+def launch_new(options, args):
+    """
+    Boot a new launch plan.  You must supply the path to a top level configuration file.
+    """
+    if len(args) < 2:
+        print "The boot command requires a top level file.  See --help"
+        return 1
 
+    config_file = args[1]
     cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (cb.run_name), inverse=True, color="green", bold=True)
@@ -150,11 +161,19 @@ def launch_new(options, config_file):
         print_chars(1, "Canceling (this will not clean up already launched services)...")
         cb.cancel()
 
-    return (0, cb.run_name)
+    return 0
 
-def status(options, dbname):
+def status(options, args):
+    """
+    Check on the status of an already booted plan.  You must supply the run name of the booted plan.
+    """
     global g_repair
 
+    if len(args) < 2:
+        print "The %s command requires a run name.  See --help" % (command)
+        return 1
+
+    dbname = args[1]
     g_repair = options.repair
 
     cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=True)
@@ -172,7 +191,14 @@ def status(options, dbname):
 
     return 0
 
-def terminate(options, dbname):
+def terminate(options, args):
+    """
+    Terminate an already booted plan.  You must supply the run name of the booted plan.
+    """
+    if len(args) < 2:
+        print "The %s command requires a run name.  See --help" % (command)
+        return 1
+    dbname = args[1]
     cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
     print_chars(1, "Terminating %s\n" % (cb.run_name))
     cb.shutdown()
@@ -195,7 +221,14 @@ def terminate(options, dbname):
         cb.cancel()
     return 1
 
-def reboot(options, dbname):
+def reboot(options, args):
+    """
+    Reboot an already booted plan.  You must supply the run name of the booted plan.
+    """
+    if len(args) < 2:
+        print "The %s command requires a run name.  See --help" % (command)
+        return 1
+    dbname = args[1]
     cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
     print_chars(1, "Rebooting %s\n" % (cb.run_name))
     cb.shutdown()
@@ -216,7 +249,30 @@ def reboot(options, dbname):
         cb.cancel()
     return 1
 
-def list(options):
+def list_commands(options, args):
+    """
+    List all of the possible plans accepted by this program.
+    """
+    line_len = 60
+    global g_commands
+    for cmd in g_commands:
+        func = g_commands[cmd]
+        print_chars(1, "%s: " % (cmd), bold=True)
+        msg = "\n\t" + func.__doc__.strip()
+        ndx = line_len
+        while ndx < len(msg):
+            i = msg[ndx:].find(" ")
+            if i < 0:
+                break
+            i = i + ndx
+            msg = msg[:i] + "\n\t" + msg[i+1:]
+            ndx = ndx + line_len
+        print_chars(1, "%s\n" % (msg))
+
+def list(options, args):
+    """
+    List all existing booted plans.
+    """
     l = os.listdir(options.database)
 
     for db in l:
@@ -233,34 +289,25 @@ def main(argv=sys.argv[1:]):
 
     # process the command
     global g_action
+    global g_outfile
+
     command = args[0]
     g_action = command
+
+    g_commands["boot"] = launch_new
+    g_commands["status"] = status
+    g_commands["terminate"] = terminate
+    g_commands["reboot"] = reboot
+    g_commands["list"] = list
+    g_commands["commands"] = list_commands
+
+    if command not in g_commands:
+        print "Invalid command.  Run with --help"
+        return 1
+
+    func = g_commands[command]
     try:
-        if command == "boot":
-            if len(args) < 2:
-                print "The boot command requires a top level file.  See --help"
-                return 1
-            (rc, name) = launch_new(options, args[1])
-        elif command == "status":
-            if len(args) < 2:
-                print "The %s command requires a run name.  See --help" % (command)
-                return 1
-            rc = status(options, args[1])
-        elif command == "terminate":
-            if len(args) < 2:
-                print "The %s command requires a run name.  See --help" % (command)
-                return 1
-            rc = terminate(options, args[1])
-        elif command == "reboot":
-            if len(args) < 2:
-                print "The %s command requires a run name.  See --help" % (command)
-                return 1
-            rc = reboot(options, args[1])
-        elif command == "list":
-            rc = list(options)
-        else:
-            print "Invalid command.  Run with --help"
-            rc = 1
+        rc = func(options, args)
         print ""
     except SystemExit:
         raise

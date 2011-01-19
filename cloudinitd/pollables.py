@@ -145,7 +145,7 @@ class InstanceHostnamePollable(Pollable):
             self._thread.join()
             return True
         if self._state != "pending":
-            self.exception = IaaSException("The current state is %s.  Never reached state running" % (self._instance.state))
+            self.exception = IaaSException("The current state is %s.  Never reached state running" % (self._state))
             raise self.exception
         return False
 
