@@ -16,27 +16,6 @@ class bootOpts(object):
         self.count = count
         self.long_help = long_help
 
-    def get_error_msg(self):
-        if self.flag != None:
-            emsg = "The option  %s | %s is a flag" % (self.short, self.long)
-            return emsg
-
-        if self.range != None:
-            emsg = "The option  %s | %s must be between %s and %s" % (self.short, self.long, self.range[0], self.range[1])
-            return emsg
-
-        if self.vals != None:
-            emsg = "The value for %s | %s must be: { " % (self.short, self.long)
-            delim = ""
-            for v in self.vals:
-                emsg = emsg + delim + str(v) 
-                delim = " | "
-            emsg = emsg + "}"
-
-            return emsg
-
-        return "Error"
-
     def validate(self, options):
 
         try:

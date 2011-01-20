@@ -142,7 +142,7 @@ def service_callback(cb, cloudservice, action, msg):
 
 def launch_new(options, args):
     """
-    Boot a new launch plan.  You must supply the path to a top level configuration file.
+    Boot a new launch plan.  You must supply the path to a top level configuration file.  A run name will be displayed in the output.  See --help for more information.
     """
     if len(args) < 2:
         print "The boot command requires a top level file.  See --help"
