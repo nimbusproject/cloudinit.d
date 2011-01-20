@@ -9,7 +9,7 @@ f = urllib.urlopen("http://localhost/test.txt")
 data = f.read().strip()
 print data
 
-f = open("/tmp/nimbusconf/bootconf.json", "r")
+f = open("./bootconf.json", "r")
 vals_dict = json.load(f)
 f.close()
 

@@ -6,7 +6,7 @@ import os
 import sys
 
 
-f = open("/tmp/nimbusconf/bootconf.json", "r")
+f = open("./bootconf.json", "r")
 vals_dict = json.load(f)
 f.close()
 print vals_dict['message']
