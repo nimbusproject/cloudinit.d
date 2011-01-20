@@ -88,6 +88,22 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def test_cleanup_list(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        runname = self._get_runname(outfile)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "list"])
+        self.assertEqual(rc, 0)
+        line = self._find_str(outfile, runname)
+        self.assertEqual(line, None)
+
     def test_reboot_simple(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
@@ -157,6 +173,32 @@ class CloudInitDTests(unittest.TestCase):
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
+
+    def check_terminate_output_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)       
+        n = "instance:"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        ndx = line.find("None")
+        self.assertTrue(ndx >= 0)
+        n = "hostname:"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        ndx = line.find("None")
+        self.assertTrue(ndx >= 0)
+
+        n = "SUCCESS"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
 
     def check_status_error_test(self):
         (osf, outfile) = tempfile.mkstemp()
