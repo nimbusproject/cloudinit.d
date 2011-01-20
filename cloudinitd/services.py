@@ -109,6 +109,7 @@ class SVCContainer(object):
         self._bootconf = None
 
 
+
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service")
@@ -127,6 +128,7 @@ class SVCContainer(object):
         self._shutdown_poller = None
         self._restart_limit = 2
         self._restart_count = 0
+        self.last_exception = None
 
     def _make_first_pollers(self):
 
@@ -289,6 +291,8 @@ class SVCContainer(object):
             return rc
         except MultilevelException, multiex:
             msg = ""
+            stdout = ""
+            stderr = ""
             if self._ssh_poller in multiex.pollable_list:
                 msg = "Service %s error getting ssh access to %s" % (self._myname, self._s.hostname)
                 stdout = self._ssh_poller.get_stdout()
@@ -354,10 +358,8 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
 
         if self._do_ready:
-            print "DOING READY!"
             cmd = self._get_ssh_ready_cmd()
-            print cmd
-            ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb)
+            ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=1)
             self._pollables.add_level([ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()

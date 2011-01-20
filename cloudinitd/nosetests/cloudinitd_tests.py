@@ -13,7 +13,19 @@ __author__ = 'bresnaha'
 class CloudInitDTests(unittest.TestCase):
 
     def setUp(self):
+        self.bkfab  = None
+        self.bkssh = None
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            self.bkfab = os.environ['CLOUD_BOOT_FAB']
+            self.bkssh = os.environ['CLOUD_BOOT_SSH']
+
+
+    def tearDown(self):
+        if self.bkfab:
+            os.environ['CLOUD_BOOT_FAB'] = self.bkfab
+            os.environ['CLOUD_BOOT_SSH'] = self.bkssh
+
 
     def _find_str(self, filename, needle):
 
@@ -161,8 +173,22 @@ class CloudInitDTests(unittest.TestCase):
         while not rc:
             rc = p.poll()
             time.sleep(0.1)
+
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            bkfab = os.environ['CLOUD_BOOT_FAB']
+            bkssh = os.environ['CLOUD_BOOT_SSH']
+            os.environ['CLOUD_BOOT_FAB'] = "/bin/false"
+            os.environ['CLOUD_BOOT_SSH'] = "/bin/false"
+
         rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            os.environ['CLOUD_BOOT_FAB'] = bkfab
+            os.environ['CLOUD_BOOT_SSH'] = bkssh             
         self._dump_output(outfile)
-        self.assertNotEqual(rc, 0)
+        n = "ERROR"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
+        
