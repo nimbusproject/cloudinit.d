@@ -337,10 +337,12 @@ class SVCContainer(object):
 
         self._pollables = MultiLevelPollable(log=self._log)
 
+        allowed_es_ssh = 128
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
-            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200)
+            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
+            allowed_es_ssh = 1
             self._pollables.add_level([self._ssh_poller])
 
             # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
@@ -358,12 +360,12 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
 
         if self._do_ready:
-            cmd = self._get_ssh_ready_cmd()
-            ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=1)
-            self._pollables.add_level([ssh_poller2])
+            #cmd = self._get_ssh_ready_cmd()
+            #ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
+            #self._pollables.add_level([ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
-                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=2, callback=self._context_cb, timeout=1200)
+                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                 self._pollables.add_level([self._ready_poller])
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))

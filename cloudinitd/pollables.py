@@ -191,7 +191,7 @@ class PopenExecutablePollable(Pollable):
     by returning an exit code of != 0 allowed_errors number of times.
     """
 
-    def __init__(self, cmd, allowed_errors=128, log=logging, timeout=600, callback=None):
+    def __init__(self, cmd, allowed_errors=64, log=logging, timeout=600, callback=None):
         Pollable.__init__(self, timeout)
         self._cmd = cmd
         self._stderr_str = ""
