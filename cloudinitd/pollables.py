@@ -97,8 +97,8 @@ class InstanceTerminatePollable(Pollable):
     def _thread_poll(self, poll_period=1.0):
         while not self._done:
             try:
-                self._state = self._instance.update()
-                if self._state == "terminated":
+                self._instance.update()
+                if self._instance.state == "terminated":
                     self._done = True
                 else:
                     time.sleep(poll_period)
@@ -121,14 +121,15 @@ class InstanceHostnamePollable(Pollable):
         Pollable.__init__(self, timeout)
         self._instance = instance
         self._poll_error_count = 0
+        self._max_id_error_count = 1
         self._log = log
-        self._state = "pending"
         self._done = False
         self.exception = None
         self._thread = None
 
     def start(self):
         Pollable.start(self)
+        self._update()
         self._thread = HostnameCheckThread(self)
         self._thread.start()
 
@@ -140,12 +141,14 @@ class InstanceHostnamePollable(Pollable):
 
         # check time out here
         Pollable.poll(self)
-        if self._state == "running":
+        # cache the state at tis time on the local call stack, should be thread safe
+        state = self._instance.state
+        if state == "running":
             self._done = True
             self._thread.join()
             return True
-        if self._state != "pending":
-            self.exception = IaaSException("The current state is %s.  Never reached state running" % (self._state))
+        if state != "pending":
+            self.exception = IaaSException("The current state is %s.  Never reached state running" % (state))
             raise self.exception
         return False
 
@@ -163,24 +166,28 @@ class InstanceHostnamePollable(Pollable):
     def get_hostname(self):
         return self._instance.public_dns_name
 
-    def _thread_poll(self, poll_period=0.1):
+    def _update(self):
+        try:
+            self._instance.update()
+        except EC2ResponseError, ecex:
+            # We allow this error to occur once.  It takes ec2 some time
+            # to be sure of the instance id
+            if self._poll_error_count > self._max_id_error_count:
+                # if we poll too quick sometimes aws cannot find the id
+                self._log.error("safety error count exceeded" + str(ecex))
+                raise
+            self._poll_error_count = self._poll_error_count + 1
+
+    def _thread_poll(self, poll_period=1.0):
         while not self._done:
             try:
-                self._state = self._instance.update()
-                if self._state != "pending":
+                # because update is called in start we will sleep first
+                time.sleep(poll_period)
+                self._update()
+                if self._instance.state != "pending":
                     self._done = True
-                else:
-                    time.sleep(poll_period)
-            except EC2ResponseError, ecex:
-                # We allow this error to occur once.  It takes ec2 some time
-                # to be sure of the instance id
-                if self._poll_error_count > 1:
-                    # if we poll too quick sometimes aws cannot find the id
-                    self.exception = IaaSException(ecex)
-                    self._log.error(ecex)
-                    self._done = True
-                self._poll_error_count = self._poll_error_count + 1                
             except Exception, ex:
+                self._log.error(ex)
                 self.exception = IaaSException(ex)
                 self._done = True
 
@@ -212,7 +219,6 @@ class PopenExecutablePollable(Pollable):
     def get_stderr(self):
         """Get and reset the current stderr buffer from any (and all) execed programs.  Good for logging"""
         s = self._stderr_str
-
         return s
 
     def get_stdout(self):
@@ -275,7 +281,7 @@ class PopenExecutablePollable(Pollable):
         if rc != 0:
             self._error_count = self._error_count + 1
             if self._error_count >= self._allowed_errors:
-                ex = Exception("Process exceeded the allowed number of failures: %s" % (self._cmd))
+                ex = Exception("Process exceeded the allowed number of failures %d with %d: %s" % (self._allowed_errors, self._error_count, self._cmd))
                 raise ProcessException(ex, self._stdout_str, self._stderr_str, rc)
             self._last_run = datetime.datetime.now()     
             return False

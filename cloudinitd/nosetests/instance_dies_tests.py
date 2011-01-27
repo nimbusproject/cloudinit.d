@@ -53,14 +53,13 @@ class InstanceDiesTests(unittest.TestCase):
         self._status(dir, cb.run_name)
         self._terminate(dir, cb.run_name)
 
-    def test_kill_first_level(self):
+    def test_get_service(self):
         tst_name = "multilevelsimple"
         (dir, cb) = self._start_one(tst_name)
         svc = cb.get_service("Two")
         h = svc.get_attr_from_bag("hostname")
         print h
         self._terminate(dir, cb.run_name)
-
 
     def test_getlevels(self):
         tst_name = "multilevelsimple"
@@ -98,6 +97,21 @@ class InstanceDiesTests(unittest.TestCase):
         cb.block_until_complete(poll_period=1.0)
         fname = cb.get_db_file()
         os.remove(fname)
+
+    def test_service_commands(self):
+        tst_name = "multilevelsimple"
+        (dir, cb) = self._start_one(tst_name)
+        svc = cb.get_service("Two")
+        sshcmd = svc.get_ssh_command()
+        self.assertNotEqual(sshcmd, None)
+        print sshcmd
+        scpcmd = svc.get_scp_command("src", "dst", upload=True)
+        self.assertNotEqual(scpcmd, None)
+        print scpcmd
+        scpcmd = svc.get_scp_command("src", "dst", upload=False)
+        self.assertNotEqual(scpcmd, None)
+        print scpcmd
+        self._terminate(dir, cb.run_name)
 
 
 if __name__ == '__main__':

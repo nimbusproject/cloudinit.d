@@ -86,7 +86,7 @@ def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None)
     if not iaashostname:
         if not iaas:
             raise ConfigException("There is no 'iaas' or 'iaas_hostname' configuration, you need one of these.")
-        region = boto.ec2.get_region(iaas)
+        region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
         if not region:
             raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
         con =  boto.connect_ec2(key, secret, region=region)
@@ -115,7 +115,6 @@ def _real_find_instance(con, instance_id):
         raise IaaSException(Exception("There is no instance %s" % (instance_id)))
     if len(reservation[0].instances) < 1:
         ex = IaaSException(Exception("There is no instance %s" % (instance_id)))
-        print ex
         raise ex
     instance = reservation[0].instances[0]
 

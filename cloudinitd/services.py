@@ -108,8 +108,6 @@ class SVCContainer(object):
         self._db.db_commit()
         self._bootconf = None
 
-
-
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service")
@@ -135,9 +133,10 @@ class SVCContainer(object):
         self._term_host_pollers = MultiLevelPollable(log=self._log)
         if self._do_terminate:
             if self._s.terminatepgm:
-                cmd = self._get_readypgm_cmd()
+                cmd = self._get_termpgm_cmd()
                 self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                 self._term_host_pollers.add_level([self._terminate_poller])
+                pass
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
             if self._s.instance_id:
@@ -191,6 +190,20 @@ class SVCContainer(object):
 
         cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
+        return cmd
+
+    def get_scp_command(self, src, dst, upload=False):
+        scpexec = "scp"
+        try:
+            if os.environ['CLOUD_BOOT_SCP']:
+                scpexec = os.environ['CLOUD_BOOT_SCP']
+        except:
+            pass
+        cmd = scpexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -i %s " % (self._s.localkey)
+        if upload:
+            cmd = cmd + "%s %s@%s:%s" % (src, self._s.username, self._s.hostname, dst)
+        else:
+            cmd = cmd + "%s@%s:%s %s" % (self._s.username, self._s.hostname, src, dst)
         return cmd
 
     def _get_ssh_command(self, host):
@@ -408,6 +421,9 @@ class SVCContainer(object):
             self._term_host_pollers = None
         return False
 
+    def get_ssh_command(self):
+        return self._get_ssh_command(self._s.hostname)
+
     def _get_ssh_ready_cmd(self):
         cmd = self._get_ssh_command(self._s.hostname) + " /bin/true"
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
@@ -421,6 +437,11 @@ class SVCContainer(object):
     def _get_boot_cmd(self):
         cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
+        return cmd
+
+    def _get_termpgm_cmd(self):
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._s.hostname, self._s.terminatepgm)
+        cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
     def _fill_template(self, path):

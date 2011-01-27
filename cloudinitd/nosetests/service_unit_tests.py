@@ -39,5 +39,6 @@ class ServiceUnitTests(unittest.TestCase):
         i = p.get_instance()
         self.assertEqual(instance, i)
 
+
 if __name__ == '__main__':
     unittest.main()

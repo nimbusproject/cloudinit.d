@@ -293,6 +293,12 @@ class CloudService(object):
         self._svc.restart(boot=True, ready=True, terminate=True)
         return self._svc
 
+    def get_ssh_command(self):
+        return self._svc.get_ssh_command()
+
+    def get_scp_command(self, src, dst, upload=False):
+        return self._svc.get_scp_command(src, dst, upload=upload)
+
 
 
 class CloudServiceException(ServiceException):
