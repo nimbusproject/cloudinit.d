@@ -179,7 +179,7 @@ def status(options, args):
     global g_repair
 
     if len(args) < 2:
-        print "The %s command requires a run name.  See --help" % (command)
+        print "The status command requires a run name.  See --help"
         return 1
 
     dbname = args[1]
