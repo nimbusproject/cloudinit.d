@@ -92,20 +92,20 @@ class CloudInitD(object):
         of a new launch) and then builds the inmemory data structures.
         """
 
-        if db_name == None and config_file == None:
+        if not db_name and not config_file:
             raise APIUsageException("Cloud boot must have a db_name or a config file to load")
         if not os.path.exists(db_dir):
-            raise APIUsageException("Path to the give db does not exist: %s" % (db_name))
+            raise APIUsageException("Path to the db directory does not exist: %s" % (db_dir))
 
         self._level_callback = level_callback
         self._service_callback = service_callback
 
-        if db_name == None:
+        if not db_name:
             db_name = str(uuid.uuid4()).split("-")[0]
 
         db_path = "/%s/cloudinitd-%s.db" % (db_dir, db_name)
         self._db_path = db_path
-        if config_file == None:
+        if config_file is None:
             if not os.path.exists(db_path):
                 raise APIUsageException("Path to the db does not exist %s.  New dbs must be given a config file" % (db_path))
 
@@ -116,7 +116,7 @@ class CloudInitD(object):
 
         self._db = CloudInitDDB(dburl)
         os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
-        if config_file != None:
+        if config_file:
             self._bo = self._db.load_from_conf(config_file)
         else:
             self._bo = self._db.load_from_db()

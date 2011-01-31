@@ -180,7 +180,7 @@ def status(options, args):
     global g_repair
 
     if len(args) < 2:
-        print "The %s command requires a run name.  See --help" % (command)
+        print "The status command requires a run name.  See --help"
         return 1
 
     dbname = args[1]
@@ -213,7 +213,7 @@ def terminate(options, args):
     Terminate an already booted plan.  You must supply the run name of the booted plan.
     """
     if len(args) < 2:
-        print "The %s command requires a run name.  See --help" % (command)
+        print "The terminate command requires a run name.  See --help"
         return 1
     dbname = args[1]
     cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
@@ -243,7 +243,7 @@ def reboot(options, args):
     Reboot an already booted plan.  You must supply the run name of the booted plan.
     """
     if len(args) < 2:
-        print "The %s command requires a run name.  See --help" % (command)
+        print "The reboot command requires a run name.  See --help"
         return 1
     dbname = args[1]
     cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
