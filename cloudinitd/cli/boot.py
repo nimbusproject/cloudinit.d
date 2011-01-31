@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from datetime import datetime
 
 import sys
 import logging
@@ -46,9 +47,9 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
-    opt = bootOpts("logfile", "f", "Path to logfile", None)
+    opt = bootOpts("logfile", "f", "Path to logfile", os.path.expanduser("~/.cloudinitd/cloudinitd-%s.log" % (str(datetime.now()).replace(" ", "_"))))
     opt.add_opt(parser)
-    opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "error", vals=["debug", "info", "warn", "error"])
+    opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "info", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
     opt = bootOpts("repair", "r", "Restart all failed services, only relevant for the status command", False, flag=True)
     opt.add_opt(parser)
@@ -330,6 +331,9 @@ def main(argv=sys.argv[1:]):
     except Exception, ex:
         print_chars(0, str(ex))
         print_chars(0, "\n")
+        print_chars(0, "see ")
+        print_chars(0, "%s" % (options.logfile), inverse=True, color="red")
+        print_chars(0,  " for more details\n")
         if options.verbose > 1:
             raise
         rc = 1
