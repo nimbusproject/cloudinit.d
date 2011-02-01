@@ -165,7 +165,7 @@ class CloudInitD(object):
         inspect the state of a specific service in the plan.
         """
         svc_list = self._boot_top.get_services()
-        cs_list = [CloudService(self, svc) for svc in svc_list]
+        cs_list = [CloudService(self, svc[1]) for svc in svc_list]
         return cs_list
 
     # return a booting service for inspection by the user
