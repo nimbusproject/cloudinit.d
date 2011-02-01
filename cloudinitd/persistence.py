@@ -53,6 +53,7 @@ service_table = Table('service', metadata,
     Column('keyname', String(32)),
     Column('localkey', String(1024)),
     Column('username', String(32)),
+    Column('scp_username', String(32)),
     Column('readypgm', String(1024)),
     Column('hostname', String(64)),
     Column('bootconf', String(1024)),
@@ -112,6 +113,7 @@ class ServiceObject(object):
         self.keyname = None
         self.localkey = None
         self.username = None
+        self.scp_username = None
         self.readypgm = None
         self.hostname = None
         self.bootconf = None
@@ -132,6 +134,7 @@ class ServiceObject(object):
         sshkey = config_get_or_none(parser, section, "sshkeyname")
         localssh = config_get_or_none(parser, section, "localsshkeypath")
         ssh_user = config_get_or_none(parser, section, "ssh_username")
+        scp_user = config_get_or_none(parser, section, "scp_username")
         bootconf = config_get_or_none(parser, section, "bootconf")
         bootpgm = config_get_or_none(parser, section, "bootpgm")
         hostname = config_get_or_none(parser, section, "hostname")
@@ -159,6 +162,8 @@ class ServiceObject(object):
                 localssh = conf.localssh
             if not ssh_user:
                 ssh_user = conf.ssh_user
+            if not scp_user:
+                scp_user = conf.scp_user
             if not iaas_key:
                 iaas_key = conf.iaas_key
             if not iaas_secret:
@@ -177,7 +182,9 @@ class ServiceObject(object):
         if not localssh:
             localssh = db.default_localssh
         if not ssh_user:
-            ssh_user = db.default_sshuser
+            ssh_user = db.default_ssh_user
+        if not scp_user:
+            scp_user = db.default_scp_user
         if not iaas_key:
             iaas_key = db.default_iaas_key
         if not iaas_secret:
@@ -192,6 +199,7 @@ class ServiceObject(object):
         self.hostname = hostname
         self.readypgm = _join_or_none(conf_dir, readypgm)
         self.username = ssh_user
+        self.scp_username = scp_user
         self.localkey = _join_or_none(conf_dir, localssh)
         self.keyname = sshkey
         self.allocation = allo
@@ -245,6 +253,7 @@ class CloudConfSection(object):
         self.sshkey = config_get_or_none(parser, section, "sshkeyname")
         self.localssh = config_get_or_none(parser, section, "localsshkeypath")
         self.ssh_user = config_get_or_none(parser, section, "ssh_username")
+        self.scp_user = config_get_or_none(parser, section, "scp_username")
         self.iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
         self.iaas_port = config_get_or_none(parser, section, "iaas_port", 8444)
         self.iaas_key = config_get_or_none(parser, section, "iaas_key")
@@ -296,6 +305,7 @@ class CloudInitDDB(object):
         self.default_sshkey = config_get_or_none(parser, s, "sshkeyname")
         self.default_localssh = config_get_or_none(parser, s, "localsshkeypath")
         self.default_ssh_user = config_get_or_none(parser, s, "ssh_username")
+        self.default_scp_user = config_get_or_none(parser, s, "scp_username")
         self.default_iaas_hostname = config_get_or_none(parser, s, "iaas_hostname")
         self.default_iaas_port = config_get_or_none(parser, s, "iaas_port", 8444)
         self.default_iaas_key = config_get_or_none(parser, s, "iaas_key")

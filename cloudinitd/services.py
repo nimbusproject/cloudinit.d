@@ -192,18 +192,20 @@ class SVCContainer(object):
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
-    def get_scp_command(self, src, dst, upload=False):
+    def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
         scpexec = "scp"
-        try:
-            if os.environ['CLOUD_BOOT_SCP']:
-                scpexec = os.environ['CLOUD_BOOT_SCP']
-        except:
-            pass
-        cmd = scpexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -i %s " % (self._s.localkey)
+        if os.environ.has_key('CLOUD_BOOT_SCP'):
+            scpexec = os.environ['CLOUD_BOOT_SCP']
+        if recursive:
+            scpexec += " -r"
+        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -i %s " % (self._s.localkey)
+        hostname = self._s.hostname
+        if forcehost:
+            hostname = forcehost
         if upload:
-            cmd = cmd + "%s %s@%s:%s" % (src, self._s.username, self._s.hostname, dst)
+            cmd += "%s %s@%s:%s" % (src, self._s.scp_username, hostname, dst)
         else:
-            cmd = cmd + "%s@%s:%s %s" % (self._s.username, self._s.hostname, src, dst)
+            cmd += "%s@%s:%s %s" % (self._s.scp_username, hostname, src, dst)
         return cmd
 
     def _get_ssh_command(self, host):
