@@ -1,10 +1,10 @@
-cloud-boot
-==========
+cloudinit.d
+===========
 
-cloud-boot is a tool for launching and configuring a set of 
+cloudinit.d is a tool for launching and configuring a set of 
 interdependent VMs in a cloud (or set of clouds).
 
-The most primitive feature of cloud-boot is the ability to launch and 
+The most primitive feature of cloudinit.d is the ability to launch and 
 configure Virtual Machines.  That building block is used to arrange 
 'boot levels'.  Any one boot-level is a collection of VMs that can be 
 launched at the same time and have no dependencies on each other. 
@@ -29,13 +29,13 @@ The web server VMs mount the NFS file system and connect to the postgres
 database, thus they cannot be started until the NFS VM and the postgres 
 VM are started.
 
-To launch this application with cloud-boot the NFS VM and the Postgres 
+To launch this application with cloudinit.d the NFS VM and the Postgres 
 VM would be put into boot level 1, and the 3 Apache VMs would be put 
 into boot-level 2.
 
 Not only do the web server VMs need the NFS and Postgres to exist, but 
 they also need to know various bit of information about there specific 
-instances (like the IP address).  Cloud-boot provides a mechanism to 
+instances (like the IP address).  cloudinit.d provides a mechanism to 
 query lower boot level VMs from information.  Thus it is a complete tool 
 for launching many interdependent virtual machines.
 
@@ -43,8 +43,8 @@ Booting and configuring a single instance
 -----------------------------------------
 
 Before diving into the details of boot level creation we must first 
-explain how to launch and configure a single VM with cloud-boot.  As 
-input cloud-boot takes a set of configuration files (these will be 
+explain how to launch and configure a single VM with cloudinit.d.  As 
+input cloudinit.d takes a set of configuration files (these will be 
 discussed in detail later).  Here we will just introduce the 'service' 
 section of the configuration file.  This is the part of the 
 configuration that describes a single VM instance and how it should be 
@@ -65,7 +65,7 @@ launched, configured, and tested.  Below is a sample service section:
     deps2: <other dep files>
 
 
-Here cloud-boot it instructed to launch the image 'ami-blahblah' in the 
+Here cloudinit.d is instructed to launch the image 'ami-blahblah' in the 
 cloud 'us-east-1'.  The sshkeyname is the security handle known by the 
 cloud and localsshkeypath is the path a key on the local file system.  
 Allocation is the type (or size) of the instance required.  All of those 
@@ -121,7 +121,7 @@ the svc-webserver would have the following:
     database_ip: ${database.ipaddress}
 
 
-This tells cloud-boot to look at all the previous boot levels and search 
+This tells cloudinit.d to look at all the previous boot levels and search 
 for a service named [svc-database].  Once found it is told to ask that 
 service the value of its variable 'ipaddress'.  This information can 
 then be used by the bootpgm to properly launch the [svc-webserver].
@@ -160,12 +160,12 @@ bootpgm and readypgm
 There are no restrictions imposed upon these programs.  The 
 responsibility of creating safe programs that do the intended function 
 is entirely upon the user.  The programs are uploaded to the VMs /tmp 
-directory and run as root. Cloudboot expects that bootpgm will 
+directory and run as root. cloudinit.d expects that bootpgm will 
 contextualize the system (anyway it wants) and it expects the readypgm 
 to return a 0 or a 1 stating if the system is ready or not.
 
 The value for each program can be a single executable file, or it can be 
-tarball.  If the filename ends in 'tar.gz' cloudboot will upload it, 
+tarball.  If the filename ends in 'tar.gz' cloudinit.d will upload it, 
 then run tar -zxf on it.  It expects the tarball to contain a single 
 root with the same name as itself, without the tar.gz extension.  It 
 further expects all of the files to be under that directory including an 
@@ -175,8 +175,8 @@ complete 'run.sh' is executed.
 The bootpgm program can take advantage of the bootconf json file.  This 
 file can be full of variables from values determined by the given 
 services dependencies.  The user creates the template for this file and 
-uses the plan configuration value 'bootconf' to tell cloudboot where the 
-template is.  Cloudboot then uses all the values it has from the 
+uses the plan configuration value 'bootconf' to tell cloudinit.d where the 
+template is.  cloudinit.d then uses all the values it has from the 
 services 'deps' file to fill in the template. This file is always 
 uploaded to: /tmp/nimbusconf/bootconf.json.  The users bootconf program 
 can read it in to determine the needed values.
