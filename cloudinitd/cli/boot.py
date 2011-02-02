@@ -292,7 +292,7 @@ def list(options, args):
     l = os.listdir(options.database)
 
     for db in l:
-        if db.find("cloudinitd-") == 0:
+        if db.find("cloudinitd-") == 0 and db[-3:] == ".db":
             name = db.replace("cloudinitd-", "")
             print_chars(0, name[:-3] + "\n")
     return 0
