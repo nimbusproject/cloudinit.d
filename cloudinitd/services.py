@@ -148,6 +148,7 @@ class SVCContainer(object):
                 cloudinitd.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
 
             # i should be able to clear the db state right now.
+            self._s.contextualized = 0
             self._s.hostname = None
             self._s.instance_id = None
             self._db.db_commit()
@@ -174,6 +175,50 @@ class SVCContainer(object):
             self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
             self._term_host_pollers.add_level([self._hostname_poller])
+
+    def _make_pollers(self):
+        self._ready_poller = None
+        self._boot_poller = None
+        self._terminate_poller = None
+
+        self._pollables = MultiLevelPollable(log=self._log)
+
+        allowed_es_ssh = 128
+        if self._do_boot:
+            # add the ready command no matter what
+            cmd = self._get_ssh_ready_cmd()
+            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
+            allowed_es_ssh = 1
+            self._pollables.add_level([self._ssh_poller])
+
+            # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
+            # the contextualization programs MUST handle multiple executions, but we can be as helpful as possible
+            if self._s.contextualized == 1:
+                cloudinitd.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
+            else:
+                if self._s.bootconf:
+                    cmd = self._get_boot_cmd()
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200)
+                    self._pollables.add_level([self._boot_poller])
+                else:
+                    cloudinitd.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
+        else:
+            cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
+
+        if self._do_ready:
+            #cmd = self._get_ssh_ready_cmd()
+            #ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
+            #self._pollables.add_level([ssh_poller2])
+            if self._s.readypgm:
+                cmd = self._get_readypgm_cmd()
+                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                self._pollables.add_level([self._ready_poller])
+            else:
+                cloudinitd.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))
+        else:
+            cloudinitd.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
+        self._pollables.start()
+
 
     def _get_fab_command(self):
         fabexec = "fab"
@@ -345,51 +390,6 @@ class SVCContainer(object):
         if action == cloudinitd.callback_action_transition:
             self._execute_callback(action, msg)
 
-    def _make_pollers(self):
-        self._ready_poller = None
-        self._boot_poller = None
-        self._terminate_poller = None
-
-        self._pollables = MultiLevelPollable(log=self._log)
-
-        allowed_es_ssh = 128
-        if self._do_boot:
-            # add the ready command no matter what
-            cmd = self._get_ssh_ready_cmd()
-            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
-            allowed_es_ssh = 1
-            self._pollables.add_level([self._ssh_poller])
-
-            # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
-            # the contextualization programs MUST handle multiple executions, but we can be as helpful as possible
-            if self._s.contextualized == 1:
-                cloudinitd.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
-            else:
-                if self._s.bootconf:
-                    cmd = self._get_boot_cmd()
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200)
-                    self._pollables.add_level([self._boot_poller])
-                else:
-                    cloudinitd.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
-        else:
-            cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
-
-        if self._do_ready:
-            #cmd = self._get_ssh_ready_cmd()
-            #ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
-            #self._pollables.add_level([ssh_poller2])
-            if self._s.readypgm:
-                cmd = self._get_readypgm_cmd()
-                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
-                self._pollables.add_level([self._ready_poller])
-            else:
-                cloudinitd.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))
-        else:
-            cloudinitd.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
-
-
-        self._pollables.start()
-
 
     def _poll(self):
         if not self._running:
@@ -405,7 +405,6 @@ class SVCContainer(object):
                     self._s.contextualized = 0
                     self._s.hostname = None
                     self._s.instance_id = None
-                    self._s.hostname = None
                 else:
                     # if it was not terminating then we can set to contextualzied
                     self._s.contextualized = 1
