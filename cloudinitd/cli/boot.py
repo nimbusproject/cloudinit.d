@@ -150,7 +150,7 @@ def launch_new(options, args):
         return 1
 
     config_file = args[1]
-    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True)
+    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, fail_if_db_present=True)
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (cb.run_name), inverse=True, color="green", bold=True)
     cb.start()
