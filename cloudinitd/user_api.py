@@ -45,7 +45,7 @@ class CloudInitD(object):
         used for querying dependencies
     """
     
-    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False):
+    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False, fail_if_db_present=False):
         """
         db_dir:     a path to a directories where databases can be stored.
 
@@ -80,7 +80,9 @@ class CloudInitD(object):
 
         ready=True: instructs the service to run the ready program or not
 
-        terminate=False:    instructs the service to run the shutdown program or not
+        terminate=False: instructs the service to run the shutdown program or not
+
+        fail_if_db_present=False: instructs the constructor that the caller expects DB present already
 
         When this object is configured with a config_file a new sqlite
         database is created under @db_dir and a new name is picked for it.
@@ -108,6 +110,9 @@ class CloudInitD(object):
         if config_file is None:
             if not os.path.exists(db_path):
                 raise APIUsageException("Path to the db does not exist %s.  New dbs must be given a config file" % (db_path))
+
+        if fail_if_db_present and os.path.exists(db_path):
+            raise APIUsageException("Already exists: '%s'" % db_path)
 
         self._log = log
         self._started = False
