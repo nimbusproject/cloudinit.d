@@ -4,6 +4,7 @@ from datetime import datetime
 import sys
 import logging
 from optparse import OptionParser
+import uuid
 import stat
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.user_api import CloudInitD, CloudServiceException
@@ -102,6 +103,9 @@ Run with the command 'commands' to see a list of all possible commands
     else:
         g_outfile = None
 
+    if not options.name:
+        options.name = str(uuid.uuid4()).split("-")[0]
+
     return (args, options)
 
 def level_callback(cb, action, current_level):
@@ -122,7 +126,7 @@ def service_callback(cb, cloudservice, action, msg):
     global g_action
     
     if action == cloudinitd.callback_action_started:
-        print_chars(3, "\tStarted %s on service %s\n" % (g_action, cloudservice.name))
+        print_chars(3, "\t%s\n" % (msg))
         sys.stdout.flush()
     elif action == cloudinitd.callback_action_transition:
         print_chars(5, "\t%s\n" % (msg))
@@ -150,9 +154,10 @@ def launch_new(options, args):
         return 1
 
     config_file = args[1]
-    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, fail_if_db_present=True)
     print_chars(1, "Starting up run ")
-    print_chars(1, "%s\n" % (cb.run_name), inverse=True, color="green", bold=True)
+    print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
+    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+    print_chars(1, "Starting the launch plan.\n")
     cb.start()
     try:
         cb.block_until_complete(poll_period=0.1)

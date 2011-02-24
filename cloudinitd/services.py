@@ -82,14 +82,13 @@ class BootTopLevel(object):
     def get_exception(self):
         return self._multi_top._exception
 
-
 class SVCContainer(object):
     """
     This object represents a service which is the leaf object in the boot tree.  This service is a special case pollable type
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, pre_start_iaas=True):
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -97,6 +96,7 @@ class SVCContainer(object):
         # we need to separate out pollables.  bootconf and ready cannot be run until the instances has a hostname
         # terminate will be run first (for restarts only)
         # first pollable set is terminate, then hostname.  next is bootconf, then ready
+        self._pre_start_iaas = pre_start_iaas
         self._readypgm = s.readypgm
         self._s = s
         self.name = s.name
@@ -127,6 +127,9 @@ class SVCContainer(object):
         self._restart_limit = 2
         self._restart_count = 0
         self.last_exception = None
+
+        self._iass_started = False
+        self._make_first_pollers()
 
     def _make_first_pollers(self):
 
@@ -160,8 +163,6 @@ class SVCContainer(object):
         # if the service if already contextualized
         if self._s.hostname:
             return
-        if self._s.image and self._s.hostname:
-            raise APIUsageException("You cannot specify both a hostname and an image.  Check your config file")
 
         if self._s.image:            
             iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
@@ -175,6 +176,13 @@ class SVCContainer(object):
             self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
             self._term_host_pollers.add_level([self._hostname_poller])
+
+        # start it now so the IaaS work gets started out of band.
+        if self._pre_start_iaas:
+            self._term_host_pollers.start()
+            self._iass_started = True
+            self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
+
 
     def _make_pollers(self):
         self._ready_poller = None
@@ -316,14 +324,14 @@ class SVCContainer(object):
     def _start(self):
         try:
             self._running = True
-            self._make_first_pollers()
             # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
             # values
             self._do_attr_bag()
 
-            if self._term_host_pollers:
+            if self._term_host_pollers and not self._iass_started:
                 self._term_host_pollers.start()
-            self._execute_callback(cloudinitd.callback_action_started, "Service Started")
+                self._iass_started = True
+            self._execute_callback(cloudinitd.callback_action_started, "Started boot for %s" % (self.name))
         except Exception, ex:
             self._running = False
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):

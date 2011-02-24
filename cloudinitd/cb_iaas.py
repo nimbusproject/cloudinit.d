@@ -72,7 +72,6 @@ def iaas_run_instance(con, image, instance_type, key_name, security_groupname=No
         return _real_iaas_run_instance(con, image, instance_type, key_name, security_groupname)
         
 def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
-
     orig_key = key
     orig_secret = secret
     # look up key and secret in env if needed

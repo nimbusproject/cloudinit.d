@@ -192,6 +192,34 @@ class InstanceHostnamePollable(Pollable):
                 self._done = True
 
 
+class DBInstanceHostnamePollable(InstanceHostnamePollable):
+    """
+    Async poll a IaaS service via boto.  Once the VM has an associated hostname, the Pollable object is considered
+    ready.
+    """
+
+    def __init__(self, instance, db, s, log=logging, timeout=600):
+        InstanceHostnamePollable.__init__(self, instance, log=log, timeout=timeout)
+        self._db = db
+        self._s = s
+
+    def start(self):
+        InstanceHostnamePollable.start(self)
+
+    def poll(self):
+        rc = InstanceHostnamePollable.poll(self)
+        if rc:
+            self._s.hostname = self.get_hostname()
+            self._db.db_commit()
+        return rc
+
+    def cancel(self):
+        InstanceHostnamePollable.cancel(self)
+        self._done = True
+        if self._thread:
+            self._thread.join()
+
+
 class PopenExecutablePollable(Pollable):
     """
     This Object will asynchornously for/exec a program and collect all of its stderr/out.  The program is allowed to fail
