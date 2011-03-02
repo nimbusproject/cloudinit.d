@@ -28,15 +28,21 @@ __author__ = 'bresnaha'
 
 class Pollable(object):
 
-    def __init__(self, timeout=0):
+    def __init__(self, timeout=0, done_cb=None):
         self._timeout = timeout
         self._exception = None
+        self._done_cb = done_cb
 
     def get_exception(self):
         return self._exception
 
     def start(self):
         self._start_time = datetime.datetime.now()
+
+    def _execute_done_cb(self):
+        if not self._done_cb:
+            return
+        self._done_cb(self)
 
     def poll(self):
         if self._timeout == 0:
@@ -69,8 +75,8 @@ class HostnameCheckThread(Thread):
 
 class InstanceTerminatePollable(Pollable):
 
-    def __init__(self, instance, log=logging, timeout=600):
-        Pollable.__init__(self, timeout)
+    def __init__(self, instance, log=logging, timeout=600, done_cb=None):
+        Pollable.__init__(self, timeout, done_cb=done_cb)
         self._instance = instance
         self._log = log
         self._started = False
@@ -89,6 +95,7 @@ class InstanceTerminatePollable(Pollable):
     def poll(self):
         if not self._started:
             raise APIUsageException("You must first start the pollable object")
+        self._execute_done_cb()
         return True
         #if self._done:
         #    self._thread.join()
@@ -146,6 +153,7 @@ class InstanceHostnamePollable(Pollable):
         if state == "running":
             self._done = True
             self._thread.join()
+            self._execute_done_cb()
             return True
         if state != "pending":
             self.exception = IaaSException("The current state is %s.  Never reached state running" % (state))
@@ -316,6 +324,7 @@ class PopenExecutablePollable(Pollable):
         self._final_rc = rc
         self._done = True
         self._execute_cb(cloudinitd.callback_action_complete, "Pollable complete")
+        self._execute_done_cb()
         return True
 
     def _poll_process(self, poll_period=0.1):

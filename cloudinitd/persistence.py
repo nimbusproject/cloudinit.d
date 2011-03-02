@@ -312,6 +312,16 @@ class CloudInitDDB(object):
         self.default_iaas_secret = config_get_or_none(parser, s, "iaas_secret")
         self.default_securitygroups = config_get_or_none(parser, s, "securitygroups")
 
+#        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
+#        bootconf = config_get_or_none(parser, section, "bootconf")
+#        bootpgm = config_get_or_none(parser, section, "bootpgm")
+#        hostname = config_get_or_none(parser, section, "hostname")
+#        readypgm = config_get_or_none(parser, section, "readypgm")
+#        image = config_get_or_none(parser, section, "image")
+#        cloudconf = config_get_or_none(parser, section, "cloud")
+
+
+
         all_sections = parser.sections()
         for s in all_sections:
             ndx = s.find("cloud-")

@@ -57,17 +57,20 @@ def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", 
     if string_lvl > pgm_lvl:
         return
 
-    if sys.stdout.isatty():
-        msg = g_background_dict[bg_color] + g_colors_dict[color] + msg + g_operations_dict['reset']
-        if bold:
-            msg = g_operations_dict['bold'] + msg# + g_operations_dict['bold_off']
-        if underline:
-            msg = g_operations_dict['underline'] + msg
-        if strikethrough:
-            msg = g_operations_dict['strikethrough'] + msg
-        if inverse:
-            msg = g_operations_dict['inverse'] + msg
-
+    orig_msg = msg
+    try:
+        if sys.stdout.isatty():
+            msg = g_background_dict[bg_color] + g_colors_dict[color] + msg + g_operations_dict['reset']
+            if bold:
+                msg = g_operations_dict['bold'] + msg# + g_operations_dict['bold_off']
+            if underline:
+                msg = g_operations_dict['underline'] + msg
+            if strikethrough:
+                msg = g_operations_dict['strikethrough'] + msg
+            if inverse:
+                msg = g_operations_dict['inverse'] + msg
+    except:
+        msg = orig_msg
 
     sys.stdout.write(str(msg))
     sys.stdout.flush()

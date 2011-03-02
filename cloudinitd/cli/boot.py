@@ -58,6 +58,9 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("outstream", "O", SUPPRESS_HELP, None)
     opt.add_opt(parser)
+    opt = bootOpts("remotedebug", "X", SUPPRESS_HELP, False, flag=True)
+    opt.add_opt(parser)
+
 
     (options, args) = parser.parse_args(args=argv)
     
@@ -106,6 +109,19 @@ Run with the command 'commands' to see a list of all possible commands
     if not options.name:
         options.name = str(uuid.uuid4()).split("-")[0]
 
+    if options.remotedebug:
+        try:
+            from pydev import pydevd
+            debug_cs = os.environ['CLOUDINITD_DEBUG_CS'].split(':')
+            debug_host = debug_cs[0]
+            debug_port = int(debug_cs[1])
+            pydevd.settrace(debug_host, port=debug_port, stdoutToServer=True, stderrToServer=True)
+        except ImportError, e:
+            print_chars(0, "Could not import remote debugging library: %s\n" % str(e), color="red", bold=True)
+        except KeyError:
+            print_chars(0, "If you want to do remote debugging please set the env CLOUDINITD_DEBUG_CS to the contact string of you expected debugger.\n", color="red", bold=True)
+        except:
+            print_chars(0, "Please verify the format of your contact string to be <hostname>:<port>.\n", color="red", bold=True)
     return (args, options)
 
 def level_callback(cb, action, current_level):
@@ -305,9 +321,15 @@ def list(options, args):
 
 def main(argv=sys.argv[1:]):
     # first process options
+    if not argv:
+        argv = []
     if len(argv) == 0:
         argv.append("--help")
     (args, options) = parse_commands(argv)
+    if not args or len(args) == 0:
+        print "You must provide a command.  Run with --help"
+        return 1
+
 
     # process the command
     global g_action

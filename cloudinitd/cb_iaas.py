@@ -20,6 +20,14 @@ class IaaSTestCon(object):
     def __init__(self):
         pass
 
+    def get_all_instances(instance_ids=None):
+        global g_fake_instance_table
+
+        if not instance_ids:
+            return g_fake_instance_table.values()
+        v = [g_fake_instance_table[id] for id in g_fake_instance_table.keys() if id in instance_ids]
+        return v
+
 class IaaSTestInstance(object):
 
     def __init__(self, hostname, time_to_hostname=2.0):

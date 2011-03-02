@@ -131,6 +131,13 @@ class SVCContainer(object):
         self._iass_started = False
         self._make_first_pollers()
 
+    def _teminate_done(self, poller):
+        self._s.contextualized = 0
+        self._s.hostname = None
+        self._s.instance_id = None
+        self._db.db_commit()
+
+
     def _make_first_pollers(self):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)
@@ -145,16 +152,10 @@ class SVCContainer(object):
             if self._s.instance_id:
                 iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
                 instance = iaas_find_instance(iaas_con, self._s.instance_id)
-                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log)
+                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
                 self._term_host_pollers.add_level([self._shutdown_poller])
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
-
-            # i should be able to clear the db state right now.
-            self._s.contextualized = 0
-            self._s.hostname = None
-            self._s.instance_id = None
-            self._db.db_commit()
         else:
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
 
@@ -174,7 +175,7 @@ class SVCContainer(object):
             self._s.instance_id = instance.id
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
             self._db.db_commit()
-            self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200)
+            self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
 
         # start it now so the IaaS work gets started out of band.
@@ -182,7 +183,6 @@ class SVCContainer(object):
             self._term_host_pollers.start()
             self._iass_started = True
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
-
 
     def _make_pollers(self):
         self._ready_poller = None
@@ -315,6 +315,7 @@ class SVCContainer(object):
         self._do_ready = ready
         self._do_terminate = terminate
         self._start()
+        self._restart_count = self._restart_count + 1
 
     def start(self):
         if self._running:
@@ -347,7 +348,6 @@ class SVCContainer(object):
         if rc == cloudinitd.callback_return_restart and self._restart_count < self._restart_limit:
             self._running = False
             self.restart(boot=True, ready=True, terminate=True, callback=self._callback)
-            self._restart_count = self._restart_count + 1
             return True
         return False
 
@@ -408,27 +408,20 @@ class SVCContainer(object):
                 self._make_pollers()
             rc = self._pollables.poll()
             if rc:
-                # if we were terminating reset all the init values
-                if self._do_terminate:
-                    self._s.contextualized = 0
-                    self._s.hostname = None
-                    self._s.instance_id = None
-                else:
-                    # if it was not terminating then we can set to contextualzied
-                    self._s.contextualized = 1
+                self._s.contextualized = 1
                 self._running = False
-
                 self._db.db_commit()
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
             return rc
 
         if self._term_host_pollers.poll():
-            if self._hostname_poller:
-                self._s.hostname = self._hostname_poller.get_hostname()
-                self._db.db_commit()
-                self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
             self._term_host_pollers = None
         return False
+
+    def _hostname_poller_done(self, poller):
+        self._s.hostname = self._hostname_poller.get_hostname()
+        self._db.db_commit()
+        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
 
     def get_ssh_command(self):
         return self._get_ssh_command(self._s.hostname)
