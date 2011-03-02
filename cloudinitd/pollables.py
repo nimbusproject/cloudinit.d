@@ -124,8 +124,8 @@ class InstanceHostnamePollable(Pollable):
     ready.
     """
 
-    def __init__(self, instance, log=logging, timeout=600):
-        Pollable.__init__(self, timeout)
+    def __init__(self, instance, log=logging, timeout=600, done_cb=None):
+        Pollable.__init__(self, timeout, done_cb=done_cb)
         self._instance = instance
         self._poll_error_count = 0
         self._max_id_error_count = 1
