@@ -21,3 +21,4 @@ from cloudinitd.nosetests.instance_dies_tests import *
 from cloudinitd.nosetests.pollable_tests import *
 from cloudinitd.nosetests.service_unit_tests import *
 from cloudinitd.nosetests.cloudinitd_tests import *
+from cloudinitd.nosetests.prelaunch_tests import *
