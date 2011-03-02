@@ -187,17 +187,18 @@ class InstanceHostnamePollable(Pollable):
             self._poll_error_count = self._poll_error_count + 1
 
     def _thread_poll(self, poll_period=1.0):
-        while not self._done:
+        done = False
+        while not self._done and not done:
             try:
                 # because update is called in start we will sleep first
                 time.sleep(poll_period)
                 self._update()
                 if self._instance.state != "pending":
-                    self._done = True
+                    done = True
             except Exception, ex:
                 self._log.error(ex)
                 self.exception = IaaSException(ex)
-                self._done = True
+                done = True
 
 
 class DBInstanceHostnamePollable(InstanceHostnamePollable):
@@ -234,8 +235,8 @@ class PopenExecutablePollable(Pollable):
     by returning an exit code of != 0 allowed_errors number of times.
     """
 
-    def __init__(self, cmd, allowed_errors=64, log=logging, timeout=600, callback=None):
-        Pollable.__init__(self, timeout)
+    def __init__(self, cmd, allowed_errors=64, log=logging, timeout=600, callback=None, done_cb=None):
+        Pollable.__init__(self, timeout, done_cb=done_cb)
         self._cmd = cmd
         self._stderr_str = ""
         self._stdout_str = ""

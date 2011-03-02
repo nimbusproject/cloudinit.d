@@ -107,11 +107,11 @@ class CloudInitDTests(unittest.TestCase):
     def test_reboot_simple(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
-        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-l", "info", "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertEqual(rc, 0)
         runname = self._get_runname(outfile)
-        rc = cloudinitd.cli.boot.main(["-O", outfile, "reboot",  "%s" % (runname)])
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-l", "debug", "reboot",  "%s" % (runname)])
         self.assertEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "status",  "%s" % (runname)])
         self.assertEqual(rc, 0)

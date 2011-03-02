@@ -110,7 +110,7 @@ class SVCContainer(object):
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
-            raise APIUsageException("trying to boot an already contextualized service")
+            raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
         self._do_boot = boot
         self._do_ready = ready
         self._do_terminate = terminate
@@ -136,7 +136,7 @@ class SVCContainer(object):
         self._s.hostname = None
         self._s.instance_id = None
         self._db.db_commit()
-
+        cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
 
     def _make_first_pollers(self):
 
@@ -160,23 +160,22 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
 
         if not self._do_boot:
+            cloudinitd.log(self._log, logging.INFO, "%s not doing boot, returning early" % (self.name))
             return
         # if the service if already contextualized
         if self._s.hostname:
+            cloudinitd.log(self._log, logging.INFO, "%s already has a hostname, no need to launch IaaS" % (self.name))
             return
 
-        if self._s.image:            
+        if self._s.image:
+            cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
             iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
-            if self._s.instance_id:
-                # XXX what if the instance is not there?  need some repair mechaisms
-                instance = iaas_find_instance(iaas_con, self._s.instance_id)
-            else:
-                instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
-            self._s.instance_id = instance.id
+            instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
-            self._db.db_commit()
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
+        else:
+            cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
         # start it now so the IaaS work gets started out of band.
         if self._pre_start_iaas:
@@ -196,7 +195,6 @@ class SVCContainer(object):
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
             self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
-            allowed_es_ssh = 1
             self._pollables.add_level([self._ssh_poller])
 
             # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
@@ -206,9 +204,10 @@ class SVCContainer(object):
             else:
                 if self._s.bootconf:
                     cmd = self._get_boot_cmd()
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200)
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200, done_cb=self.context_done_cb)
                     self._pollables.add_level([self._boot_poller])
                 else:
+                    self.context_done_cb(None)
                     cloudinitd.log(self._log, logging.DEBUG, "%s has no boot conf" % (self.name))
         else:
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
@@ -311,9 +310,6 @@ class SVCContainer(object):
         if callback == None:
             callback = self._callback
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
-        self._do_boot = boot
-        self._do_ready = ready
-        self._do_terminate = terminate
         self._start()
         self._restart_count = self._restart_count + 1
 
@@ -408,9 +404,7 @@ class SVCContainer(object):
                 self._make_pollers()
             rc = self._pollables.poll()
             if rc:
-                self._s.contextualized = 1
                 self._running = False
-                self._db.db_commit()
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
             return rc
 
@@ -418,10 +412,19 @@ class SVCContainer(object):
             self._term_host_pollers = None
         return False
 
+    def context_done_cb(self, poller):
+        self._s.contextualized = 1
+        self._db.db_commit()
+        cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
+
+
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()
+        self._s.instance_id = self._hostname_poller.get_instance_id()
         self._db.db_commit()
-        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
+        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s and instance %s" %(self._s.hostname, self._s.instance_id))
+        cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
+
 
     def get_ssh_command(self):
         return self._get_ssh_command(self._s.hostname)

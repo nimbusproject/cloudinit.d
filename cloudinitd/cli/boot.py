@@ -272,7 +272,9 @@ def reboot(options, args):
     cb.shutdown()
     try:
         print_chars(1, "Terminating all services %s\n" % (cb.run_name))
+        options.logger.info("Terminating all services")
         cb.block_until_complete(poll_period=0.1)
+        options.logger.info("Starting services back up")
         cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, continue_on_error=False)
         print_chars(1, "Booting all services %s\n" % (cb.run_name))
         cb.start()
