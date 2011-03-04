@@ -29,7 +29,7 @@ class InstanceDiesTests(unittest.TestCase):
         cb.block_until_complete(poll_period=1.0)
 
     def _terminate(self, dir, run_name):
-        cb = CloudInitD(dir, db_name=run_name, terminate=True, boot=False, ready=False)
+        cb = CloudInitD(dir, db_name=run_name, terminate=True, boot=False, ready=False, continue_on_error=True)
         cb.shutdown()
         cb.block_until_complete(poll_period=1.0)
         fname = cb.get_db_file()
