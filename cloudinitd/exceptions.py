@@ -11,6 +11,9 @@ class CloudInitDException(Exception):
         self._base_stack = traceback.format_tb(exc_traceback)
 
     def __str__(self):
+        return str(self._base_ex)
+
+    def get_stack(self):
         return str(self._base_stack)
 
 class APIUsageException(Exception):
@@ -30,8 +33,9 @@ class IaaSException(CloudInitDException):
         return str(self.msg)
 
 class ConfigException(Exception):
-    def __init__(self, msg):
+    def __init__(self, msg, ex=None):
         Exception.__init__(self, msg)
+        self._source_ex = ex
 
 
 class PollableException(CloudInitDException):

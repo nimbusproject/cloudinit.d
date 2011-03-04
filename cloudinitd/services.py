@@ -107,6 +107,8 @@ class SVCContainer(object):
         
         self._db.db_commit()
         self._bootconf = None
+        self._restart_limit = 4
+        self._restart_count = 0
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
@@ -120,12 +122,11 @@ class SVCContainer(object):
         self._callback = callback
         self._running = False
         self._ssh_poller = None
+        self._ssh_poller2 = None
         self._ready_poller = None
         self._boot_poller = None
         self._terminate_poller = None
         self._shutdown_poller = None
-        self._restart_limit = 2
-        self._restart_count = 0
         self.last_exception = None
 
         self._iass_started = False
@@ -151,9 +152,14 @@ class SVCContainer(object):
                 cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
             if self._s.instance_id:
                 iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
-                instance = iaas_find_instance(iaas_con, self._s.instance_id)
-                self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
-                self._term_host_pollers.add_level([self._shutdown_poller])
+                try:
+                    instance = iaas_find_instance(iaas_con, self._s.instance_id)
+                    self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
+                    self._term_host_pollers.add_level([self._shutdown_poller])
+                except IaaSException, iaas_ex:
+                    emsg = "Skipping terminate due to IaaS exception %s" % (str(iaas_ex))
+                    self._execute_callback(cloudinitd.callback_action_transition, emsg)
+                    cloudinitd.log(self._log, logging.INFO, emsg)
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
         else:
@@ -170,6 +176,7 @@ class SVCContainer(object):
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
             iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
+
             instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
             self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200, done_cb=self._hostname_poller_done)
@@ -190,7 +197,10 @@ class SVCContainer(object):
 
         self._pollables = MultiLevelPollable(log=self._log)
 
-        allowed_es_ssh = 128
+        if self._s.contextualized == 1:
+            allowed_es_ssh = 1
+        else:
+            allowed_es_ssh = 128
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
@@ -213,9 +223,9 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the boot" % (self.name))
 
         if self._do_ready:
-            #cmd = self._get_ssh_ready_cmd()
-            #ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
-            #self._pollables.add_level([ssh_poller2])
+            cmd = self._get_ssh_ready_cmd()
+            self._ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
+            self._pollables.add_level([self._ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
                 self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
@@ -240,7 +250,7 @@ class SVCContainer(object):
             fabfile = fabfile[0:-4] + ".py"
             cloudinitd.log(self._log, logging.DEBUG, "modfiled fabfile is: %s" % (fabfile))
 
-        cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
+        cmd = fabexec + " -p XXX -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
@@ -250,7 +260,7 @@ class SVCContainer(object):
             scpexec = os.environ['CLOUD_BOOT_SCP']
         if recursive:
             scpexec += " -r"
-        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -i %s " % (self._s.localkey)
+        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s " % (self._s.localkey)
         hostname = self._s.hostname
         if forcehost:
             hostname = forcehost
@@ -267,7 +277,7 @@ class SVCContainer(object):
                 sshexec = os.environ['CLOUD_BOOT_SSH']
         except:
             pass
-        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -i %s %s@%s" % (self._s.localkey, self._s.username, host)
+        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s %s@%s" % (self._s.localkey, self._s.username, host)
         return cmd
 
     def get_db_id(self):
@@ -284,12 +294,12 @@ class SVCContainer(object):
             return self._s.instance_id
         try:
             return self._attr_bag[key]
-        except:
-            raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files" % (self._myname, key))
+        except Exception, ex:
+            raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
 
     def _do_attr_bag(self):
-        if not self._do_boot:
-            return
+        #if not self._do_boot:
+        #    return
         pattern = re.compile('\$\{(.*?)\.(.*)\}')
         for bao in self._s.attrs:
             val = bao.value
@@ -306,12 +316,16 @@ class SVCContainer(object):
     def restart(self, boot, ready, terminate, callback=None):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
+        self._restart_count = self._restart_count + 1
+        if self._restart_count > self._restart_limit:
+            emsg = "Retry on error count exceeded (%d)" % (self._restart_count)
+            cloudinitd.log(self._log, logging.ERROR, emsg)
+            raise APIUsageException(emsg)
 
         if callback == None:
             callback = self._callback
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
         self._start()
-        self._restart_count = self._restart_count + 1
 
     def start(self):
         if self._running:
@@ -319,16 +333,16 @@ class SVCContainer(object):
         self._start()
 
     def _start(self):
+        self._running = True
+        # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
+        # values
+        self._do_attr_bag()
         try:
-            self._running = True
-            # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
-            # values
-            self._do_attr_bag()
 
             if self._term_host_pollers and not self._iass_started:
                 self._term_host_pollers.start()
                 self._iass_started = True
-            self._execute_callback(cloudinitd.callback_action_started, "Started boot for %s" % (self.name))
+            self._execute_callback(cloudinitd.callback_action_started, "Started %s" % (self.name))
         except Exception, ex:
             self._running = False
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
@@ -341,7 +355,9 @@ class SVCContainer(object):
         if state != cloudinitd.callback_action_error:
             return False
         self.last_exception = ex
-        if rc == cloudinitd.callback_return_restart and self._restart_count < self._restart_limit:
+        if rc == cloudinitd.callback_return_restart:
+            if self._restart_count > self._restart_limit:
+                return False
             self._running = False
             self.restart(boot=True, ready=True, terminate=True, callback=self._callback)
             return True
@@ -361,6 +377,10 @@ class SVCContainer(object):
                 msg = "Service %s error getting ssh access to %s" % (self._myname, self._s.hostname)
                 stdout = self._ssh_poller.get_stdout()
                 stderr = self._ssh_poller.get_stderr()
+            if self._ssh_poller2 in multiex.pollable_list:
+                msg = "Service %s error getting ssh access to %s." % (self._myname, self._s.hostname)
+                stdout = self._ssh_poller2.get_stdout()
+                stderr = self._ssh_poller2.get_stderr()
             if self._boot_poller in multiex.pollable_list:
                 msg = "Service %s error configuring for boot: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._boot_poller.get_stdout()

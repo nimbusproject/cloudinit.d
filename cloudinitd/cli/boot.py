@@ -206,8 +206,9 @@ def status(options, args):
 
     dbname = args[1]
     g_repair = options.repair
+    c_on_e = not g_repair
 
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=True)
+    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
     cb.start()
     try:
