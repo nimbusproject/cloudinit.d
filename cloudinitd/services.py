@@ -24,6 +24,7 @@ class BootTopLevel(object):
         self.services = {}
         self._log = log
         self._multi_top = MultiLevelPollable(log=log, callback=level_callback, continue_on_error=continue_on_error)
+        self._continue_on_error = continue_on_error
         self._service_callback = service_callback
         self._boot = boot
         self._ready = ready
@@ -103,6 +104,9 @@ class SVCContainer(object):
         self._db = db
         self._top_level = top_level
 
+        if self._s.contextualized == 2 and not boot:
+            raise APIUsageException("the service %s has been terminate.  The only action that can be performed on it is a boot" % (self.name))
+
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
         
         self._db.db_commit()
@@ -133,7 +137,7 @@ class SVCContainer(object):
         self._make_first_pollers()
 
     def _teminate_done(self, poller):
-        self._s.contextualized = 0
+        self._s.contextualized = 2
         self._s.hostname = None
         self._s.instance_id = None
         self._db.db_commit()
@@ -296,11 +300,18 @@ class SVCContainer(object):
         try:
             return self._attr_bag[key]
         except Exception, ex:
-            raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
+            # if it isn't in the attr bad pull it from the services db defs.  This should allow the user the ability
+            # to query everything about the service
+            try:
+                self._s.__getattribute__(key)
+            except AttributeError:
+                raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
 
     def _do_attr_bag(self):
-        #if not self._do_boot:
-        #    return
+
+        if self._do_terminate and not self._do_ready and not self._do_boot:
+            return
+               
         pattern = re.compile('\$\{(.*?)\.(.*)\}')
         for bao in self._s.attrs:
             val = bao.value

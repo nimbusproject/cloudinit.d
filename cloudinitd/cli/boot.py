@@ -8,7 +8,7 @@ import uuid
 import stat
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.user_api import CloudInitD, CloudServiceException
-from cloudinitd.exceptions import MultilevelException
+from cloudinitd.exceptions import MultilevelException, APIUsageException
 import cloudinitd
 import os
 import cloudinitd.cli.output
@@ -358,6 +358,14 @@ def main(argv=sys.argv[1:]):
         print ""
     except SystemExit:
         raise
+    except APIUsageException, apiex:
+        print_chars(0, str(apiex))
+        print_chars(0, "\n")
+        print_chars(0, "see ")
+        print_chars(0, "%s" % (options.logfile), inverse=True, color="red")
+        print_chars(0,  " for more details\n")
+        options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program")
+        rc = 1
     except Exception, ex:
         print_chars(0, str(ex))
         print_chars(0, "\n")

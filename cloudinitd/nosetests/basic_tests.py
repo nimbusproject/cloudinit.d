@@ -28,6 +28,10 @@ class BasicUserAPITests(unittest.TestCase):
         fname = cb.get_db_file()
         os.remove(fname)
 
+    def test_lotsonlevel(self):
+        tst_name = "lotsonlevel"
+        self._start_one(tst_name)
+        
     def test_multileveldeps(self):
         tst_name = "multileveldeps"
         self._start_one(tst_name)

@@ -131,8 +131,19 @@ class CloudInitD(object):
         for level in self._bo.levels:
             level_list = []
             for s in level.services:
-                svc = self._boot_top.new_service(s, self._db)
-                level_list.append(svc)
+                try:
+                    svc = self._boot_top.new_service(s, self._db)
+                    level_list.append(svc)
+                except Exception, svcex:
+                    if not continue_on_error:
+                        raise
+                    action = cloudinitd.callback_action_error
+                    msg = "ERROR creating SVC object %s, but continue on error set: %s" % (s.name, str(svcex))
+                    if self._service_callback:
+                        cs = CloudService(self, None, name=s.name)
+                        self._service_callback(self, cs, action, msg)
+
+                    cloudinitd.log(self._log, logging.ERROR, msg)
 
             self._boot_top.add_level(level_list)
             self._levels.append(level_list)
@@ -264,14 +275,19 @@ class CloudInitD(object):
 
 class CloudService(object):
 
-    def __init__(self, cloudbooter, svc):
+    def __init__(self, cloudbooter, svc, name=None):
         """This should only be called by the CloudInitD object"""
         self._svc = svc
-        self.name = svc.name
+        if svc == None:
+            self.name = name
+        else:
+            self.name = svc.name
         self._cb = cloudbooter
         self._db = cloudbooter._db
 
     def get_attr_from_bag(self, name):
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_dep(name)
     # need various methods for monitoring state. values from attr bag and from db
 
@@ -287,6 +303,8 @@ class CloudService(object):
 
         returns an pollable object
         """
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
         self._svc.restart(boot=False, ready=False, terminate=True, callback=callback)
         return self._svc
 
@@ -295,13 +313,19 @@ class CloudService(object):
         This will restart the service, or check the results of the ready
         program if the service is already running.
         """
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
         self._svc.restart(boot=True, ready=True, terminate=True)
         return self._svc
 
     def get_ssh_command(self):
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_ssh_command()
 
     def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_scp_command(src, dst, upload=upload, recursive=recursive, forcehost=forcehost)
 
 

@@ -118,7 +118,7 @@ class PollableTests(unittest.TestCase):
         mcp.add_level([pexe1_1, pexe1_2])
         mcp.add_level([pexe2_1, pexe2_2])
         mcp.start()
-        
+
         rc = False
         try:
             failed = True

@@ -66,7 +66,10 @@ def iaas_find_instance(con, instance_id):
     global g_fake_instance_table
 
     if type(con) == IaaSTestCon:
-        return g_fake_instance_table[instance_id]
+        try:
+            return g_fake_instance_table[instance_id]
+        except Exception, ex:
+            raise IaaSException(str(ex))
     else:
         return _real_find_instance(con, instance_id)
 
