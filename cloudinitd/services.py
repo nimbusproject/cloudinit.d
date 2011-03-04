@@ -157,6 +157,7 @@ class SVCContainer(object):
                     self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
                     self._term_host_pollers.add_level([self._shutdown_poller])
                 except IaaSException, iaas_ex:
+                    self._teminate_done(self)
                     emsg = "Skipping terminate due to IaaS exception %s" % (str(iaas_ex))
                     self._execute_callback(cloudinitd.callback_action_transition, emsg)
                     cloudinitd.log(self._log, logging.INFO, emsg)
