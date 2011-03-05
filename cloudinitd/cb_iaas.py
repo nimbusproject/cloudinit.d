@@ -73,7 +73,7 @@ def iaas_find_instance(con, instance_id):
     else:
         return _real_find_instance(con, instance_id)
 
-def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
+def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
     if 'CLOUDBOOT_TESTENV' in os.environ:
         return IaaSTestCon()
     else:
@@ -99,7 +99,7 @@ def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None)
     
     if not iaashostname:
         if not iaas:
-            raise ConfigException("There is no 'iaas' or 'iaas_hostname' configuration, you need one of these.")
+            raise ConfigException("There is no 'iaas' or 'iaas_hostname' configuration, you need one of these. %s" % (iaas))
         region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
         if not region:
             raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)

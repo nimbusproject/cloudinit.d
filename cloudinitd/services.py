@@ -303,7 +303,7 @@ class SVCContainer(object):
             # if it isn't in the attr bad pull it from the services db defs.  This should allow the user the ability
             # to query everything about the service
             try:
-                self._s.__getattribute__(key)
+                return self._s.__getattribute__(key)
             except AttributeError:
                 raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
 
