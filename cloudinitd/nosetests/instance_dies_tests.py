@@ -35,12 +35,6 @@ class InstanceDiesTests(unittest.TestCase):
         fname = cb.get_db_file()
         os.remove(fname)
 
-    def test_nokill(self):
-        tst_name = "multilevelsimple"
-        (dir, cb) = self._start_one(tst_name)
-        self._status(dir, cb.run_name)
-        self._terminate(dir, cb.run_name)
-
     def test_kill_first_level(self):
         tst_name = "multilevelsimple"
         (dir, cb) = self._start_one(tst_name)
@@ -126,6 +120,11 @@ class InstanceDiesTests(unittest.TestCase):
         print scpcmd
         self._terminate(dir, cb.run_name)
 
+    def test_nokill(self):
+        tst_name = "multilevelsimple"
+        (dir, cb) = self._start_one(tst_name)
+        self._status(dir, cb.run_name)
+        self._terminate(dir, cb.run_name)
 
 if __name__ == '__main__':
     unittest.main()

@@ -45,7 +45,7 @@ class CloudInitD(object):
         used for querying dependencies
     """
     
-    def __init__(self, db_dir, config_file=None, db_name=None, log=logging, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False, fail_if_db_present=False):
+    def __init__(self, db_dir, config_file=None, db_name=None, log_level="warn", logdir=None, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False, fail_if_db_present=False):
         """
         db_dir:     a path to a directories where databases can be stored.
 
@@ -114,7 +114,8 @@ class CloudInitD(object):
         if fail_if_db_present and os.path.exists(db_path):
             raise APIUsageException("Already exists: '%s'" % db_path)
 
-        self._log = log
+        self._log = cloudinitd.make_logger(log_level, db_name, logdir=logdir)
+
         self._started = False
         self.run_name = db_name
         dburl = "sqlite://%s" % (db_path)
@@ -127,12 +128,14 @@ class CloudInitD(object):
             self._bo = self._db.load_from_db()
 
         self._levels = []
-        self._boot_top = BootTopLevel(log=log, level_callback=self._mp_cb, service_callback=self._svc_cb, boot=boot, ready=ready, terminate=terminate, continue_on_error=continue_on_error)
+        self._boot_top = BootTopLevel(log=self._log, level_callback=self._mp_cb, service_callback=self._svc_cb, boot=boot, ready=ready, terminate=terminate, continue_on_error=continue_on_error)
         for level in self._bo.levels:
             level_list = []
             for s in level.services:
                 try:
-                    svc = self._boot_top.new_service(s, self._db)
+                    s_log = cloudinitd.make_logger(log_level, self.run_name, logdir=logdir, servicename=s.name)
+
+                    svc = self._boot_top.new_service(s, self._db, log=s_log)
                     level_list.append(svc)
                 except Exception, svcex:
                     if not continue_on_error:

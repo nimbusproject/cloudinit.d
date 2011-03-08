@@ -53,7 +53,7 @@ def readypgm(pgm=None):
     with cd(REMOTE_WORKING_DIR):
         sudo(destpgm)
 
-def bootpgm(pgm=None, conf=None):
+def bootpgm(pgm=None, conf=None, output=None):
     run('mkdir %s' % REMOTE_WORKING_DIR)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (REMOTE_WORKING_DIR, relpgm)
@@ -66,5 +66,9 @@ def bootpgm(pgm=None, conf=None):
         put(conf, destconf)
     with cd(REMOTE_WORKING_DIR):
         sudo(destpgm)
+    if output:
+        remote_output = "%s/bootout.json" % REMOTE_WORKING_DIR
+        get(remote_output, output)
 
+    
 

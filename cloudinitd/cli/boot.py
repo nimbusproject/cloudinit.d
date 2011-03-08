@@ -2,7 +2,6 @@
 from datetime import datetime
 
 import sys
-import logging
 from optparse import OptionParser
 import uuid
 import stat
@@ -48,11 +47,9 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
-    opt = bootOpts("logfile", "f", "Path to logfile", os.path.expanduser("~/.cloudinitd/cloudinitd-%s.log" % (str(datetime.now()).replace(" ", "_"))))
+    opt = bootOpts("logdir", "f", "Path to the base log directory.", None)
     opt.add_opt(parser)
     opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "info", vals=["debug", "info", "warn", "error"])
-    opt.add_opt(parser)
-    opt = bootOpts("repair", "r", "Restart all failed services, only relevant for the status command", False, flag=True)
     opt.add_opt(parser)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
@@ -63,32 +60,13 @@ Run with the command 'commands' to see a list of all possible commands
 
 
     (options, args) = parser.parse_args(args=argv)
-    
-    if options.loglevel == "debug":
-        loglevel = logging.DEBUG
-    elif options.loglevel == "info":
-        loglevel = logging.INFO
-    elif options.loglevel == "warn":
-        loglevel = logging.WARN
-    elif options.loglevel == "error":
-        loglevel = logging.ERROR
+    if not options.name:
+        options.name = str(uuid.uuid4()).split("-")[0]
 
-    logger = logging.getLogger("cloudinitd")
-    logger.setLevel(loglevel)
-    if options.logfile == None:
-        options.logfile = "/dev/null"
-    if options.logfile == "-":
-        handler = logging.StreamHandler()
-    else:
-        handler = logging.handlers.RotatingFileHandler(
-          options.logfile, maxBytes=100*1024*1024, backupCount=5)
+    if options.logdir == None:
+        options.logdir = os.path.expanduser("~/.cloudinitd/")
 
-    logger.addHandler(handler)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-        
-    options.logger = logger
-
+    options.logger = cloudinitd.make_logger(options.loglevel, options.name, logdir=options.logdir)
     if not options.database:
         dbdir = os.path.expanduser("~/.cloudinitd")
         if not os.path.exists(dbdir):
@@ -105,9 +83,6 @@ Run with the command 'commands' to see a list of all possible commands
         g_outfile = open(options.outstream, "w")
     else:
         g_outfile = None
-
-    if not options.name:
-        options.name = str(uuid.uuid4()).split("-")[0]
 
     if options.remotedebug:
         try:
@@ -172,7 +147,7 @@ def launch_new(options, args):
     config_file = args[1]
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
     print_chars(1, "Starting the launch plan.\n")
     cb.start()
     try:
@@ -198,17 +173,19 @@ def status(options, args):
     """
     Check on the status of an already booted plan.  You must supply the run name of the booted plan.
     """
-    global g_repair
-
     if len(args) < 2:
         print "The status command requires a run name.  See --help"
         return 1
+    rc = _status(options, args)
+    return rc
+
+def _status(options, args):
+    global g_repair
 
     dbname = args[1]
-    g_repair = options.repair
     c_on_e = not g_repair
 
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
+    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
     cb.start()
     try:
@@ -238,7 +215,7 @@ def terminate(options, args):
         print "The terminate command requires a run name.  See --help"
         return 1
     dbname = args[1]
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
+    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
     print_chars(1, "Terminating %s\n" % (cb.run_name))
     cb.shutdown()
     try:
@@ -268,7 +245,7 @@ def reboot(options, args):
         print "The reboot command requires a run name.  See --help"
         return 1
     dbname = args[1]
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=True, boot=False, ready=False, continue_on_error=True)
+    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
     print_chars(1, "Rebooting %s\n" % (cb.run_name))
     cb.shutdown()
     try:
@@ -276,7 +253,7 @@ def reboot(options, args):
         options.logger.info("Terminating all services")
         cb.block_until_complete(poll_period=0.1)
         options.logger.info("Starting services back up")
-        cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, log=options.logger, terminate=False, boot=True, ready=True, continue_on_error=False)
+        cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, continue_on_error=False)
         print_chars(1, "Booting all services %s\n" % (cb.run_name))
         cb.start()
         cb.block_until_complete(poll_period=0.1)
@@ -322,6 +299,14 @@ def list(options, args):
             print_chars(0, name[:-3] + "\n")
     return 0
 
+def repair(options, args):
+    g_repair = True
+    if len(args) < 2:
+        print "The repair command requires a run name.  See --help"
+        return 1
+    return _status(options, args)
+
+
 def main(argv=sys.argv[1:]):
     # first process options
     if not argv:
@@ -347,6 +332,7 @@ def main(argv=sys.argv[1:]):
     g_commands["reboot"] = reboot
     g_commands["list"] = list
     g_commands["commands"] = list_commands
+    g_commands["repair"] = repair
 
     if command not in g_commands:
         print "Invalid command.  Run with --help"
@@ -362,15 +348,15 @@ def main(argv=sys.argv[1:]):
         print_chars(0, str(apiex))
         print_chars(0, "\n")
         print_chars(0, "see ")
-        print_chars(0, "%s" % (options.logfile), inverse=True, color="red")
+        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
         print_chars(0,  " for more details\n")
-        options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program")
+        options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program: %s", str(apiex))
         rc = 1
     except Exception, ex:
         print_chars(0, str(ex))
         print_chars(0, "\n")
         print_chars(0, "see ")
-        print_chars(0, "%s" % (options.logfile), inverse=True, color="red")
+        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
         print_chars(0,  " for more details\n")
         if options.verbose > 1:
             raise

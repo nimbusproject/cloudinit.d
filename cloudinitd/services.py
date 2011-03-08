@@ -1,5 +1,6 @@
 import traceback
 import re
+from cloudinitd.persistence import BagAttrsObject
 from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable
 import bootfabtasks
 import tempfile
@@ -8,6 +9,7 @@ from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceExc
 from cloudinitd.statics import *
 import logging
 from cloudinitd.cb_iaas import *
+import simplejson as json
 
 __author__ = 'bresnaha'
 
@@ -54,7 +56,7 @@ class BootTopLevel(object):
     def poll(self):
         return self._multi_top.poll()
 
-    def new_service(self, s, db, boot=None, ready=None, terminate=None):
+    def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None):
 
         if s.name in self.services.keys():
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
@@ -68,8 +70,11 @@ class BootTopLevel(object):
             ready = self._ready
         if terminate == None:
             terminate = self._terminate
+        if not log:
+            log = self._log
 
-        svc = SVCContainer(db, s, self, log=self._log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate)
+        # logname = <log dir>/<runname>/s.name
+        svc = SVCContainer(db, s, self, log=log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate)
         self.services[s.name] = svc
         return svc
 
@@ -132,6 +137,7 @@ class SVCContainer(object):
         self._terminate_poller = None
         self._shutdown_poller = None
         self.last_exception = None
+        self._boot_output_file = None
 
         self._iass_started = False
         self._make_first_pollers()
@@ -444,7 +450,27 @@ class SVCContainer(object):
             self._term_host_pollers = None
         return False
 
+    def _read_boot_output(self):
+        """
+        Read in the output of the bootpgm to the attr bag
+        """
+        if not self._boot_output_file:
+            return
+        try:
+            f = open(self._boot_output_file, "r")
+            j_doc = json.load(f)
+        except Exception, ex:
+            cloudinitd.log(self._log, logging.WARN, "No output read from the boot program %s" % (str(ex)))
+            return
+        for k in j_doc.keys():
+            self._attr_bag[k] = j_doc[k]
+            bao = BagAttrsObject()
+            bao.key = k
+            bao.value = j_doc[k]
+            self._s.attrs.append(bao)
+
     def context_done_cb(self, poller):
+        self._read_boot_output()
         self._s.contextualized = 1
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
@@ -472,7 +498,9 @@ class SVCContainer(object):
         return cmd
 
     def _get_boot_cmd(self):
-        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf)
+        (osf, self._boot_output_file) = tempfile.mkstemp()
+        os.close(osf)
+        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s,output=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf, self._boot_output_file)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 

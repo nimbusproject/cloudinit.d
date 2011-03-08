@@ -300,7 +300,7 @@ class CloudInitDTests(unittest.TestCase):
 #            os.environ['CLOUD_BOOT_SSH'] = "/bin/false"
 #
 #        print "start repair"
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","--repair", "status", runname])
+#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
 #        if 'CLOUDBOOT_TESTENV' in os.environ:
 #            os.environ['CLOUD_BOOT_FAB'] = bkfab
 #            os.environ['CLOUD_BOOT_SSH'] = bkssh

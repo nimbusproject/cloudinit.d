@@ -81,7 +81,7 @@ def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"
 
 def iaas_run_instance(con, image, instance_type, key_name, security_groupname=None):
     if type(con) == IaaSTestCon:
-        h = str(uuid.uuid1()) + ".nimbusproject.org"
+        h = "localhost"
         return IaaSTestInstance(h)
     else:
         return _real_iaas_run_instance(con, image, instance_type, key_name, security_groupname)

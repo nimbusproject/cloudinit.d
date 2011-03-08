@@ -35,3 +35,52 @@ def get_env_val(key):
             key = None
     return key
 
+
+def make_logger(log_level, runname, logdir=None, servicename=None):
+
+    if log_level == "debug":
+        loglevel = logging.DEBUG
+    elif log_level == "info":
+        loglevel = logging.INFO
+    elif log_level == "warn":
+        loglevel = logging.WARN
+    elif log_level == "error":
+        loglevel = logging.ERROR
+
+    logname = "cloudinitd-" + runname
+    if servicename:
+        logname = logname + "-" + servicename
+
+    logger = logging.getLogger(logname)
+    logger.setLevel(loglevel)
+
+    if logdir == "-":
+        handler = logging.StreamHandler()
+    else:
+        if not logdir:
+            logdir = os.path.expanduser("~/.cloudinitd")
+
+        if not os.path.exists(logdir):
+            try:
+                os.mkdir(logdir)
+            except OSError:
+                pass
+
+        if servicename:
+            logdir = logdir + "/%s" % (runname)
+            if not os.path.exists(logdir):
+                try:
+                    os.mkdir(logdir)
+                except OSError:
+                    pass
+            logfile = logdir + "/" + servicename + ".log"
+        else:
+            logfile = logdir + "/" + runname + ".log"
+            
+        handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=100*1024*1024, backupCount=5)
+
+    logger.addHandler(handler)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+
+    return logger
