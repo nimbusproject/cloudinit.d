@@ -152,6 +152,7 @@ def launch_new(options, args):
     cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
     if options.validate:
+        print_chars(1, "Validating the launch plan.")
         errors = cb.boot_validate()
         if len(errors) > 0:
             print_chars(0, "The boot plan is not valid.\n", color = "red")
@@ -159,6 +160,7 @@ def launch_new(options, args):
                 print_chars(1, "Service %s had the error:\n" % (svc.name))
                 print_chars(1, "\t%s" %(str(ex)))
             return 1
+    cb.pre_start_iaas()
 
     print_chars(1, "Starting the launch plan.\n")
     cb.start()

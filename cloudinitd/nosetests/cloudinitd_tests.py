@@ -72,6 +72,28 @@ class CloudInitDTests(unittest.TestCase):
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
 
+    def test_validate_nolaunch(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+
+        key = None
+        secret = None
+        try:
+            key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
+            secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
+        except:
+            pass
+
+        # XXX this test may fail for nimbus
+        con = cloudinitd.cb_iaas.iaas_get_con(key, secret)
+        i_list = con.get_all_instances()
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+        after_list = con.get_all_instances()
+        self.assertEqual(len(i_list), len(after_list))
+
+
     def _get_runname(self, fname):
         n = "Starting up run"
         line = self._find_str(fname, n)

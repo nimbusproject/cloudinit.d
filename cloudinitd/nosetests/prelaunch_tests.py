@@ -33,6 +33,7 @@ class BasicUserAPITests(unittest.TestCase):
         dir = tempfile.mkdtemp()
         conf_file = self.plan_basedir + "/" + conf_file + "/top.conf"
         cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.pre_start_iaas()
 
         post_boot_list = con.get_all_instances()
 

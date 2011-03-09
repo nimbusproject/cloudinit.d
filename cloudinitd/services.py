@@ -96,7 +96,7 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, pre_start_iaas=True):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None):
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -104,7 +104,6 @@ class SVCContainer(object):
         # we need to separate out pollables.  bootconf and ready cannot be run until the instances has a hostname
         # terminate will be run first (for restarts only)
         # first pollable set is terminate, then hostname.  next is bootconf, then ready
-        self._pre_start_iaas = pre_start_iaas
         self._readypgm = s.readypgm
         self._s = s
         self.name = s.name
@@ -188,20 +187,19 @@ class SVCContainer(object):
 
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
-            iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
+            #iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
 
-            instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
+            #instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
-            self._hostname_poller = InstanceHostnamePollable(instance, self._log, timeout=1200, done_cb=self._hostname_poller_done)
+            self._hostname_poller = InstanceHostnamePollable(self._s, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
-        # start it now so the IaaS work gets started out of band.
-        if self._pre_start_iaas:
-            self._term_host_pollers.start()
-            self._iass_started = True
-            self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
+    def pre_start_iaas(self):
+        self._term_host_pollers.start()
+        self._iass_started = True
+        self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
 
     def _make_pollers(self):
         self._ready_poller = None
@@ -360,8 +358,9 @@ class SVCContainer(object):
         try:
 
             if self._term_host_pollers and not self._iass_started:
-                self._term_host_pollers.start()
-                self._iass_started = True
+                self.pre_start_iaas()
+#                self._term_host_pollers.start()
+#                self._iass_started = True
             self._execute_callback(cloudinitd.callback_action_started, "Started %s" % (self.name))
         except Exception, ex:
             self._running = False

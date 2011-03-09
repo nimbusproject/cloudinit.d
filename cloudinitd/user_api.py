@@ -154,6 +154,7 @@ class CloudInitD(object):
         self._exception = None
 
 
+
     def get_db_file(self):
         """
         Return the path to the db file in use.
@@ -267,6 +268,13 @@ class CloudInitD(object):
         self._boot_top.start()
         self._started = True
 
+    def pre_start_iaas(self):
+        bo = self._bo
+        for level in bo.levels:
+            for s in level.services:
+                svc = self._boot_top.get_service(s.name)
+                svc.pre_start_iaas()
+
     def boot_validate(self):
         bo = self._bo
         connnections = {}
@@ -280,15 +288,15 @@ class CloudInitD(object):
                     hash_str = hash_str + hostname
                 hash_str = hash_str + "/"
                 port = svc.get_dep("iaas_port")
-                if x:
+                if port:
                     hash_str = hash_str + port
                 hash_str = hash_str + "/"
                 iaas = svc.get_dep("iaas")
-                if x:
+                if iaas:
                     hash_str = hash_str + iaas
                 hash_str = hash_str + "/"
                 key = svc.get_dep("iaas_key")
-                if x:
+                if key:
                     hash_str = hash_str + key
                 hash_str = hash_str + "/"
                 secret = svc.get_dep("iaas_secret")

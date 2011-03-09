@@ -22,6 +22,8 @@ from cloudinitd.exceptions import TimeoutException, IaaSException, APIUsageExcep
 import cloudinitd
 import traceback
 import os
+from cloudinitd.cb_iaas import *
+
 
 __author__ = 'bresnaha'
 
@@ -124,9 +126,10 @@ class InstanceHostnamePollable(Pollable):
     ready.
     """
 
-    def __init__(self, instance, log=logging, timeout=600, done_cb=None):
+    def __init__(self, s, log=logging, timeout=600, done_cb=None):
         Pollable.__init__(self, timeout, done_cb=done_cb)
-        self._instance = instance
+        self._s = s
+        self._instance = None
         self._poll_error_count = 0
         self._max_id_error_count = 1
         self._log = log
@@ -136,6 +139,8 @@ class InstanceHostnamePollable(Pollable):
 
     def start(self):
         Pollable.start(self)
+        iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
+        self._instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
         self._update()
         self._thread = HostnameCheckThread(self)
         self._thread.start()
@@ -201,19 +206,18 @@ class InstanceHostnamePollable(Pollable):
                 done = True
 
 
-class DBInstanceHostnamePollable(InstanceHostnamePollable):
-    """
-    Async poll a IaaS service via boto.  Once the VM has an associated hostname, the Pollable object is considered
-    ready.
-    """
+class InstanceLaunchHostnamePollable(Pollable):
 
-    def __init__(self, instance, db, s, log=logging, timeout=600):
-        InstanceHostnamePollable.__init__(self, instance, log=log, timeout=timeout)
-        self._db = db
+    def __init__(self, s, log=logging, timeout=600):
+        self._instance_poller = None
+        self._log = log
         self._s = s
 
     def start(self):
-        InstanceHostnamePollable.start(self)
+
+        InstanceHostnamePollable(instance, log=log, timeout=timeout)
+        InstanceHostnamePollable.start()
+
 
     def poll(self):
         rc = InstanceHostnamePollable.poll(self)
