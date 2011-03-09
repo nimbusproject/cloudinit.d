@@ -5,6 +5,7 @@ import sys
 import logging
 from optparse import OptionParser
 import uuid
+import remote_debug
 import stat
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.user_api import CloudInitD, CloudServiceException
@@ -308,6 +309,9 @@ def main(argv=sys.argv[1:]):
     if len(argv) == 0:
         argv.append("--help")
     (args, options) = parse_commands(argv)
+
+    # Enabled by a constant in the remote_debug module.
+    remote_debug.connect_debugger_if_enabled()
 
     # process the command
     global g_action
