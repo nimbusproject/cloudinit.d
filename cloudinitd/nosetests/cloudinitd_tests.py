@@ -65,6 +65,13 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def test_basic_validate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
     def _get_runname(self, fname):
         n = "Starting up run"
         line = self._find_str(fname, n)
@@ -199,7 +206,6 @@ class CloudInitDTests(unittest.TestCase):
         n = "SUCCESS"
         line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
-
 
     def check_status_shutdown_error_test(self):
         (osf, outfile) = tempfile.mkstemp()

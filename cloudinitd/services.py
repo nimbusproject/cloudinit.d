@@ -1,5 +1,6 @@
 import traceback
 import re
+import cb_iaas
 from cloudinitd.persistence import BagAttrsObject
 from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable
 import bootfabtasks
@@ -87,6 +88,7 @@ class BootTopLevel(object):
 
     def get_exception(self):
         return self._multi_top._exception
+
 
 class SVCContainer(object):
     """

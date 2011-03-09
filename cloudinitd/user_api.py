@@ -28,6 +28,7 @@ import uuid
 import time
 import logging
 import stat
+import cb_iaas
 from cloudinitd.exceptions import APIUsageException, ServiceException
 from cloudinitd.persistence import CloudInitDDB
 from cloudinitd.services import BootTopLevel
@@ -265,6 +266,57 @@ class CloudInitD(object):
 
         self._boot_top.start()
         self._started = True
+
+    def boot_validate(self):
+        bo = self._bo
+        connnections = {}
+        for level in bo.levels:
+            for s in level.services:
+                svc = self._boot_top.get_service(s.name)
+
+                hash_str = ""
+                hostname = svc.get_dep("iaas_hostname")
+                if hostname:
+                    hash_str = hash_str + hostname
+                hash_str = hash_str + "/"
+                port = svc.get_dep("iaas_port")
+                if x:
+                    hash_str = hash_str + port
+                hash_str = hash_str + "/"
+                iaas = svc.get_dep("iaas")
+                if x:
+                    hash_str = hash_str + iaas
+                hash_str = hash_str + "/"
+                key = svc.get_dep("iaas_key")
+                if x:
+                    hash_str = hash_str + key
+                hash_str = hash_str + "/"
+                secret = svc.get_dep("iaas_secret")
+                if secret:
+                    hash_str = hash_str + secret
+
+                if hash_str not in connnections.keys():
+                    con = cb_iaas.iaas_get_con(key, secret, iaashostname=hostname, iaasport=port, iaas=iaas)
+                    connnections[hash_str] = (con, [svc])
+                else:
+                    (con, svc_list) = connnections[hash_str]
+                    svc_list.append(svc)
+
+        exception_list = []
+        for (con, svc_list) in connnections.values():
+            try:
+                con.get_all_instances()
+            except Exception, ex:
+                # this means that there is a problem connection with all the associated services
+                names = ""
+                d = ""
+                for svc in svc_list:
+                    exception_list.append((svc, ex,))
+                    names = names + d + svc.name
+                    d = ","
+                msg = "The following services have problems with their IaaS configuration.  Please check the launch plan to verify the iaas configuration is connection. %s || %s" % (msg, str(ex))
+                cloudinitd.log(self._log, logging.ERROR, msg)
+        return exception_list
 
     def shutdown(self, dash_nine=False):
         self._boot_top.reverse_order()

@@ -41,6 +41,8 @@ Run with the command 'commands' to see a list of all possible commands
 
     opt = bootOpts("verbose", "v", "Print more output", 1, count=True)
     opt.add_opt(parser)
+    opt = bootOpts("validate", "x", "Check that boot plan is valid before launching it.", False, flag=True)
+    opt.add_opt(parser)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
     opt = bootOpts("name", "n", "Set the run name, only relevant for boot (by default the system picks)", None)
@@ -148,6 +150,16 @@ def launch_new(options, args):
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
     cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+
+    if options.validate:
+        errors = cb.boot_validate()
+        if len(errors) > 0:
+            print_chars(0, "The boot plan is not valid.\n", color = "red")
+            for (svc, ex) in errors:
+                print_chars(1, "Service %s had the error:\n" % (svc.name))
+                print_chars(1, "\t%s" %(str(ex)))
+            return 1
+
     print_chars(1, "Starting the launch plan.\n")
     cb.start()
     try:

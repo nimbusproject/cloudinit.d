@@ -495,3 +495,14 @@ class MultiLevelPollable(Pollable):
                 p.cancel()
                 
         self._canceled = True
+
+
+class ValidationPollable(Pollable):
+
+    def __init__(self, svc, timeout=600, done_cb=None):
+        Pollable.__init__(self, timeout, done_cb=done_cb)
+        self._svc = svc
+        
+
+    def start(self):
+        Pollable.start(self)

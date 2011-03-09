@@ -75,6 +75,8 @@ def iaas_find_instance(con, instance_id):
 
 def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
     if 'CLOUDBOOT_TESTENV' in os.environ:
+        if secret == "fail":
+            raise IaaSException("The test env is setup to fail here")
         return IaaSTestCon()
     else:
         return _real_iaas_get_con(key, secret, iaashostname, iaasport, iaas)
