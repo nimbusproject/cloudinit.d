@@ -191,7 +191,7 @@ class SVCContainer(object):
 
             #instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
-            self._hostname_poller = InstanceHostnamePollable(self._s, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
+            self._hostname_poller = InstanceHostnamePollable(s=self._s, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))

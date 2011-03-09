@@ -126,10 +126,10 @@ class InstanceHostnamePollable(Pollable):
     ready.
     """
 
-    def __init__(self, s, log=logging, timeout=600, done_cb=None):
+    def __init__(self, s=None, log=logging, timeout=600, done_cb=None, instance=None):
         Pollable.__init__(self, timeout, done_cb=done_cb)
         self._s = s
-        self._instance = None
+        self._instance = instance
         self._poll_error_count = 0
         self._max_id_error_count = 1
         self._log = log
@@ -139,8 +139,9 @@ class InstanceHostnamePollable(Pollable):
 
     def start(self):
         Pollable.start(self)
-        iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
-        self._instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
+        if not self._instance:
+            iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
+            self._instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
         self._update()
         self._thread = HostnameCheckThread(self)
         self._thread.start()
