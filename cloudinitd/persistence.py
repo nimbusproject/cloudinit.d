@@ -81,14 +81,16 @@ attrbag_table = Table('attrbag', metadata,
 def _resolve_file_or_none(context_dir, conf, conf_file):
     """Return absolute path to file if specified.  If None or empty string return None.
 
-    Supports configurations of "../xyz" being taken relative to the configuration file it
-    was specified in.
+    Supports configurations of "../xyz" (or "xyz") being taken relative to the configuration
+    file it was specified in.
 
     * context_dir - Directory of the configuration file (level*conf)
 
     * conf - Configuration value, may be None or empty string
 
     * conf_file - Absolute path to the file where the configuration was (for errors)
+
+    If there is a path to be resolved, Exception is raised when it does not exist.
     """
     if not conf:
         return None
