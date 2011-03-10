@@ -29,7 +29,7 @@ class ServiceUnitTests(unittest.TestCase):
     def test_service_poll(self):
         h1 = str(uuid.uuid1())
         instance = IaaSTestInstance(h1, time_to_hostname=1)
-        p = InstanceHostnamePollable(instance)
+        p = InstanceHostnamePollable(instance=instance)
         p.start()
         rc = False
         while not rc:

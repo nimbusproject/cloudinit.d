@@ -11,4 +11,5 @@ if [ "X" != "X$CLOUDBOOT_FAB_SLEEP" ]; then
 fi
 
 sleep $slptim
+
 exit $rc

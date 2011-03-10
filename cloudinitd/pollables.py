@@ -90,31 +90,12 @@ class InstanceTerminatePollable(Pollable):
         Pollable.start(self)
         self._started = True
         self._instance.terminate()
-        # not sure if we need to wait for terminate or not, it seems we do not
-        #self._thread = HostnameCheckThread(self)
-        #self._thread.start()
 
     def poll(self):
         if not self._started:
             raise APIUsageException("You must first start the pollable object")
         self._execute_done_cb()
         return True
-        #if self._done:
-        #    self._thread.join()
-        #return self._done
-    
-    def _thread_poll(self, poll_period=1.0):
-        while not self._done:
-            try:
-                self._instance.update()
-                if self._instance.state == "terminated":
-                    self._done = True
-                else:
-                    time.sleep(poll_period)
-            except Exception, ex:
-                self.exception = IaaSException(ex)
-                self._done = True
-
 
     def cancel(self):
         pass
@@ -141,7 +122,7 @@ class InstanceHostnamePollable(Pollable):
         Pollable.start(self)
         if not self._instance:
             iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
-            self._instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
+            self._instance = iaas_con.run_instance(self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
         self._update()
         self._thread = HostnameCheckThread(self)
         self._thread.start()
@@ -155,7 +136,7 @@ class InstanceHostnamePollable(Pollable):
         # check time out here
         Pollable.poll(self)
         # cache the state at tis time on the local call stack, should be thread safe
-        state = self._instance.state
+        state = self._instance.get_state()
         if state == "running":
             self._done = True
             self._thread.join()
@@ -172,13 +153,13 @@ class InstanceHostnamePollable(Pollable):
             self._thread.join()
 
     def get_instance_id(self):
-        return self._instance.id
+        return self._instance.get_id()
 
     def get_instance(self):
         return self._instance
 
     def get_hostname(self):
-        return self._instance.public_dns_name
+        return self._instance.get_hostname()
 
     def _update(self):
         try:
@@ -199,40 +180,12 @@ class InstanceHostnamePollable(Pollable):
                 # because update is called in start we will sleep first
                 time.sleep(poll_period)
                 self._update()
-                if self._instance.state != "pending":
+                if self._instance.get_state() != "pending":
                     done = True
             except Exception, ex:
                 self._log.error(ex)
                 self.exception = IaaSException(ex)
                 done = True
-
-
-class InstanceLaunchHostnamePollable(Pollable):
-
-    def __init__(self, s, log=logging, timeout=600):
-        self._instance_poller = None
-        self._log = log
-        self._s = s
-
-    def start(self):
-
-        InstanceHostnamePollable(instance, log=log, timeout=timeout)
-        InstanceHostnamePollable.start()
-
-
-    def poll(self):
-        rc = InstanceHostnamePollable.poll(self)
-        if rc:
-            self._s.hostname = self.get_hostname()
-            self._db.db_commit()
-        return rc
-
-    def cancel(self):
-        InstanceHostnamePollable.cancel(self)
-        self._done = True
-        if self._thread:
-            self._thread.join()
-
 
 class PopenExecutablePollable(Pollable):
     """

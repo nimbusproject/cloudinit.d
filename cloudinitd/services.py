@@ -164,7 +164,7 @@ class SVCContainer(object):
             if self._s.instance_id:
                 iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
                 try:
-                    instance = iaas_find_instance(iaas_con, self._s.instance_id)
+                    instance = iaas_con.find_instance(self._s.instance_id)
                     self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
                     self._term_host_pollers.add_level([self._shutdown_poller])
                 except IaaSException, iaas_ex:
@@ -187,9 +187,6 @@ class SVCContainer(object):
 
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
-            #iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
-
-            #instance = iaas_run_instance(iaas_con, self._s.image, self._s.allocation, self._s.keyname, security_groupname=self._s.securitygroups)
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
             self._hostname_poller = InstanceHostnamePollable(s=self._s, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
@@ -261,7 +258,7 @@ class SVCContainer(object):
             fabfile = fabfile[0:-4] + ".py"
             cloudinitd.log(self._log, logging.DEBUG, "modfiled fabfile is: %s" % (fabfile))
 
-        cmd = fabexec + " -p XXX -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
+        cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
@@ -475,7 +472,6 @@ class SVCContainer(object):
         self._s.contextualized = 1
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
-
 
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()

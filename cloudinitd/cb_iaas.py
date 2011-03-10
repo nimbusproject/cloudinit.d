@@ -3,6 +3,9 @@ import datetime
 import uuid
 import boto
 import boto.ec2
+from boto.provider import Provider
+from libcloud.providers import get_driver
+
 try:
     from boto.regioninfo import RegionInfo
 except:
@@ -12,7 +15,6 @@ import cloudinitd
 from cloudinitd.exceptions import ConfigException, IaaSException
 
 __author__ = 'bresnaha'
-
 
 g_fake_instance_table = {}
 
@@ -32,6 +34,66 @@ class IaaSTestCon(object):
         #        v.append(g_fake_instance_table[id])
         return v
 
+    def run_instance(self, image, instance_type, key_name, security_groupname=None):
+        h = "localhost"
+        return IaaSTestInstance(h)
+
+    def find_instance(self, instance_id):
+        global g_fake_instance_table
+
+        try:
+            return g_fake_instance_table[instance_id]
+        except Exception, ex:
+            raise IaaSException(str(ex))
+
+
+class IaaSBotoConn(object):
+    def __init__(self, con):
+        self._boto_con = con
+
+    def get_all_instances(self, instance_ids=None):
+        return self._boto_con.get_all_instances(instance_ids) 
+
+    def run_instance(self, image, instance_type, key_name, security_groupname=None):
+        sec_group = None
+        if security_groupname:
+             sec_group_a = self._boto_con.get_all_security_groups(groupnames=[security_groupname,])
+             sec_group = sec_group_a[0]
+
+        reservation = self._boto_con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
+        instance = reservation.instances[0]
+        return IaaSBotoInstance(instance)
+
+    def find_instance(self, instance_id):
+        reservation = self._boto_con.get_all_instances(instance_ids=[instance_id,])
+        if len(reservation) < 1:
+            raise IaaSException(Exception("There is no instance %s" % (instance_id)))
+        if len(reservation[0].instances) < 1:
+            ex = IaaSException(Exception("There is no instance %s" % (instance_id)))
+            raise ex
+        instance = reservation[0].instances[0]
+        i = IaaSBotoInstance(instance)
+        return i
+
+
+class IaaSLibCloudConn(object):
+    def __init__(self, con):
+        self._con = con
+
+    def get_all_instances(self, instance_ids=None):
+        pass
+#        name	String with a name for this new node (required) (type: str )#
+	#size	The size of resources allocated to this node. (required) (type: NodeSize )
+	#image	OS Image to boot on node. (required) (type: NodeImage )
+	#location	Which data center to create a node in. If empty, undefined behavoir will be selected. (optional) (type: NodeLocation )
+	#auth	Initial authentication information for the node (optiona
+
+    def run_instance(self, image, instance_type, key_name, security_groupname=None):
+        pass
+
+    def find_instance(self, instance_id):
+        pass
+
 class IaaSTestInstance(object):
 
     def __init__(self, hostname, time_to_hostname=2.0):
@@ -48,6 +110,9 @@ class IaaSTestInstance(object):
         self._time_next_state = datetime.datetime.now() + timedelta(days=0, seconds=time_to_hostname)
         self._next_state = "running"
 
+    def get_state(self):
+        return self.state
+
     def terminate(self):
         self._time_next_state = datetime.datetime.now() + timedelta(days=0, seconds=self.time_to_hostname)
         self._next_state = "running"
@@ -62,16 +127,53 @@ class IaaSTestInstance(object):
             self._time_next_state = None
         return self.state
 
-def iaas_find_instance(con, instance_id):
-    global g_fake_instance_table
+    def get_hostname(self):
+        return self.public_dns_name
 
-    if type(con) == IaaSTestCon:
-        try:
-            return g_fake_instance_table[instance_id]
-        except Exception, ex:
-            raise IaaSException(str(ex))
-    else:
-        return _real_find_instance(con, instance_id)
+    def get_id(self):
+        return self.id
+
+class IaaSBotoInstance(object):
+
+    def __init__(self, instance):
+        self._instance = instance
+
+    def terminate(self):
+        return self._instance.terminate()
+
+    def update(self):
+        return self._instance.update()
+
+    def get_hostname(self):
+        return self._instance.public_dns_name
+
+    def get_state(self):
+        return self._instance.state
+
+    def get_id(self):
+        return self._instance.id
+
+
+class IaaSLibCloudInstance(object):
+
+    def __init__(self, instance):
+        self._instance = instance
+
+    def terminate(self):
+        return self._instance.terminate()
+
+    def update(self):
+        return self._instance.update()
+
+    def get_hostname(self):
+        return self._instance.public_dns_name
+
+    def get_state(self):
+        return self._instance.state
+
+    def get_id(self):
+        return self._instance.id
+
 
 def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
     if 'CLOUDBOOT_TESTENV' in os.environ:
@@ -81,13 +183,7 @@ def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"
     else:
         return _real_iaas_get_con(key, secret, iaashostname, iaasport, iaas)
 
-def iaas_run_instance(con, image, instance_type, key_name, security_groupname=None):
-    if type(con) == IaaSTestCon:
-        h = "localhost"
-        return IaaSTestInstance(h)
-    else:
-        return _real_iaas_run_instance(con, image, instance_type, key_name, security_groupname)
-        
+
 def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
     orig_key = key
     orig_secret = secret
@@ -113,25 +209,12 @@ def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None)
         else:
             con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
 
-    return con
+    return IaaSBotoConn(con)
 
-def _real_iaas_run_instance(con, image, instance_type, key_name, security_groupname=None):
-    sec_group = None
-    if security_groupname:
-         sec_group_a = con.get_all_security_groups(groupnames=[security_groupname,])
-         sec_group = sec_group_a[0]
-
-    reservation = con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
-    instance = reservation.instances[0]
-    return instance
-
-def _real_find_instance(con, instance_id):
-    reservation = con.get_all_instances(instance_ids=[instance_id,])
-    if len(reservation) < 1:
-        raise IaaSException(Exception("There is no instance %s" % (instance_id)))
-    if len(reservation[0].instances) < 1:
-        ex = IaaSException(Exception("There is no instance %s" % (instance_id)))
-        raise ex
-    instance = reservation[0].instances[0]
-
-    return instance
+def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
+    if iaas.lower() == "nimbus":
+        conn = None
+    else:
+        Driver = get_driver(Provider.EC2) 
+        conn = Driver(key, secret)
+    return IaaSLibCloudConn(conn)

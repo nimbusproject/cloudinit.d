@@ -1,9 +1,9 @@
 __author__ = 'bresnaha'
 
 import os
-from fabric.api import env, run, put, sudo, cd
+from fabric.api import env, run, put, sudo, cd, get
+from cloudinitd.statics import *
 
-REMOTE_WORKING_DIR = "/tmp/nimbusready"
 
 def _iftar(filename):
     """Return base filename if filename ends with .tar.gz (and does not simply equal that suffix)
@@ -66,9 +66,11 @@ def bootpgm(pgm=None, conf=None, output=None):
         put(conf, destconf)
     with cd(REMOTE_WORKING_DIR):
         sudo(destpgm)
-    if output:
-        remote_output = "%s/bootout.json" % REMOTE_WORKING_DIR
-        get(remote_output, output)
+        try:
+            fetch_conf(output=output)
+        except:
+            pass
 
-    
-
+def fetch_conf(output=None):
+    remote_output = "%s/bootout.json" % REMOTE_WORKING_DIR
+    get(remote_output, output) 

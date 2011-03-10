@@ -1,7 +1,7 @@
 import tempfile
 import unittest
 import uuid
-from cloudinitd.cb_iaas import iaas_get_con, iaas_find_instance
+from cloudinitd.cb_iaas import iaas_get_con
 from cloudinitd.user_api import CloudInitD
 import os
 import cloudinitd
@@ -280,7 +280,7 @@ class CloudInitDTests(unittest.TestCase):
         iaas_port = svc.get_attr_from_bag('iaas_port')
         instance_id = svc.get_attr_from_bag('instance_id')
         con = iaas_get_con(key, secret, iaashostname=iaas_host, iaasport=iaas_port)
-        instance = iaas_find_instance(con, instance_id)
+        instance = con.find_instance(instance_id)
         instance.terminate()
 
         if 'CLOUDBOOT_TESTENV' in os.environ:
@@ -318,7 +318,7 @@ class CloudInitDTests(unittest.TestCase):
 #        iaas_port = svc.get_attr_from_bag('iaas_port')
 #        instance_id = svc.get_attr_from_bag('instance_id')
 #        con = iaas_get_con(key, secret, iaashostname=iaas_host, iaasport=iaas_port)
-#        instance = iaas_find_instance(con, instance_id)
+#        instance = con.find_instance(con, instance_id)
 #        instance.terminate()
 #
 #        if 'CLOUDBOOT_TESTENV' in os.environ:

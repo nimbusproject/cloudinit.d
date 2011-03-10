@@ -7,3 +7,6 @@ callback_action_error = "error"
 
 callback_return_default = None
 callback_return_restart = "restart"
+
+REMOTE_WORKING_DIR = "/tmp/nimbusready"
+
