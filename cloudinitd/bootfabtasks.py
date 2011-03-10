@@ -72,5 +72,5 @@ def bootpgm(pgm=None, conf=None, output=None):
             pass
 
 def fetch_conf(output=None):
-    remote_output = "%s/bootout.json" % REMOTE_WORKING_DIR
+    remote_output = "%s/bootout.json" % (REMOTE_WORKING_DIR)
     get(remote_output, output) 

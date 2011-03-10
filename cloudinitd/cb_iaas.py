@@ -81,7 +81,12 @@ class IaaSLibCloudConn(object):
         self._con = con
 
     def get_all_instances(self, instance_ids=None):
-        pass
+        nodes = conn.list_nodes()
+        if instance_ids:
+            nodes = [IaaSLibCloudInstance(n) for n in nodes if n.name in instance_ids]
+        else:
+            nodes = [IaaSLibCloudInstance(n) for n in nodes]
+        return nodes
 #        name	String with a name for this new node (required) (type: str )#
 	#size	The size of resources allocated to this node. (required) (type: NodeSize )
 	#image	OS Image to boot on node. (required) (type: NodeImage )
@@ -92,7 +97,8 @@ class IaaSLibCloudConn(object):
         pass
 
     def find_instance(self, instance_id):
-        pass
+        i_a = self.get_all_instances([instance_id,])
+        return i_a[0]
 
 class IaaSTestInstance(object):
 
@@ -156,23 +162,23 @@ class IaaSBotoInstance(object):
 
 class IaaSLibCloudInstance(object):
 
-    def __init__(self, instance):
-        self._instance = instance
+    def __init__(self, node):
+        self._node = node
 
     def terminate(self):
-        return self._instance.terminate()
+        pass
 
     def update(self):
-        return self._instance.update()
+        pass
 
     def get_hostname(self):
-        return self._instance.public_dns_name
+        pass
 
     def get_state(self):
-        return self._instance.state
+        pass
 
     def get_id(self):
-        return self._instance.id
+        pass
 
 
 def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
