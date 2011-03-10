@@ -332,7 +332,6 @@ def main(argv=sys.argv[1:]):
         print "You must provide a command.  Run with --help"
         return 1
 
-
     # process the command
     global g_action
     global g_outfile

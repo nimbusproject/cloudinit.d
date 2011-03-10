@@ -59,7 +59,7 @@ def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", 
 
     orig_msg = msg
     try:
-        if sys.stdout.isatty():
+        if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
             msg = g_background_dict[bg_color] + g_colors_dict[color] + msg + g_operations_dict['reset']
             if bold:
                 msg = g_operations_dict['bold'] + msg# + g_operations_dict['bold_off']
