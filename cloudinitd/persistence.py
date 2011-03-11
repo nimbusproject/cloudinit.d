@@ -78,12 +78,30 @@ attrbag_table = Table('attrbag', metadata,
     )
 
 
-def _join_or_none(base1, base2):
-    if base2 == None:
+def _resolve_file_or_none(context_dir, conf, conf_file):
+    """Return absolute path to file if specified.  If None or empty string return None.
+
+    Supports configurations of "../xyz" (or "xyz") being taken relative to the configuration
+    file it was specified in.
+
+    * context_dir - Directory of the configuration file (level*conf)
+
+    * conf - Configuration value, may be None or empty string
+
+    * conf_file - Absolute path to the file where the configuration was (for errors)
+
+    If there is a path to be resolved, Exception is raised when it does not exist.
+    """
+    if not conf:
         return None
-    base1 = os.path.expanduser(base1)
-    base2 = os.path.expanduser(base2)
-    return os.path.join(base1, base2)
+    base1 = os.path.expanduser(context_dir)
+    base2 = os.path.expanduser(conf)
+    path = os.path.join(base1, base2)
+    path = os.path.abspath(path) # This resolves "/../"
+    if not os.path.exists(path):
+        raise Exception("File does not exist: '%s'.  This was "
+                        "referenced in the file '%s'." % (path, conf_file))
+    return path
 
 class BootObject(object):
 
@@ -126,7 +144,8 @@ class ServiceObject(object):
         self.contextualized = 0
         self.securitygroups = None
 
-    def _load_from_conf(self, parser, section, db, conf_dir, cloud_confs):
+    def _load_from_conf(self, parser, section, db, conf_dir, cloud_confs, conf_file):
+        """conf_dir is the directory of the particular level*conf file"""
 
         iaas = config_get_or_none(parser, section, "iaas")
         iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
@@ -194,13 +213,13 @@ class ServiceObject(object):
 
         self.name = section.replace("svc-", "")
         self.image = image
-        self.bootconf = _join_or_none(conf_dir, bootconf)
-        self.bootpgm = _join_or_none(conf_dir, bootpgm)
+        self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
+        self.bootpgm = _resolve_file_or_none(conf_dir, bootpgm, conf_file)
         self.hostname = hostname
-        self.readypgm = _join_or_none(conf_dir, readypgm)
+        self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file)
         self.username = ssh_user
         self.scp_username = scp_user
-        self.localkey = _join_or_none(conf_dir, localssh)
+        self.localkey = _resolve_file_or_none(conf_dir, localssh, conf_file)
         self.keyname = sshkey
         self.allocation = allo
         self.iaas = iaas
@@ -219,8 +238,7 @@ class ServiceObject(object):
         deps_list.sort()
         for i in deps_list:
             deps = config_get_or_none(parser, section, i)
-            deps_file = _join_or_none(conf_dir, deps)
-
+            deps_file = _resolve_file_or_none(conf_dir, deps, conf_file)
             if deps_file:
                 parser2 = ConfigParser.ConfigParser()
                 parser2.read(deps_file)
@@ -361,13 +379,15 @@ class CloudInitDDB(object):
 
         sections = parser.sections()
 
+        context_dir = os.path.dirname(level_file)
+
         order = int(level_name.replace("level", ""))
         level = LevelObject(level_file, level_name, order)
         for s in sections:
             ndx = s.find("svc-")
             if ndx == 0:
                 svc_db = ServiceObject()
-                svc_db._load_from_conf(parser, s, self, self._confdir, self._cloudconf_sections)
+                svc_db._load_from_conf(parser, s, self, context_dir, self._cloudconf_sections, level_file)
                 level.services.append(svc_db)
                 self._session.add(svc_db)
         return (level, order)
