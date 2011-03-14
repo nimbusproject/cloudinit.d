@@ -181,6 +181,25 @@ class IaaSLibCloudInstance(object):
         pass
 
 
+    def _create_node_data(self, spec, **kwargs):
+        """Utility to get correct form of data to create a Node.
+"""
+        image = NodeImage(spec.image, spec.name, self.node_driver)
+        sz = ec2.EC2_INSTANCE_TYPES[spec.size] #XXX generalize (for Nimbus, etc)
+        size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self.node_driver)
+        node_data = {
+            'name':spec.name,
+            'size':size,
+            'image':image,
+            'ex_mincount':str(spec.count),
+            'ex_maxcount':str(spec.count),
+            'ex_userdata':spec.userdata,
+            'ex_keyname':spec.keyname,
+        }
+
+        node_data.update(kwargs)
+
+
 def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
     if 'CLOUDBOOT_TESTENV' in os.environ:
         if secret == "fail":

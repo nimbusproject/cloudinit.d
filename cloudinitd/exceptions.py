@@ -82,7 +82,7 @@ class MultilevelException(PollableException):
         s = "["
         d = ""
         for ex in self.exception_list:
-            s = s + d + str(ex)
+            s = s + d + str(ex) + ":" + str(type(ex))
             d = ","
         s = s + "]"
         return s

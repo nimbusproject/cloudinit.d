@@ -23,6 +23,9 @@ metadata = MetaData()
 def config_get_or_none(parser, s, v, default=None):
     try:
         x = parser.get(s, v)
+        if not x:
+            return x
+        x = cloudinitd.get_env_val(x)
         return x
     except:
         return default

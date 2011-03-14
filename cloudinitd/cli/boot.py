@@ -60,7 +60,14 @@ Run with the command 'commands' to see a list of all possible commands
     opt = bootOpts("remotedebug", "X", SUPPRESS_HELP, False, flag=True)
     opt.add_opt(parser)
 
-
+    homedir = os.path.expanduser("~/.cloudinitd")
+    try:
+        if not os.path.exists(homedir):
+            os.mkdir(homedir)
+            os.chmod(homedir, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR)
+    except Exception, ex:
+        print_chars(0, "Error creating cloudinit.d directort %s : %s" % (homedir, str(ex)))
+        
     (options, args) = parser.parse_args(args=argv)
     if not options.name:
         options.name = str(uuid.uuid4()).split("-")[0]
@@ -71,9 +78,6 @@ Run with the command 'commands' to see a list of all possible commands
     options.logger = cloudinitd.make_logger(options.loglevel, options.name, logdir=options.logdir)
     if not options.database:
         dbdir = os.path.expanduser("~/.cloudinitd")
-        if not os.path.exists(dbdir):
-            os.mkdir(dbdir)
-        os.chmod(dbdir, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR)
         options.database = dbdir
 
     if options.quiet:
