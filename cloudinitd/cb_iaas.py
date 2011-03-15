@@ -3,7 +3,8 @@ import datetime
 import uuid
 import boto
 import boto.ec2
-from boto.provider import Provider
+#from boto.provider import Provider
+from libcloud.base import NodeImage, NodeSize
 from libcloud.providers import get_driver
 
 try:
@@ -34,7 +35,7 @@ class IaaSTestCon(object):
         #        v.append(g_fake_instance_table[id])
         return v
 
-    def run_instance(self, image, instance_type, key_name, security_groupname=None):
+    def run_instance(self):
         h = "localhost"
         return IaaSTestInstance(h)
 
@@ -48,24 +49,58 @@ class IaaSTestCon(object):
 
 
 class IaaSBotoConn(object):
-    def __init__(self, con):
-        self._boto_con = con
+    def __init__(self, svc, key=None, secret=None, iaashostname=None):
+        iaas = None
+        self._svc = svc
+        if self._svc:
+            key = svc.get_dep("iaas_key")
+            secret = svc.get_dep("iaas_secret")
+            if not key:
+                raise ConfigException("IaaS key %s not in env" % (key))
+            if not secret:
+                raise ConfigException("IaaS key %s not in env" % (secret))
+
+            iaashostname = svc.get_dep("iaas_hostname")
+            iaas = svc.get_dep("iaas")
+
+
+        if not iaas:
+            iaas = "us-east-1"
+
+        if not iaashostname:
+            region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
+            if not region:
+                raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
+            self._con =  boto.connect_ec2(key, secret, region=region)
+        else:
+            region = RegionInfo(iaashostname)
+            if not iaasport:
+                self._con =  boto.connect_ec2(key, secret, region=region)
+            else:
+                self._con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
 
     def get_all_instances(self, instance_ids=None):
-        return self._boto_con.get_all_instances(instance_ids) 
+        return self._con.get_all_instances(instance_ids)
 
-    def run_instance(self, image, instance_type, key_name, security_groupname=None):
+    def run_instance(self):
+        if self._svc == None:
+            raise ConfigException("You can only launch instances if a service is associated with the connection")
+        image = self._svc.get_dep("image")
+        instance_type = self._svc.get_dep("allocation")
+        key_name = self._svc.get_dep("keyname")
+        security_groupname = self._svc.get_dep("securitygroups")
+
         sec_group = None
         if security_groupname:
-             sec_group_a = self._boto_con.get_all_security_groups(groupnames=[security_groupname,])
+             sec_group_a = self._con.get_all_security_groups(groupnames=[security_groupname,])
              sec_group = sec_group_a[0]
 
-        reservation = self._boto_con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
+        reservation = self._con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
         instance = reservation.instances[0]
         return IaaSBotoInstance(instance)
 
     def find_instance(self, instance_id):
-        reservation = self._boto_con.get_all_instances(instance_ids=[instance_id,])
+        reservation = self._con.get_all_instances(instance_ids=[instance_id,])
         if len(reservation) < 1:
             raise IaaSException(Exception("There is no instance %s" % (instance_id)))
         if len(reservation[0].instances) < 1:
@@ -77,11 +112,23 @@ class IaaSBotoConn(object):
 
 
 class IaaSLibCloudConn(object):
-    def __init__(self, con):
-        self._con = con
+    def __init__(self, svc, key=None, secret=None):
+
+        self._svc = svc
+        if self._svc:
+            key = svc.get_dep("iaas_key")
+            secret = svc.get_dep("iaas_secret")
+            if not key:
+                raise ConfigException("IaaS key %s not in env" % (key))
+            if not secret:
+                raise ConfigException("IaaS key %s not in env" % (secret))
+
+        Driver = get_driver(Provider.EC2)
+        self._con = Driver(key, secret)
+        self._driver = Driver
 
     def get_all_instances(self, instance_ids=None):
-        nodes = conn.list_nodes()
+        nodes = self._con.list_nodes()
         if instance_ids:
             nodes = [IaaSLibCloudInstance(n) for n in nodes if n.name in instance_ids]
         else:
@@ -93,8 +140,31 @@ class IaaSLibCloudConn(object):
 	#location	Which data center to create a node in. If empty, undefined behavoir will be selected. (optional) (type: NodeLocation )
 	#auth	Initial authentication information for the node (optiona
 
-    def run_instance(self, image, instance_type, key_name, security_groupname=None):
-        pass
+    #def run_instance(self, image, instance_type, key_name, security_groupname=None):
+
+    def run_instance(self):
+        if self._svc == None:
+            raise ConfigException("You can only launch instances if a service is associated with the connection")
+
+        image = self._svc.get_dep("image")
+        instance_type = self._svc.get_dep("allocation")
+        key_name = self._svc.get_dep("keyname")
+        security_groupname = self._svc.get_dep("securitygroups")
+        name = self._svc.name
+        
+        image = NodeImage(image, name, self._driver)
+        sz = ec2.EC2_INSTANCE_TYPES[instance_type]
+        size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self._driver)
+        node_data = {
+            'name':name,
+            'size':size,
+            'image':image,
+            'ex_mincount':str(1),
+            'ex_maxcount':str(1),
+            'ex_securitygroup': security_groupname,
+            'ex_keyname':key_name,
+        }
+        node = driver.create_node(**node_data)
 
     def find_instance(self, instance_id):
         i_a = self.get_all_instances([instance_id,])
@@ -162,11 +232,12 @@ class IaaSBotoInstance(object):
 
 class IaaSLibCloudInstance(object):
 
-    def __init__(self, node):
+    def __init__(self, con, node):
         self._node = node
+        self._con = con
 
     def terminate(self):
-        pass
+        self._node.destroy()
 
     def update(self):
         pass
@@ -181,60 +252,16 @@ class IaaSLibCloudInstance(object):
         pass
 
 
-    def _create_node_data(self, spec, **kwargs):
-        """Utility to get correct form of data to create a Node.
-"""
-        image = NodeImage(spec.image, spec.name, self.node_driver)
-        sz = ec2.EC2_INSTANCE_TYPES[spec.size] #XXX generalize (for Nimbus, etc)
-        size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self.node_driver)
-        node_data = {
-            'name':spec.name,
-            'size':size,
-            'image':image,
-            'ex_mincount':str(spec.count),
-            'ex_maxcount':str(spec.count),
-            'ex_userdata':spec.userdata,
-            'ex_keyname':spec.keyname,
-        }
 
-        node_data.update(kwargs)
-
-
-def iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas="us-east-1"):
+def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
     if 'CLOUDBOOT_TESTENV' in os.environ:
         if secret == "fail":
             raise IaaSException("The test env is setup to fail here")
         return IaaSTestCon()
     else:
-        return _real_iaas_get_con(key, secret, iaashostname, iaasport, iaas)
-
-
-def _real_iaas_get_con(key, secret, iaashostname=None, iaasport=None, iaas=None):
-    orig_key = key
-    orig_secret = secret
-    # look up key and secret in env if needed
-    key = cloudinitd.get_env_val(key)
-    secret = cloudinitd.get_env_val(secret)
-    if not key:
-        raise ConfigException("IaaS key %s not in env" % (orig_key))
-    if not secret:
-        raise ConfigException("IaaS key %s not in env" % (orig_secret))
-    
-    if not iaashostname:
-        if not iaas:
-            raise ConfigException("There is no 'iaas' or 'iaas_hostname' configuration, you need one of these. %s" % (iaas))
-        region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
-        if not region:
-            raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
-        con =  boto.connect_ec2(key, secret, region=region)
-    else:
-        region = RegionInfo(iaashostname)
-        if not iaasport:
-            con =  boto.connect_ec2(key, secret, region=region)
-        else:
-            con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
-
-    return IaaSBotoConn(con)
+        # can hindge the connection type on the iaas type
+        return IaaSBotoConn(svc, key=key, secret=secret)
+        
 
 def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
     if iaas.lower() == "nimbus":
@@ -242,4 +269,4 @@ def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
     else:
         Driver = get_driver(Provider.EC2) 
         conn = Driver(key, secret)
-    return IaaSLibCloudConn(conn)
+    return IaaSLibCloudConn(conn, driver)

@@ -156,7 +156,7 @@ def launch_new(options, args):
     cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
     if options.validate:
-        print_chars(1, "Validating the launch plan.")
+        print_chars(1, "Validating the launch plan.\n")
         errors = cb.boot_validate()
         if len(errors) > 0:
             print_chars(0, "The boot plan is not valid.\n", color = "red")

@@ -14,7 +14,7 @@ if 'CLOUDBOOT_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDBOOT_IAAS_SECRET_KEY'
     os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "NOTHING"
     os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "NOTHING"
 
-
+from cloudinitd.nosetests.service_tests import *
 from cloudinitd.nosetests.basic_tests import *
 from cloudinitd.nosetests.basic_unit_tests import *
 from cloudinitd.nosetests.instance_dies_tests import *

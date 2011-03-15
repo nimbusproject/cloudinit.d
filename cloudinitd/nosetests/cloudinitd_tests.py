@@ -68,7 +68,14 @@ class CloudInitDTests(unittest.TestCase):
     def test_basic_validate(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
-        rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+        
+    def test_bad_validate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
 
@@ -85,7 +92,7 @@ class CloudInitDTests(unittest.TestCase):
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(key, secret)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret)
         i_list = con.get_all_instances()
         rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
@@ -259,7 +266,7 @@ class CloudInitDTests(unittest.TestCase):
         n = "ERROR"
         line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
-        
+
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
@@ -279,7 +286,7 @@ class CloudInitDTests(unittest.TestCase):
         iaas_host = svc.get_attr_from_bag('iaas_hostname')
         iaas_port = svc.get_attr_from_bag('iaas_port')
         instance_id = svc.get_attr_from_bag('instance_id')
-        con = iaas_get_con(key, secret, iaashostname=iaas_host, iaasport=iaas_port)
+        con = iaas_get_con(None, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
         instance = con.find_instance(instance_id)
         instance.terminate()
 
@@ -317,7 +324,7 @@ class CloudInitDTests(unittest.TestCase):
 #        iaas_host = svc.get_attr_from_bag('iaas_hostname')
 #        iaas_port = svc.get_attr_from_bag('iaas_port')
 #        instance_id = svc.get_attr_from_bag('instance_id')
-#        con = iaas_get_con(key, secret, iaashostname=iaas_host, iaasport=iaas_port)
+#        con = iaas_get_con(svc)
 #        instance = con.find_instance(con, instance_id)
 #        instance.terminate()
 #

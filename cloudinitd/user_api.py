@@ -153,7 +153,8 @@ class CloudInitD(object):
             self._levels.append(level_list)
         self._exception = None
 
-
+    def find_dep(self, service_name, key):
+        return self._boot_top.find_dep(service_name, key)
 
     def get_db_file(self):
         """
@@ -304,7 +305,7 @@ class CloudInitD(object):
                     hash_str = hash_str + secret
 
                 if hash_str not in connnections.keys():
-                    con = cb_iaas.iaas_get_con(key, secret, iaashostname=hostname, iaasport=port, iaas=iaas)
+                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaashostname=hostname, iaasport=port)
                     connnections[hash_str] = (con, [svc])
                 else:
                     (con, svc_list) = connnections[hash_str]

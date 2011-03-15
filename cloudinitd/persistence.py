@@ -247,8 +247,10 @@ class ServiceObject(object):
                 parser2.read(deps_file)
                 keys_val = parser2.items("deps")
                 for (ka,val) in keys_val:
-                    bao = BagAttrsObject(ka, val)
-                    self.attrs.append(bao)
+                    val2 = config_get_or_none(parser2, "deps", ka)
+                    if val2:
+                        bao = BagAttrsObject(ka, val2)
+                        self.attrs.append(bao)
             
 
                 

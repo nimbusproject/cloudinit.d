@@ -82,8 +82,8 @@ class BootTopLevel(object):
     def find_dep(self, svc_name, attr):
         try:
             svc = self.services[svc_name]
-        except:
-            return None
+        except KeyError, ex:
+            raise APIUsageException("service %s not found" % (svc_name))
         return svc.get_dep(attr)
 
     def get_exception(self):
@@ -162,7 +162,7 @@ class SVCContainer(object):
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
             if self._s.instance_id:
-                iaas_con = iaas_get_con(self._s.iaas_key, self._s.iaas_secret, self._s.iaas_hostname, self._s.iaas_port, self._s.iaas)
+                iaas_con = iaas_get_con(self)
                 try:
                     instance = iaas_con.find_instance(self._s.instance_id)
                     self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
@@ -188,7 +188,7 @@ class SVCContainer(object):
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
-            self._hostname_poller = InstanceHostnamePollable(s=self._s, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
+            self._hostname_poller = InstanceHostnamePollable(svc=self, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
@@ -462,9 +462,7 @@ class SVCContainer(object):
             return
         for k in j_doc.keys():
             self._attr_bag[k] = j_doc[k]
-            bao = BagAttrsObject()
-            bao.key = k
-            bao.value = j_doc[k]
+            bao = BagAttrsObject(k, j_doc[k])
             self._s.attrs.append(bao)
 
     def context_done_cb(self, poller):

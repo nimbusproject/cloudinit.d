@@ -26,7 +26,7 @@ class BasicUserAPITests(unittest.TestCase):
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(key, secret)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret)
         i_list = con.get_all_instances()
         conf_file = "multilevelsimple"
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
