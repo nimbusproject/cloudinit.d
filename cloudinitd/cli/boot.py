@@ -304,6 +304,7 @@ def list_commands(options, args):
             msg = msg[:i] + "\n\t" + msg[i+1:]
             ndx = ndx + line_len
         print_chars(1, "%s\n" % (msg))
+    return 0
 
 def list(options, args):
     """
@@ -334,7 +335,10 @@ def main(argv=sys.argv[1:]):
         argv = []
     if len(argv) == 0:
         argv.append("--help")
-    (args, options) = parse_commands(argv)
+    try:
+        (args, options) = parse_commands(argv)
+    except SystemExit:
+        return 0
     if not args or len(args) == 0:
         print "You must provide a command.  Run with --help"
         return 1

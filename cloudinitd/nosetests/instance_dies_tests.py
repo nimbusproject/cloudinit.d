@@ -62,30 +62,30 @@ class InstanceDiesTests(unittest.TestCase):
             cb.get_level(i)
         self._terminate(dir, cb.run_name)
 
-    def test_restart_one_level(self):
-        tst_name = "oneservice"
-        (dir, cb) = self._start_one(tst_name)
-        svc = cb.get_service("sampleservice")
-        p = svc.restart()
-        rc = p.poll()
-        while not rc:
-            rc = p.poll()
-            time.sleep(0.1)
-        self._status(dir, cb.run_name)
-        self._terminate(dir, cb.run_name)
+#    def test_restart_one_level(self):
+#        tst_name = "oneservice"
+#        (dir, cb) = self._start_one(tst_name)
+#        svc = cb.get_service("sampleservice")
+#        p = svc.restart()
+#        rc = p.poll()
+#        while not rc:
+#            rc = p.poll()
+#            time.sleep(0.1)
+#        self._status(dir, cb.run_name)
+#        self._terminate(dir, cb.run_name)
 
-    def test_restart_first_level(self):
-        tst_name = "multilevelsimple"
-        (dir, cb) = self._start_one(tst_name)
-        svc = cb.get_service("Two")
-        p = svc.restart()
-        rc = p.poll()
-        while not rc:
-            rc = p.poll()
-            time.sleep(0.1)
-        self._status(dir, cb.run_name)
-        self._terminate(dir, cb.run_name)
-
+#    def test_restart_first_level(self):
+#        tst_name = "multilevelsimple"
+#        (dir, cb) = self._start_one(tst_name)
+#        svc = cb.get_service("Two")
+#        p = svc.restart()
+#        rc = p.poll()
+#        while not rc:
+#            rc = p.poll()
+#            time.sleep(0.1)
+#        self._status(dir, cb.run_name)
+#        self._terminate(dir, cb.run_name)
+#
 
     def test_poll_to_soon_error(self):
         self.plan_basedir = self.plan_basedir = cloudinitd.nosetests.g_plans_dir

@@ -1,11 +1,13 @@
 from datetime import timedelta
 import datetime
+import threading
 import uuid
 import boto
 import boto.ec2
 #from boto.provider import Provider
 from libcloud.base import NodeImage, NodeSize
 from libcloud.providers import get_driver
+from libcloud.types import Provider
 
 try:
     from boto.regioninfo import RegionInfo
@@ -18,6 +20,8 @@ from cloudinitd.exceptions import ConfigException, IaaSException
 __author__ = 'bresnaha'
 
 g_fake_instance_table = {}
+
+g_lock = threading.Lock()
 
 class IaaSTestCon(object):
     def __init__(self):
@@ -80,9 +84,23 @@ class IaaSBotoConn(object):
                 self._con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
 
     def get_all_instances(self, instance_ids=None):
-        return self._con.get_all_instances(instance_ids)
+        global g_lock
+        g_lock.acquire()
+        try:
+            return self._con.get_all_instances(instance_ids)
+        finally:
+            g_lock.release()
 
     def run_instance(self):
+        global g_lock
+        g_lock.acquire()
+        try:
+            x = self._run_instance()
+        finally:
+            g_lock.release()
+        return x
+
+    def _run_instance(self):
         if self._svc == None:
             raise ConfigException("You can only launch instances if a service is associated with the connection")
         image = self._svc.get_dep("image")
@@ -100,6 +118,15 @@ class IaaSBotoConn(object):
         return IaaSBotoInstance(instance)
 
     def find_instance(self, instance_id):
+        global g_lock
+        g_lock.acquire()
+        try:
+            x = self._find_instance(instance_id)
+        finally:
+            g_lock.release()
+        return x
+
+    def _find_instance(self, instance_id):
         reservation = self._con.get_all_instances(instance_ids=[instance_id,])
         if len(reservation) < 1:
             raise IaaSException(Exception("There is no instance %s" % (instance_id)))
@@ -165,6 +192,8 @@ class IaaSLibCloudConn(object):
             'ex_keyname':key_name,
         }
         node = driver.create_node(**node_data)
+        return IaaSLibCloudInstance(self, node)
+
 
     def find_instance(self, instance_id):
         i_a = self.get_all_instances([instance_id,])
@@ -213,21 +242,44 @@ class IaaSBotoInstance(object):
 
     def __init__(self, instance):
         self._instance = instance
+        self._lock = threading.Lock()
 
     def terminate(self):
-        return self._instance.terminate()
+        self._lock.acquire()
+        try:
+            x = self._instance.terminate()
+        finally:
+            self._lock.release()
+        return x
 
     def update(self):
-        return self._instance.update()
+        self._lock.acquire()
+        try:
+            x = self._instance.update()
+        finally:
+            self._lock.release()
+        return x
 
     def get_hostname(self):
-        return self._instance.public_dns_name
+        self._lock.acquire()
+        try:
+            return self._instance.public_dns_name
+        finally:
+            self._lock.release()
 
     def get_state(self):
-        return self._instance.state
+        self._lock.acquire()
+        try:
+            return self._instance.state
+        finally:
+            self._lock.release()
 
     def get_id(self):
-        return self._instance.id
+        self._lock.acquire()
+        try:
+            return self._instance.id
+        finally:
+            self._lock.release()
 
 
 class IaaSLibCloudInstance(object):
@@ -259,8 +311,15 @@ def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
             raise IaaSException("The test env is setup to fail here")
         return IaaSTestCon()
     else:
+        global g_lock
+
+        g_lock.acquire()
+        try:
         # can hindge the connection type on the iaas type
-        return IaaSBotoConn(svc, key=key, secret=secret)
+            con = IaaSBotoConn(svc, key=key, secret=secret)
+        finally:
+            g_lock.release()
+        return con
         
 
 def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):

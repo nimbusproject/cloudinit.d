@@ -152,6 +152,7 @@ class ServiceObject(object):
 
         iaas = config_get_or_none(parser, section, "iaas")
         iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
+        iaas_port = config_get_or_none(parser, section, "iaas_port")
 
         sshkey = config_get_or_none(parser, section, "sshkeyname")
         localssh = config_get_or_none(parser, section, "localsshkeypath")
@@ -213,7 +214,17 @@ class ServiceObject(object):
             iaas_secret = db.default_iaas_secret
         if not securitygroups:
             securitygroups = db.default_securitygroups
-
+        if not image:
+            image = db.default_image
+        if not iaas_port:
+            iaas_port = db.default_iaas_port
+        if not bootconf:
+            bootconf = db.default_bootconf
+        if not bootpgm:
+            bootpgm = db.default_bootpgm
+        if not readypgm:
+            readypgm = db.default_readypgm
+                    
         self.name = section.replace("svc-", "")
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
@@ -335,14 +346,11 @@ class CloudInitDDB(object):
         self.default_iaas_secret = config_get_or_none(parser, s, "iaas_secret")
         self.default_securitygroups = config_get_or_none(parser, s, "securitygroups")
 
-#        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
-#        bootconf = config_get_or_none(parser, section, "bootconf")
-#        bootpgm = config_get_or_none(parser, section, "bootpgm")
-#        hostname = config_get_or_none(parser, section, "hostname")
-#        readypgm = config_get_or_none(parser, section, "readypgm")
-#        image = config_get_or_none(parser, section, "image")
-#        cloudconf = config_get_or_none(parser, section, "cloud")
-
+        self.default_bootconf = config_get_or_none(parser, s, "bootconf")
+        self.default_bootpgm = config_get_or_none(parser, s, "bootpgm")
+        self.default_hostname = config_get_or_none(parser, s, "hostname")
+        self.default_readypgm = config_get_or_none(parser, s, "readypgm")
+        self.default_image = config_get_or_none(parser, s, "image")
 
 
         all_sections = parser.sections()

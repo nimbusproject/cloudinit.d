@@ -65,6 +65,18 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def test_list_commands(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "commands"])
+        self.assertEqual(rc, 0)
+
+    def test_help(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["--help"])
+        self.assertEqual(rc, 0)        
+
     def test_basic_validate(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
