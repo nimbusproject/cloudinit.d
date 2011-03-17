@@ -238,6 +238,7 @@ class ServiceObject(object):
         self.allocation = allo
         self.iaas = iaas
         self.iaas_hostname = iaas_hostname
+        self.iaas_port = iaas_port
 
         self.iaas_secret = iaas_secret
         self.iaas_key = iaas_key

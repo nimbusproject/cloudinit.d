@@ -53,7 +53,7 @@ class IaaSTestCon(object):
 
 
 class IaaSBotoConn(object):
-    def __init__(self, svc, key=None, secret=None, iaashostname=None):
+    def __init__(self, svc, key=None, secret=None, iaashostname=None, iaasport=None):
         iaas = None
         self._svc = svc
         if self._svc:
@@ -65,6 +65,7 @@ class IaaSBotoConn(object):
                 raise ConfigException("IaaS key %s not in env" % (secret))
 
             iaashostname = svc.get_dep("iaas_hostname")
+            iaasport = svc.get_dep("iaas_port")
             iaas = svc.get_dep("iaas")
 
 
@@ -78,10 +79,12 @@ class IaaSBotoConn(object):
             self._con =  boto.connect_ec2(key, secret, region=region)
         else:
             region = RegionInfo(iaashostname)
+            print "IAAS %s %d" % (iaashostname, iaasport)
             if not iaasport:
                 self._con =  boto.connect_ec2(key, secret, region=region)
             else:
                 self._con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
+            self._con.host = iaashostname
 
     def get_all_instances(self, instance_ids=None):
         global g_lock
@@ -316,7 +319,7 @@ def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
         g_lock.acquire()
         try:
         # can hindge the connection type on the iaas type
-            con = IaaSBotoConn(svc, key=key, secret=secret)
+            con = IaaSBotoConn(svc, key=key, secret=secret, iaashostname=iaashostname, iaasport=iaasport)
         finally:
             g_lock.release()
         return con
