@@ -354,3 +354,28 @@ class CloudInitDTests(unittest.TestCase):
         print "start terminate"
         rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
+
+    def test_multiterminate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname1 = line[len(n):].strip()
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname2 = line[len(n):].strip()
+
+        print "run name is %s and %s" % (runname1, runname2)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  runname1, runname2])
+        self.assertEqual(rc, 0)
