@@ -2,10 +2,14 @@
 
 import sys
 import os
+import simplejson as json
 
 f = open("bootconf.json", "r")
-lines = f.readlines()
+vals_dict = json.load(f)
 f.close()
 
-print lines
-sys.exit(0)
+print vals_dict['message']
+cmd = "sudo echo %s > /var/www/test.txt" % (vals_dict['message'])
+print cmd
+rc = os.system(cmd)
+sys.exit(rc)
