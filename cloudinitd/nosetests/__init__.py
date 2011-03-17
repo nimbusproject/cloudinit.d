@@ -13,6 +13,18 @@ if 'CLOUDBOOT_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDBOOT_IAAS_SECRET_KEY'
     os.environ['CLOUD_BOOT_SSH'] = "/bin/true"
     os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "NOTHING"
     os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "notrealkey"
+    os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "notrealkey"
+    os.environ['CLOUDBOOT_IAAS_HOSTNAME'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_PORT'] = "NOTHING"
+
+    os.environ['CLOUDBOOT_IAAS_IMAGE'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_TYPE'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_ALLOCATION'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_SSHKEYNAME'] ="NOTHING"
+    os.environ['CLOUDBOOT_IAAS_SSHKEY'] = "/etc/group"
+    os.environ['CLOUDBOOT_SSH_USERNAME'] = "NOTHING"
+
 
 from cloudinitd.nosetests.service_tests import *
 from cloudinitd.nosetests.basic_tests import *

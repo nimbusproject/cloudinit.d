@@ -232,28 +232,30 @@ def terminate(options, args):
     if len(args) < 2:
         print "The terminate command requires a run name.  See --help"
         return 1
-    dbname = args[1]
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
-    print_chars(1, "Terminating %s\n" % (cb.run_name))
-    cb.shutdown()
-    try:
-        cb.block_until_complete(poll_period=0.1)
-        if not options.noclean:
-            path = "%s/cloudinitd-%s.db" % (options.database, dbname)
-            print_chars(1, "deleting the db file %s\n" % (path))
-            if not os.path.exists(path):
-                raise Exception("That DB does not seem to exist: %s" % (path))
-            os.remove(path)
-
-        return 0
-    except CloudServiceException, svcex:
-        print svcex
-    except MultilevelException, mex:
-        print mex
-    except KeyboardInterrupt:
-        print_chars(1, "Canceling...")
-        cb.cancel()
-    return 1
+    
+    for dbname in args[1:]:
+        rc = 0
+        cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
+        print_chars(1, "Terminating %s\n" % (cb.run_name))
+        cb.shutdown()
+        try:
+            cb.block_until_complete(poll_period=0.1)
+            if not options.noclean:
+                path = "%s/cloudinitd-%s.db" % (options.database, dbname)
+                print_chars(1, "deleting the db file %s\n" % (path))
+                if not os.path.exists(path):
+                    raise Exception("That DB does not seem to exist: %s" % (path))
+                os.remove(path)
+        except CloudServiceException, svcex:
+            print svcex
+            rc = 1
+        except MultilevelException, mex:
+            rc = 1
+        except KeyboardInterrupt:
+            print_chars(1, "Canceling...")
+            cb.cancel()
+            return 1
+    return rc
 
 def reboot(options, args):
     """
