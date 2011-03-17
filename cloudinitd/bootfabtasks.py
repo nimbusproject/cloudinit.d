@@ -51,7 +51,7 @@ def readypgm(pgm=None):
          destpgm = _tartask(REMOTE_WORKING_DIR, tarname, destpgm)
     env.warn_only = False
     with cd(REMOTE_WORKING_DIR):
-        sudo(destpgm)
+        run(destpgm)
 
 def bootpgm(pgm=None, conf=None, output=None):
     run('mkdir %s' % REMOTE_WORKING_DIR)
@@ -65,7 +65,7 @@ def bootpgm(pgm=None, conf=None, output=None):
         destconf = "%s/bootconf.json" % REMOTE_WORKING_DIR
         put(conf, destconf)
     with cd(REMOTE_WORKING_DIR):
-        sudo(destpgm)
+        run(destpgm)
         try:
             fetch_conf(output=output)
         except:
