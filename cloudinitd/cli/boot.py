@@ -235,10 +235,11 @@ def terminate(options, args):
     
     for dbname in args[1:]:
         rc = 0
-        cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
-        print_chars(1, "Terminating %s\n" % (cb.run_name))
-        cb.shutdown()
         try:
+            cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
+            print_chars(1, "Terminating %s\n" % (cb.run_name))
+            cb.shutdown()
+
             cb.block_until_complete(poll_period=0.1)
             if not options.noclean:
                 path = "%s/cloudinitd-%s.db" % (options.database, dbname)
@@ -249,7 +250,7 @@ def terminate(options, args):
         except CloudServiceException, svcex:
             print svcex
             rc = 1
-        except MultilevelException, mex:
+        except Exception, mex:
             rc = 1
         except KeyboardInterrupt:
             print_chars(1, "Canceling...")
