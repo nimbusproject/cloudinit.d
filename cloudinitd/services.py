@@ -110,9 +110,6 @@ class SVCContainer(object):
         self._db = db
         self._top_level = top_level
 
-        if self._s.contextualized == 2 and not boot:
-            raise APIUsageException("the service %s has been terminate.  The only action that can be performed on it is a boot" % (self.name))
-
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
         
         self._db.db_commit()
@@ -145,7 +142,8 @@ class SVCContainer(object):
 
     def _teminate_done(self, poller):
         self._s.contextualized = 2
-        self._s.hostname = None
+        if self._s.image:
+            self._s.hostname = None
         self._s.instance_id = None
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
@@ -154,35 +152,34 @@ class SVCContainer(object):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)
         if self._do_terminate:
-            if self._s.terminatepgm:
-                cmd = self._get_termpgm_cmd()
-                self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
-                self._term_host_pollers.add_level([self._terminate_poller])
-                pass
+            if self._s.contextualized == 2:
+                cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
-                cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
-            if self._s.instance_id:
-                iaas_con = iaas_get_con(self)
-                try:
-                    instance = iaas_con.find_instance(self._s.instance_id)
-                    self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
-                    self._term_host_pollers.add_level([self._shutdown_poller])
-                except IaaSException, iaas_ex:
-                    self._teminate_done(self)
-                    emsg = "Skipping terminate due to IaaS exception %s" % (str(iaas_ex))
-                    self._execute_callback(cloudinitd.callback_action_transition, emsg)
-                    cloudinitd.log(self._log, logging.INFO, emsg)
-            else:
-                cloudinitd.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
+                if self._s.terminatepgm and self._s.contextualized != 2:
+                    cmd = self._get_termpgm_cmd()
+                    self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                    self._term_host_pollers.add_level([self._terminate_poller])
+                    pass
+                else:
+                    cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
+                if self._s.instance_id:
+                    iaas_con = iaas_get_con(self)
+                    try:
+                        instance = iaas_con.find_instance(self._s.instance_id)
+                        self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
+                        self._term_host_pollers.add_level([self._shutdown_poller])
+                    except IaaSException, iaas_ex:                        
+                        emsg = "Skipping terminate due to IaaS exception %s" % (str(iaas_ex))
+                        self._execute_callback(cloudinitd.callback_action_transition, emsg)
+                        cloudinitd.log(self._log, logging.INFO, emsg)
+                else:
+                    cloudinitd.log(self._log, logging.DEBUG, "%s no instance id for termination" % (self.name))
+                    self._teminate_done(None)
         else:
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the terminate program" % (self.name))
 
         if not self._do_boot:
             cloudinitd.log(self._log, logging.INFO, "%s not doing boot, returning early" % (self.name))
-            return
-        # if the service if already contextualized
-        if self._s.hostname:
-            cloudinitd.log(self._log, logging.INFO, "%s already has a hostname, no need to launch IaaS" % (self.name))
             return
 
         if self._s.image:
@@ -196,7 +193,8 @@ class SVCContainer(object):
     def pre_start_iaas(self):
         self._term_host_pollers.start()
         self._iass_started = True
-        self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
+        if self._do_boot:
+            self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
 
     def _make_pollers(self):
         self._ready_poller = None
@@ -345,6 +343,12 @@ class SVCContainer(object):
     def start(self):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
+# HOW DO I HANDLE THIS?  THE PROBLEM IS THAT IF THE SERVICE WAS TERMINATED SOMEONE ELSE MAY HAVE GOTTEN THE HOSTNAME
+        if self._s.contextualized == 2 and not self._do_boot and not self._do_terminate:
+            ex = APIUsageException("the service %s has been terminate.  The only action that can be performed on it is a boot" % (self.name))
+            if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
+                raise ex
+
         self._start()
 
     def _start(self):
