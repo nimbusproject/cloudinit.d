@@ -322,6 +322,7 @@ def repair(options, args):
     """
     Check the status of all services.  If any services fail, reboot them.
     """
+    global g_repair
     g_repair = True
     if len(args) < 2:
         print "The repair command requires a run name.  See --help"

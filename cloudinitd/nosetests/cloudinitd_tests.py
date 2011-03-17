@@ -231,7 +231,8 @@ class CloudInitDTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         runname = self._get_runname(outfile)
 
-        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-v", "-v", "terminate",  "%s" % (runname)])
+        self._dump_output(outfile)
         self.assertEqual(rc, 0)
         n = "instance:"
         line = self._find_str(outfile, n)
@@ -319,43 +320,37 @@ class CloudInitDTests(unittest.TestCase):
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
-#
-#    def check_repair_error_test(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        dir = os.path.expanduser("~/.cloudinitd/")
-#        conf_file = self.plan_basedir + "/multileveldeps/top.conf"
-#        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
-#        cb.start()
-#        cb.block_until_complete(poll_period=1.0)
-#        runname = cb.run_name
-#        svc = cb.get_service("l2service")
-#
-#        secret = svc.get_attr_from_bag('iaas_secret')
-#        key = svc.get_attr_from_bag('iaas_key')
-#        iaas_host = svc.get_attr_from_bag('iaas_hostname')
-#        iaas_port = svc.get_attr_from_bag('iaas_port')
-#        instance_id = svc.get_attr_from_bag('instance_id')
-#        con = iaas_get_con(svc)
-#        instance = con.find_instance(con, instance_id)
-#        instance.terminate()
-#
-#        if 'CLOUDBOOT_TESTENV' in os.environ:
-#            bkfab = os.environ['CLOUD_BOOT_FAB']
-#            bkssh = os.environ['CLOUD_BOOT_SSH']
-#            os.environ['CLOUD_BOOT_FAB'] = "/bin/false"
-#            os.environ['CLOUD_BOOT_SSH'] = "/bin/false"
-#
-#        print "start repair"
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
-#        if 'CLOUDBOOT_TESTENV' in os.environ:
-#            os.environ['CLOUD_BOOT_FAB'] = bkfab
-#            os.environ['CLOUD_BOOT_SSH'] = bkssh
-#        self._dump_output(outfile)
-#        n = "ERROR"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#
-#        print "start terminate"
-#        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
+
+    def check_repair_error_test(self):
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            # we cannot run this one in fake mode yet
+            return
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        dir = os.path.expanduser("~/.cloudinitd/")
+        conf_file = self.plan_basedir + "/multileveldeps/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        runname = cb.run_name
+        svc = cb.get_service("l2service")
+
+        secret = svc.get_attr_from_bag('iaas_secret')
+        key = svc.get_attr_from_bag('iaas_key')
+        iaas_host = svc.get_attr_from_bag('iaas_hostname')
+        iaas_port = svc.get_attr_from_bag('iaas_port')
+        instance_id = svc.get_attr_from_bag('instance_id')
+        con = iaas_get_con(svc._svc, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
+        instance = con.find_instance(instance_id)
+        instance.terminate()
+
+        print "start repair"
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
+        self._dump_output(outfile)
+        n = "ERROR"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        print "start terminate"
+        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)

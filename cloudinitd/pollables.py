@@ -363,9 +363,25 @@ class MultiLevelPollable(Pollable):
         self.level_ndx = 0
         if len(self.levels) == 0:
             return
+        self._start()
+        
+    def _start(self):
         self._execute_cb(cloudinitd.callback_action_started, self._get_callback_level())
         for p in self.levels[self.level_ndx]:
-            p.start()
+            try:
+                p.start()
+            except Exception, ex:
+                self._exception_occurred = True
+                self.last_exception = PollableException(p, ex)
+                self._level_error_ex.append(self.last_exception)
+                self._level_error_polls.append(p)
+                cloudinitd.log(self._log, logging.ERROR, "Multilevel poll error on start %s" % (str(ex)), traceback)
+
+                if not self._continue_on_error:
+                    self._execute_cb(cloudinitd.callback_action_error, self._get_callback_level())
+                    self.exception = ex
+                    raise
+
 
     def poll(self):
         if self.exception and not self._continue_on_error:
@@ -416,8 +432,7 @@ class MultiLevelPollable(Pollable):
                 return True
             self._execute_cb(cloudinitd.callback_action_started, self._get_callback_level())
 
-            for p in self.levels[self.level_ndx]:
-                p.start()
+            self._start()
         return False
 
     def _execute_cb(self, action, lvl):
