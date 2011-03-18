@@ -16,7 +16,7 @@ if 'CLOUDBOOT_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDBOOT_IAAS_SECRET_KEY'
     os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "notrealkey"
     os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "notrealkey"
     os.environ['CLOUDBOOT_IAAS_HOSTNAME'] = "NOTHING"
-    os.environ['CLOUDBOOT_IAAS_PORT'] = "NOTHING"
+    os.environ['CLOUDBOOT_IAAS_PORT'] = "8978"
 
     os.environ['CLOUDBOOT_IAAS_IMAGE'] = "NOTHING"
     os.environ['CLOUDBOOT_IAAS_TYPE'] = "NOTHING"
