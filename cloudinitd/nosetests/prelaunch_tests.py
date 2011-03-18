@@ -22,11 +22,13 @@ class BasicUserAPITests(unittest.TestCase):
         try:
             key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
             secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
+            host = os.environ['CLOUDBOOT_IAAS_HOSTNAME']
+            port = os.environ['CLOUDBOOT_IAAS_PORT']
         except:
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaashostname=host, iaasport=port)
         i_list = con.get_all_instances()
         conf_file = "multilevelsimple"
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
