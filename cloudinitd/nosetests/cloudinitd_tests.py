@@ -100,11 +100,13 @@ class CloudInitDTests(unittest.TestCase):
         try:
             key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
             secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
+            host = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
+            port = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
         except:
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaashostname=host, iaasport=port)
         i_list = con.get_all_instances()
         rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
