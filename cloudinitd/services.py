@@ -295,18 +295,20 @@ class SVCContainer(object):
     def get_dep(self, key):
         # first parse through the known ones, then hit the attr bag
         if key == "hostname":
-            return self._s.hostname
+            rc = self._s.hostname
         elif key == "instance_id":
-            return self._s.instance_id
-        try:
-            return self._attr_bag[key]
-        except Exception, ex:
-            # if it isn't in the attr bad pull it from the services db defs.  This should allow the user the ability
-            # to query everything about the service
+            rc = self._s.instance_id
+        else:
             try:
-                return self._s.__getattribute__(key)
-            except AttributeError:
-                raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
+                rc = self._attr_bag[key]
+            except Exception, ex:
+                # if it isn't in the attr bad pull it from the services db defs.  This should allow the user the ability
+                # to query everything about the service
+                try:
+                    rc = self._s.__getattribute__(key)
+                except AttributeError:
+                    raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
+        return str(rc)
 
     def _do_attr_bag(self):
 

@@ -79,7 +79,6 @@ class IaaSBotoConn(object):
             self._con =  boto.connect_ec2(key, secret, region=region)
         else:
             region = RegionInfo(iaashostname)
-            print "IAAS %s %d" % (iaashostname, iaasport)
             if not iaasport:
                 self._con =  boto.connect_ec2(key, secret, region=region)
             else:
@@ -309,6 +308,10 @@ class IaaSBotoInstance(object):
 
 
 def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
+    # type check the port
+    if iaasport:
+        iaasport = int(iaasport)
+    
     if 'CLOUDBOOT_TESTENV' in os.environ:
         if secret == "fail":
             raise IaaSException("The test env is setup to fail here")
