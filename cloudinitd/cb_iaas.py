@@ -65,7 +65,7 @@ class IaaSBotoConn(object):
                 raise ConfigException("IaaS key %s not in env" % (secret))
 
             iaashostname = svc.get_dep("iaas_hostname")
-            iaasport = svc.get_dep("iaas_port")
+            iaasport = int(svc.get_dep("iaas_port"))
             iaas = svc.get_dep("iaas")
 
 
@@ -113,7 +113,8 @@ class IaaSBotoConn(object):
         sec_group = None
         if security_groupname:
              sec_group_a = self._con.get_all_security_groups(groupnames=[security_groupname,])
-             sec_group = sec_group_a[0]
+             if sec_group_a:
+                 sec_group = sec_group_a[0]
 
         reservation = self._con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
         instance = reservation.instances[0]
