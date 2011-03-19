@@ -381,3 +381,22 @@ class CloudInitDTests(unittest.TestCase):
         print "run name is %s and %s" % (runname1, runname2)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  runname1, runname2])
         self.assertEqual(rc, 0)
+
+    def check_service_log_test(self):
+
+        dir = os.path.expanduser("~/.cloudinitd/")
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-l", "info", "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+
+        logfilename = dir + "/" + runname + "/sampleservice.log"
+        self.assertTrue(os.path.exists(logfilename), "%s should exist" % (logfilename))
+        os.path.getsize(logfilename)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)        
