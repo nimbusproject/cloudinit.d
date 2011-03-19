@@ -303,17 +303,21 @@ class PopenExecutablePollable(Pollable):
         (rlist,wlist,elist) = select.select(selectors, [], [], poll_period)
         for f in rlist:
             line = f.readline()
-            self._log.info(line)
+
             if f == p.stdout:
                 # we assume there will be a full line or eof
                 # not the fastest str concat, but this is small                
                 self._stdout_str = self._stdout_str + line
                 if not line:
                     self._stdout_eof = True
+                else:
+                    cloudinitd.log(self._log, logging.INFO, "stdout: %s" %(line))
             else:
                 self._stderr_str = self._stderr_str + line
                 if not line:
                     self._stderr_eof = True
+                else:
+                    cloudinitd.log(self._log, logging.INFO, "stderr: %s" %(line))
 
         return self._stderr_eof and self._stdout_eof
 
@@ -321,6 +325,8 @@ class PopenExecutablePollable(Pollable):
         cloudinitd.log(self._log, logging.DEBUG, "running the command %s" % (str(self._cmd)))
         self._p = subprocess.Popen(self._cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
+    def get_command(self):
+        return self._cmd
 
 class MultiLevelPollable(Pollable):
     """

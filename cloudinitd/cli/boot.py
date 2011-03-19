@@ -153,7 +153,7 @@ def launch_new(options, args):
     config_file = args[1]
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
@@ -203,7 +203,7 @@ def _status(options, args):
     dbname = args[1]
     c_on_e = not g_repair
 
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
+    cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
     cb.start()
     try:
@@ -236,7 +236,7 @@ def terminate(options, args):
     for dbname in args[1:]:
         rc = 0
         try:
-            cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
+            cb = CloudInitD(options.database, log_level=options.loglevel, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
             print_chars(1, "Terminating %s\n" % (cb.run_name))
             cb.shutdown()
 
@@ -266,7 +266,7 @@ def reboot(options, args):
         print "The reboot command requires a run name.  See --help"
         return 1
     dbname = args[1]
-    cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
+    cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
     print_chars(1, "Rebooting %s\n" % (cb.run_name))
     cb.shutdown()
     try:
@@ -274,7 +274,7 @@ def reboot(options, args):
         options.logger.info("Terminating all services")
         cb.block_until_complete(poll_period=0.1)
         options.logger.info("Starting services back up")
-        cb = CloudInitD(options.database, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, continue_on_error=False)
+        cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, continue_on_error=False)
         print_chars(1, "Booting all services %s\n" % (cb.run_name))
         cb.start()
         cb.block_until_complete(poll_period=0.1)

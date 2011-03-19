@@ -65,7 +65,9 @@ class IaaSBotoConn(object):
                 raise ConfigException("IaaS key %s not in env" % (secret))
 
             iaashostname = svc.get_dep("iaas_hostname")
-            iaasport = int(svc.get_dep("iaas_port"))
+            iaasport = svc.get_dep("iaas_port")
+            if iaasport:
+                iaasport = int(iaasport)
             iaas = svc.get_dep("iaas")
 
 

@@ -308,7 +308,9 @@ class SVCContainer(object):
                     rc = self._s.__getattribute__(key)
                 except AttributeError:
                     raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
-        return str(rc)
+        if rc:
+            rc = str(rc)
+        return rc
 
     def _do_attr_bag(self):
 
@@ -390,6 +392,11 @@ class SVCContainer(object):
             rc = self._poll()
             if rc:
                 self._running = False
+            if rc:
+                poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
+                for p in poller_list:
+                    self._log_poller_output(p)
+
             return rc
         except MultilevelException, multiex:
             msg = ""
@@ -431,6 +438,14 @@ class SVCContainer(object):
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
                 raise ServiceException(ex, self)
             return False
+
+    def _log_poller_output(self, poller):
+        if not poller:
+            return
+        stdout = poller.get_stdout()
+        stderr = poller.get_stderr()
+        cmd = poller.get_command()
+        cloudinitd.log(self._log, logging.INFO, "Output for the command %s:\nstdout\n------\n%s\nstderr\n------\n%s" % (cmd, stdout, stderr))
 
     def _context_cb(self, popen_poller, action, msg):
         if action == cloudinitd.callback_action_transition:
