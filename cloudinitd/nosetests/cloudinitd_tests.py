@@ -97,6 +97,8 @@ class CloudInitDTests(unittest.TestCase):
 
         key = None
         secret = None
+        host = None
+        port = None
         try:
             key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
             secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']

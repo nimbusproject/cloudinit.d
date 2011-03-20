@@ -2,14 +2,18 @@
 
 import sys
 import os
+import tempfile
 import simplejson as json
 
 f = open("bootconf.json", "r")
 vals_dict = json.load(f)
 f.close()
 
+(osf, fname) = tempfile.mkstemp()
 print vals_dict['message']
-cmd = "sudo echo %s > /var/www/test.txt" % (vals_dict['message'])
+os.write(osf, vals_dict['message'])
+os.close(osf)
+cmd = "sudo cp %s /var/www/test.txt" % (fname)
 print cmd
 rc = os.system(cmd)
 
