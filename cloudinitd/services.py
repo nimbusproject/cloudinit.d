@@ -537,7 +537,7 @@ class SVCContainer(object):
         template = string.Template(doc_tpl)
         try:
             document = template.substitute(self._attr_bag)
-        except ValueError,e:
+        except Exception,e:
             raise ConfigException("The file '%s' has a variable that could not be found: %s" % (path, str(e)))
 
         # having the template name in the temp file name makes it easier

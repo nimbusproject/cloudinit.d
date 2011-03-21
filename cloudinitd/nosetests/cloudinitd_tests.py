@@ -116,7 +116,6 @@ class CloudInitDTests(unittest.TestCase):
         after_list = con.get_all_instances()
         self.assertEqual(len(i_list), len(after_list))
 
-
     def _get_runname(self, fname):
         n = "Starting up run"
         line = self._find_str(fname, n)
