@@ -20,6 +20,10 @@ class OutputJsonTests(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def _dump_output(self, filename):
+        file = open(filename, "r")
+        print file.readlines()
+        file.close()
 
     def _find_str(self, filename, needle):
 
@@ -39,7 +43,7 @@ class OutputJsonTests(unittest.TestCase):
     def test_basic(self):
         if 'CLOUDBOOT_TESTENV' in os.environ:
             return
-        
+
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/outputdep/top.conf" % (cloudinitd.nosetests.g_plans_dir)])
@@ -53,3 +57,36 @@ class OutputJsonTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def check_repair_error_test(self):
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            # we cannot run this one in fake mode yet
+            return
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        dir = os.path.expanduser("~/.cloudinitd/")
+        conf_file = "%s/outputdep/top.conf" % (cloudinitd.nosetests.g_plans_dir)
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        runname = cb.run_name
+        svc = cb.get_service("onelvl1")
+
+        secret = svc.get_attr_from_bag('iaas_secret')
+        key = svc.get_attr_from_bag('iaas_key')
+        iaas_host = svc.get_attr_from_bag('iaas_hostname')
+        iaas_port = svc.get_attr_from_bag('iaas_port')
+        instance_id = svc.get_attr_from_bag('instance_id')
+        con = iaas_get_con(svc._svc, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
+        instance = con.find_instance(instance_id)
+        instance.terminate()
+
+        print "start repair"
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
+        self._dump_output(outfile)
+        n = "ERROR"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        print "start terminate"
+        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
