@@ -40,37 +40,37 @@ def _tartask(directory, basename, tarball):
     
     return destpgm
 
-def readypgm(pgm=None):
+def readypgm(pgm=None, stagedir=None):
     env.warn_only = True
-    run('mkdir %s' % REMOTE_WORKING_DIR)
+    run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
-    destpgm = "%s/%s" % (REMOTE_WORKING_DIR, relpgm)
+    destpgm = "%s/%s" % (stagedir, relpgm)
     put(pgm, destpgm, mode=0755)
     tarname = _iftar(relpgm)
     if tarname:
-         destpgm = _tartask(REMOTE_WORKING_DIR, tarname, destpgm)
+         destpgm = _tartask(stagedir, tarname, destpgm)
     env.warn_only = False
-    with cd(REMOTE_WORKING_DIR):
+    with cd(stagedir):
         run(destpgm)
 
-def bootpgm(pgm=None, conf=None, output=None):
-    run('mkdir %s' % REMOTE_WORKING_DIR)
+def bootpgm(pgm=None, conf=None, output=None, stagedir=None):
+    run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
-    destpgm = "%s/%s" % (REMOTE_WORKING_DIR, relpgm)
+    destpgm = "%s/%s" % (stagedir, relpgm)
     put(pgm, destpgm, mode=0755)
     tarname = _iftar(relpgm)
     if tarname:
-        destpgm = _tartask(REMOTE_WORKING_DIR, tarname, destpgm)
+        destpgm = _tartask(stagedir, tarname, destpgm)
     if conf:
-        destconf = "%s/bootconf.json" % REMOTE_WORKING_DIR
+        destconf = "%s/bootconf.json" % stagedir
         put(conf, destconf)
-    with cd(REMOTE_WORKING_DIR):
+    with cd(stagedir):
         run(destpgm)
         try:
-            fetch_conf(output=output)
+            fetch_conf(output=output, stagedir=stagedir)
         except:
             pass
 
-def fetch_conf(output=None):
-    remote_output = "%s/bootout.json" % (REMOTE_WORKING_DIR)
+def fetch_conf(output=None, stagedir=None):
+    remote_output = "%s/bootout.json" % (stagedir)
     get(remote_output, output) 

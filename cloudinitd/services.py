@@ -117,6 +117,8 @@ class SVCContainer(object):
         self._restart_limit = 4
         self._restart_count = 0
 
+        self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
+
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
@@ -268,7 +270,7 @@ class SVCContainer(object):
         if recursive:
             scpexec += " -r"
         cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s " % (self._s.localkey)
-        hostname = self._s.hostname
+        hostname = self._expand_attr(self._s.hostname)
         if forcehost:
             hostname = forcehost
         if upload:
@@ -284,6 +286,7 @@ class SVCContainer(object):
                 sshexec = os.environ['CLOUD_BOOT_SSH']
         except:
             pass
+        host = self._expand_attr(host)
         cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s %s@%s" % (self._s.localkey, self._s.username, host)
         return cmd
 
@@ -309,24 +312,32 @@ class SVCContainer(object):
                     rc = self._s.__getattribute__(key)
                 except AttributeError:
                     raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
+        rc = self._expand_attr(rc)
         if rc:
             rc = str(rc)
         return rc
+
+    def _expand_attr(self, val):
+        if not val:
+            return val
+        pattern = re.compile('\$\{(.*?)\.(.*)\}')
+                
+        match = pattern.search(val)
+        if match:
+            svc_name = match.group(1)
+            attr_name = match.group(2)
+            val = self._top_level.find_dep(svc_name, attr_name)
+        return val
+
 
     def _do_attr_bag(self):
 
         if self._do_terminate and not self._do_ready and not self._do_boot:
             return
-               
-        pattern = re.compile('\$\{(.*?)\.(.*)\}')
+
         for bao in self._s.attrs:
             val = bao.value
-            match = pattern.search(val)
-            if match:
-                svc_name = match.group(1)
-                attr_name = match.group(2)
-                val = self._top_level.find_dep(svc_name, attr_name)
-            self._attr_bag[bao.key] = val
+            self._attr_bag[bao.key] = self._expand_attr(val)
 
         if self._s.bootconf:
             self._bootconf = self._fill_template(self._s.bootconf)
@@ -510,19 +521,22 @@ class SVCContainer(object):
         return cmd
 
     def _get_readypgm_cmd(self):
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._s.hostname, self._s.readypgm)
+        host = self._expand_attr(self._s.hostname)
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,stagedir=%s" % (host, self._s.readypgm, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
     def _get_boot_cmd(self):
+        host = self._expand_attr(self._s.hostname)
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s,output=%s" % (self._s.hostname, self._s.bootpgm, self._bootconf, self._boot_output_file)
+        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s,output=%s,stagedir=%s" % (host, self._s.bootpgm, self._bootconf, self._boot_output_file, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
     def _get_termpgm_cmd(self):
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s" % (self._s.hostname, self._s.terminatepgm)
+        host = self._expand_attr(self._s.hostname)
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,stagedir=%s" % (host, self._s.terminatepgm, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
