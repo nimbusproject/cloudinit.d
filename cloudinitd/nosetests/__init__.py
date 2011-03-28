@@ -36,3 +36,4 @@ from cloudinitd.nosetests.cloudinitd_tests import *
 from cloudinitd.nosetests.prelaunch_tests import *
 from cloudinitd.nosetests.plan_tests import *
 from cloudinitd.nosetests.outputjson_tests import *
+from cloudinitd.nosetests.validate_tests import *

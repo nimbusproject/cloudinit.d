@@ -195,6 +195,7 @@ class SVCContainer(object):
         self._iass_started = True
         if self._do_boot:
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
+        cb_iaas.iaas_validate(self, self._log)
 
     def _make_pollers(self):
         self._ready_poller = None

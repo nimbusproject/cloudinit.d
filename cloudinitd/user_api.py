@@ -283,6 +283,8 @@ class CloudInitD(object):
             for s in level.services:
                 svc = self._boot_top.get_service(s.name)
 
+                cb_iaas.iaas_validate(svc, self._log)
+
                 hash_str = ""
                 hostname = svc.get_dep("iaas_hostname")
                 if hostname:

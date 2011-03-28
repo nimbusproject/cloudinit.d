@@ -3,6 +3,7 @@ import datetime
 import threading
 import uuid
 import boto
+import logging
 import boto.ec2
 ##from boto.provider import Provider
 #from libcloud.base import NodeImage, NodeSize
@@ -15,7 +16,7 @@ except:
     from boto.ec2.regioninfo import RegionInfo
 import os
 import cloudinitd
-from cloudinitd.exceptions import ConfigException, IaaSException
+from cloudinitd.exceptions import ConfigException, IaaSException, APIUsageException
 
 __author__ = 'bresnaha'
 
@@ -329,7 +330,36 @@ def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
         finally:
             g_lock.release()
         return con
-        
+
+def _iaas_nimbus_validate(svc, log):
+    rc = 0
+    if svc._s.securitygroups:
+        rc = 1
+        cloudinitd.log(log, logging.WARN, "The Nimbus IaaS platform does not support security groups as of 2.7")
+
+    return rc
+
+def _ec2_nimbus_validate(svc, log):
+    return 0
+
+
+g_validate_funcs = {}
+g_validate_funcs['nimbus'] = _iaas_nimbus_validate
+g_validate_funcs['ec2'] = _ec2_nimbus_validate
+
+def iaas_validate(svc, log=logging):
+    global g_validate_funcs
+    iaas_type = svc._s.iaas
+    if not iaas_type:
+        iaas_type = "ec2"
+
+    iaas_type = iaas_type.lower()
+    try:
+        func = g_validate_funcs[iaas_type]
+    except Exception, ex:
+        raise APIUsageException("iaas type %s has a problem: %s" % (iaas_type, str(ex)))
+    rc = func(svc, log)
+    return rc
 
 def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
     if iaas.lower() == "nimbus":
