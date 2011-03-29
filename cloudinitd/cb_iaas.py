@@ -337,14 +337,16 @@ def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
 
 def _iaas_nimbus_validate(svc, log):
     rc = 0
+    msg = None
     if svc._s.securitygroups:
         rc = 1
-        cloudinitd.log(log, logging.WARN, "The Nimbus IaaS platform does not support security groups as of 2.7")
+        msg = "The Nimbus IaaS platform does not support security groups as of 2.7"
+        cloudinitd.log(log, logging.WARN, msg)
 
-    return rc
+    return (rc, msg)
 
 def _ec2_nimbus_validate(svc, log):
-    return 0
+    return (0, None)
 
 
 g_validate_funcs = {}
@@ -357,18 +359,30 @@ def iaas_validate(svc, log=logging):
     if not iaas_type:
         iaas_type = "ec2"
 
+    rc = 0
+    msgs = []
     # make sure they have a local key if they are trying to ssh anywhere
     if not svc._s.localkey:
         if svc._s.readypgm or svc._s.bootpgm:
             raise ConfigException("If you are using a readypgm or a bootpgm you must have an ssh key")
+
+    if not svc._s.username:
+        if svc._s.readypgm or svc._s.bootpgm:
+            msgs.append("You have no username set for ssh access.  This could be an oversite in the plan.")
+            rc = 1
 
     iaas_type = iaas_type.lower()
     try:
         func = g_validate_funcs[iaas_type]
     except Exception, ex:
         raise APIUsageException("iaas type %s has a problem: %s" % (iaas_type, str(ex)))
-    rc = func(svc, log)
-    return rc
+    (rc1, msg1) = func(svc, log)
+    if rc1 > rc:
+        rc = rc1
+    if msg1:
+        msgs.append(msg1)
+
+    return (rc, str(msgs))
 
 def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
     if iaas.lower() == "nimbus":

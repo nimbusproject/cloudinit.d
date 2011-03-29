@@ -192,7 +192,11 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
     def pre_start_iaas(self):
-        cb_iaas.iaas_validate(self, self._log)
+        (rc, emsg) = cb_iaas.iaas_validate(self, self._log)
+        if rc != 0:
+            msg = "A warning has issued regarding your plan.  Please check the log file: %s" % (emsg)
+            self._execute_callback(cloudinitd.callback_action_transition, msg)
+
         self._term_host_pollers.pre_start()
         if self._hostname_poller:
             self._s.instance_id = self._hostname_poller.get_instance_id()
