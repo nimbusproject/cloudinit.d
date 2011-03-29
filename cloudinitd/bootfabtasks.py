@@ -61,7 +61,7 @@ def bootpgm(pgm=None, conf=None, output=None, stagedir=None):
     tarname = _iftar(relpgm)
     if tarname:
         destpgm = _tartask(stagedir, tarname, destpgm)
-    if conf:
+    if conf and conf != "None":
         destconf = "%s/bootconf.json" % stagedir
         put(conf, destconf)
     with cd(stagedir):

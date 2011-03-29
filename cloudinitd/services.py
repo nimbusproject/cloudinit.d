@@ -228,7 +228,7 @@ class SVCContainer(object):
             if self._s.contextualized == 1:
                 cloudinitd.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
             else:
-                if self._s.bootconf:
+                if self._s.bootpgm:
                     cmd = self._get_boot_cmd()
                     self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200, done_cb=self.context_done_cb)
                     self._pollables.add_level([self._boot_poller])

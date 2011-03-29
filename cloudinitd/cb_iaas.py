@@ -365,6 +365,8 @@ def iaas_validate(svc, log=logging):
     if not svc._s.localkey:
         if svc._s.readypgm or svc._s.bootpgm:
             raise ConfigException("If you are using a readypgm or a bootpgm you must have an ssh key")
+        msgs.append("You have no localsshkeyname set for this plan.")
+        rc = 1
 
     if not svc._s.username:
         if svc._s.readypgm or svc._s.bootpgm:
