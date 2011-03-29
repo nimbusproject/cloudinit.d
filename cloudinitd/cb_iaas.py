@@ -61,9 +61,9 @@ class IaaSBotoConn(object):
             key = svc.get_dep("iaas_key")
             secret = svc.get_dep("iaas_secret")
             if not key:
-                raise ConfigException("IaaS key %s not in env" % (key))
+                raise ConfigException("IaaS key %s not in provided" % (key))
             if not secret:
-                raise ConfigException("IaaS key %s not in env" % (secret))
+                raise ConfigException("IaaS secret %s not in provided" % (secret))
 
             iaashostname = svc.get_dep("iaas_hostname")
             iaasport = svc.get_dep("iaas_port")
@@ -356,6 +356,11 @@ def iaas_validate(svc, log=logging):
     iaas_type = svc._s.iaas
     if not iaas_type:
         iaas_type = "ec2"
+
+    # make sure they have a local key if they are trying to ssh anywhere
+    if not svc._s.localkey:
+        if svc._s.readypgm or svc._s.bootpgm:
+            raise ConfigException("If you are using a readypgm or a bootpgm you must have an ssh key")
 
     iaas_type = iaas_type.lower()
     try:

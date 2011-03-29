@@ -192,6 +192,7 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
     def pre_start_iaas(self):
+        cb_iaas.iaas_validate(self, self._log)
         self._term_host_pollers.pre_start()
         if self._hostname_poller:
             self._s.instance_id = self._hostname_poller.get_instance_id()
@@ -200,7 +201,6 @@ class SVCContainer(object):
         self._iass_started = True
         if self._do_boot:
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
-        cb_iaas.iaas_validate(self, self._log)
 
     def _make_pollers(self):
         self._ready_poller = None
@@ -248,7 +248,6 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
         self._pollables.start()
 
-
     def _get_fab_command(self):
         fabexec = "fab"
         try:
@@ -276,10 +275,13 @@ class SVCContainer(object):
         hostname = self._expand_attr(self._s.hostname)
         if forcehost:
             hostname = forcehost
+        user = ""
+        if self._s.scp_username:
+            user = "%s@" % (self._s.scp_username)
         if upload:
-            cmd += "%s %s@%s:%s" % (src, self._s.scp_username, hostname, dst)
+            cmd += "%s %s%s:%s" % (src, user, hostname, dst)
         else:
-            cmd += "%s@%s:%s %s" % (self._s.scp_username, hostname, src, dst)
+            cmd += "%s%s:%s %s" % (user, hostname, src, dst)
         return cmd
 
     def _get_ssh_command(self, host):
@@ -290,7 +292,10 @@ class SVCContainer(object):
         except:
             pass
         host = self._expand_attr(host)
-        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s %s@%s" % (self._s.localkey, self._s.username, host)
+        user = ""
+        if self._s.username:
+            user = "%s@" % (self._s.username)
+        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s %s%s" % (self._s.localkey, user, host)
         return cmd
 
     def get_db_id(self):
