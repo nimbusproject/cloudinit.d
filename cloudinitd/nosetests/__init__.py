@@ -38,3 +38,4 @@ from cloudinitd.nosetests.plan_tests import *
 from cloudinitd.nosetests.outputjson_tests import *
 from cloudinitd.nosetests.validate_tests import *
 from cloudinitd.nosetests.singlevm_tests import *
+from cloudinitd.nosetests.badplan_cleanup_tests import *

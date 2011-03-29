@@ -186,17 +186,20 @@ class SVCContainer(object):
 
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
-            self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s" % (self._s.instance_id))
             self._hostname_poller = InstanceHostnamePollable(svc=self, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
     def pre_start_iaas(self):
-        self._term_host_pollers.start()
+        self._term_host_pollers.pre_start()
+        if self._hostname_poller:
+            self._s.instance_id = self._hostname_poller.get_instance_id()
+            self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s for %s" % (self._s.instance_id, self.name))
+            self._db.db_commit()            
         self._iass_started = True
         if self._do_boot:
-            self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s " % self.name)
+            self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
         cb_iaas.iaas_validate(self, self._log)
 
     def _make_pollers(self):
@@ -312,9 +315,9 @@ class SVCContainer(object):
                     rc = self._s.__getattribute__(key)
                 except AttributeError:
                     raise ConfigException("The service %s has no attr by the name of %s.  Please check your config files. %s" % (self._myname, key, str(ex)), ex)
-        rc = self._expand_attr(rc)
         if rc:
             rc = str(rc)
+            rc = self._expand_attr(rc)
         return rc
 
     def _expand_attr(self, val):
@@ -376,8 +379,7 @@ class SVCContainer(object):
 
             if self._term_host_pollers and not self._iass_started:
                 self.pre_start_iaas()
-#                self._term_host_pollers.start()
-#                self._iass_started = True
+            self._term_host_pollers.start()
             self._execute_callback(cloudinitd.callback_action_started, "Started %s" % (self.name))
         except Exception, ex:
             self._running = False
@@ -507,9 +509,8 @@ class SVCContainer(object):
 
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()
-        self._s.instance_id = self._hostname_poller.get_instance_id()
         self._db.db_commit()
-        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s and instance %s" %(self._s.hostname, self._s.instance_id))
+        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
         cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
 
 

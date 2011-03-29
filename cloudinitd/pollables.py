@@ -46,6 +46,9 @@ class Pollable(object):
             return
         self._done_cb(self)
 
+    def pre_start(self):
+        pass
+
     def poll(self):
         if self._timeout == 0:
             return False
@@ -118,11 +121,14 @@ class InstanceHostnamePollable(Pollable):
         self.exception = None
         self._thread = None
 
-    def start(self):
-        Pollable.start(self)
+    def pre_start(self):
         if not self._instance:
             iaas_con = iaas_get_con(self._svc)
             self._instance = iaas_con.run_instance()
+
+    def start(self):
+        self.pre_start()
+        Pollable.start(self)
         self._update()
         self._thread = HostnameCheckThread(self)
         self._thread.start()
@@ -361,6 +367,11 @@ class MultiLevelPollable(Pollable):
         else:
             ndx = self.level_ndx
         return ndx
+
+    def pre_start(self):
+        for l in self.levels:
+            for p in l:
+                p.pre_start()
 
     def start(self):
         Pollable.start(self)        

@@ -92,7 +92,11 @@ class IaaSBotoConn(object):
         global g_lock
         g_lock.acquire()
         try:
-            return self._con.get_all_instances(instance_ids)
+            l = []
+            for r in self._con.get_all_instances(instance_ids):
+                l = l + r.instances
+            cb_l = [IaaSBotoInstance(i) for i in l]
+            return cb_l
         finally:
             g_lock.release()
 
