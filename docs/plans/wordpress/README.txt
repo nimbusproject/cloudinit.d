@@ -1,6 +1,15 @@
 cloudinit.d wordpress example
 =============================
 
+Prerequisites
+------------
+
+For this example to work you need your default security group to have 
+port 22, 80 and 3306 open.
+
+boot
+----
+
 This example launch plan will launch 2 standard ubuntu 10.10 images provided
 by the EC2 AMI ami-ccf405a5.  The first instance will be setup to run mysql.
 How it is setup is described in the python program mysql_boot.py.  The
@@ -50,7 +59,7 @@ First we boot that launch plan:
             instance: i-40cf662f
     SUCCESS level 2
 
-Now we can use a web browser to navagate to:
+Now we can use a web browser to navigate to:
      http://ec2-184-72-89-233.compute-1.amazonaws.com/wordpress/wp-admin/install.php
 
 Now we clean up the service to avoid further EC2 charges:
