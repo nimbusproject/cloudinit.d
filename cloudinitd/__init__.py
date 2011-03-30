@@ -80,7 +80,12 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
         handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=100*1024*1024, backupCount=5)
 
     logger.addHandler(handler)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+    fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    if loglevel == logging.DEBUG:
+        fmt = fmt + " || at source line %(filename)s : %(lineno)s"
+
+    formatter = logging.Formatter(fmt)
     handler.setFormatter(formatter)
 
     return logger
