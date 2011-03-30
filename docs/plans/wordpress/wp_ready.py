@@ -17,13 +17,8 @@ dbpassword=vals_dict['mysql_dbpassword']
 dbhost=vals_dict['mysql_dbhost']
 
 commands = [
-  "sudo -E apt-get update",
-  "sudo -E apt-get -y -q install wordpress php5-mysql php5 libapache2-mod-proxy-html php-mdb2-driver-mysql",
-  "wget http://wordpress.org/latest.tar.gz",
-  "tar -zxvf latest.tar.gz",
-  "sed -e 's/database_name_here/%s/' -e 's/username_here/%s/' -e 's/password_here/%s/' -e 's/localhost/%s/' wordpress/wp-config-sample.php > wordpress/wp-config.php" % (dbname, dbuser, dbpassword, dbhost),
-  "sudo mv wordpress/ /var/www/",
-  "sudo -E /etc/init.d/apache2 restart"]
+  'sudo mysql -h %s --database=%s --password=%s -e "select now();"' % (dbhost, dbname, dbpassword),
+  "wget http://localhost/wordpress/wp-admin/install.php"]
 
 for cmd in commands:
     print cmd
