@@ -358,6 +358,8 @@ def iaas_validate(svc, log=logging):
     iaas_type = svc._s.iaas
     if not iaas_type:
         iaas_type = "ec2"
+    if iaas_type not in g_validate_funcs.keys():
+        iaas_type = "ec2"
 
     rc = 0
     msgs = []
