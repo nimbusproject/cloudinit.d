@@ -35,6 +35,51 @@ class ServiceTests(unittest.TestCase):
         fname = cb.get_db_file()
         os.remove(fname)
 
+    def dep_keys_test(self):
+        self.plan_basedir = cloudinitd.nosetests.g_plans_dir
+        dir = tempfile.mkdtemp()
+        conf_file = self.plan_basedir + "/oneservice/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+
+        svc = cb.get_service("sampleservice")
+        attr_keys = svc.get_keys_from_bag()
+        # until we figure out how to get __dict__ values from the sqlalchemy objects this will be in complete
+        expectations = [
+            "hostname",
+            "instance_id",
+#            "name",
+#            "level_id",
+#            "image",
+#            "iaas",
+#            "allocation",
+#            "keyname",
+#            "localkey",
+#            "username",
+#            "scp_username",
+#            "readypgm",
+#            "hostname",
+#            "bootconf",
+#            "bootpgm",
+#            "instance_id",
+#            "iaas_hostname",
+#            "iaas_port",
+#            "iaas_key",
+#            "iaas_secret",
+#            "contextualized",
+#            "securitygroups",
+            "webmessage"
+            ]
+        for e in expectations:
+            self.assertTrue(e in attr_keys, "The key %s should exist in %s" % (e, str(attr_keys)))
+
+        cb = CloudInitD(dir, db_name=cb.run_name, terminate=True, boot=False, ready=False)
+        cb.shutdown()
+        cb.block_until_complete(poll_period=1.0)
+        fname = cb.get_db_file()
+        os.remove(fname)
+
 
 if __name__ == '__main__':
     unittest.main()

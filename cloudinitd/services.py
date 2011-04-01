@@ -329,6 +329,11 @@ class SVCContainer(object):
             rc = self._expand_attr(rc)
         return rc
 
+    def get_dep_keys(self):
+        # first parse through the known ones, then hit the attr bag
+        keys = ["hostname", "instance_id"] + self._attr_bag.keys()# + self._s.__dict__.keys()
+        return keys
+
     def _expand_attr(self, val):
         if not val:
             return val

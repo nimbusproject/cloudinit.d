@@ -351,6 +351,12 @@ class CloudService(object):
         self._cb = cloudbooter
         self._db = cloudbooter._db
 
+    def get_keys_from_bag(self):
+        if self._svc == None:
+            raise APIUsageException("This Cloud service has no real backing service")
+        return self._svc.get_dep_keys()
+
+
     def get_attr_from_bag(self, name):
         if self._svc == None:
             raise APIUsageException("This Cloud service has no real backing service")
