@@ -356,8 +356,10 @@ g_validate_funcs['ec2'] = _ec2_nimbus_validate
 def iaas_validate(svc, log=logging):
     global g_validate_funcs
     iaas_type = svc._s.iaas
+
     if not iaas_type:
         iaas_type = "ec2"
+    iaas_type = iaas_type.lower()
     if iaas_type not in g_validate_funcs.keys():
         iaas_type = "ec2"
 

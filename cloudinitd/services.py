@@ -419,12 +419,7 @@ class SVCContainer(object):
         try:
             rc = self._poll()
             if rc:
-                self._running = False
-            if rc:
-                poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
-                for p in poller_list:
-                    self._log_poller_output(p)
-
+                self._running = False                
             return rc
         except MultilevelException, multiex:
             msg = ""
@@ -492,6 +487,10 @@ class SVCContainer(object):
             if rc:
                 self._running = False
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
+                poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
+                for p in poller_list:
+                    self._log_poller_output(p)
+
             return rc
 
         if self._term_host_pollers.poll():
