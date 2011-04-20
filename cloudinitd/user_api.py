@@ -325,7 +325,7 @@ class CloudInitD(object):
                     exception_list.append((svc, ex,))
                     names = names + d + svc.name
                     d = ","
-                msg = "The following services have problems with their IaaS configuration.  Please check the launch plan to verify the iaas configuration is connection. %s || %s" % (msg, str(ex))
+                msg = "The following services have problems with their IaaS configuration.  Please check the launch plan to verify the iaas configuration is correct. %s || %s" % (names, str(ex))
                 cloudinitd.log(self._log, logging.ERROR, msg)
         return exception_list
 
