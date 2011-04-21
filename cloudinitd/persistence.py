@@ -375,8 +375,9 @@ class CloudInitDDB(object):
                 lvl_dict[order] = level
 
         bo = BootObject(conf_file)
-        lvl_dict.keys().sort()
-        for k in lvl_dict.keys():
+        x = lvl_dict.keys()
+        x.sort()
+        for k in x:
             lvl = lvl_dict[k]
             self._session.add(lvl)
             bo.levels.append(lvl)

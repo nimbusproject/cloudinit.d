@@ -35,6 +35,24 @@ class ServiceTests(unittest.TestCase):
         fname = cb.get_db_file()
         os.remove(fname)
 
+    def get_status_test(self):
+        self.plan_basedir = cloudinitd.nosetests.g_plans_dir
+        dir = tempfile.mkdtemp()
+        conf_file = self.plan_basedir + "/oneservice/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+
+        svc = cb.get_service("sampleservice")
+        status = svc.get_iaas_status()
+        self.assertEqual("running", status)
+
+        cb = CloudInitD(dir, db_name=cb.run_name, terminate=True, boot=False, ready=False)
+        cb.shutdown()
+        cb.block_until_complete(poll_period=1.0)
+        fname = cb.get_db_file()
+        os.remove(fname)
+
     def dep_keys_test(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()

@@ -10,7 +10,7 @@ import time
 import unittest
 import os
 
-class SingleVMTests(unittest.TestCase):
+class BanPlanTests(unittest.TestCase):
 
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir

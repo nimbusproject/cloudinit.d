@@ -150,6 +150,12 @@ class SVCContainer(object):
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
 
+    def get_iaas_status(self):
+        if not self._hostname_poller:
+            return None
+        return self._hostname_poller.get_status()
+
+
     def _make_first_pollers(self):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)

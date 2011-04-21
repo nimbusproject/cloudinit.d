@@ -169,6 +169,9 @@ class InstanceHostnamePollable(Pollable):
     def get_hostname(self):
         return self._instance.get_hostname()
 
+    def get_status(self):
+        return self._instance.get_state()
+
     def _update(self):
         try:
             self._instance.update()

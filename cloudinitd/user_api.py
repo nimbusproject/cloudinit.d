@@ -351,6 +351,11 @@ class CloudService(object):
         self._cb = cloudbooter
         self._db = cloudbooter._db
 
+    def get_iaas_status(self):
+        """If the associated service is run in a VM that cloudinit.d launched, this will return the
+            IaaS status of that VM"""
+        return self._svc.get_iaas_status()
+
     def get_keys_from_bag(self):
         if self._svc == None:
             raise APIUsageException("This Cloud service has no real backing service")
