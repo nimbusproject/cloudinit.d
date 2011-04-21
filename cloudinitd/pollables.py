@@ -149,7 +149,9 @@ class InstanceHostnamePollable(Pollable):
             self._execute_done_cb()
             return True
         if state != "pending":
-            self.exception = IaaSException("The current state is %s.  Never reached state running" % (state))
+            msg = "The current state is %s.  Never reached state running" % (state)
+            cloudinitd.log(self._log, logging.DEBUG, msg, tb=traceback)
+            self.exception = IaaSException(msg)
             raise self.exception
         return False
 
@@ -175,7 +177,7 @@ class InstanceHostnamePollable(Pollable):
             # to be sure of the instance id
             if self._poll_error_count > self._max_id_error_count:
                 # if we poll too quick sometimes aws cannot find the id
-                self._log.error("safety error count exceeded" + str(ecex))
+                cloudinitd.log(self._log, logging.ERROR, "safety error count exceeded" + str(ecex), tb=traceback)
                 raise
             self._poll_error_count = self._poll_error_count + 1
 
@@ -189,7 +191,7 @@ class InstanceHostnamePollable(Pollable):
                 if self._instance.get_state() != "pending":
                     done = True
             except Exception, ex:
-                self._log.error(ex)
+                cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
                 self.exception = IaaSException(ex)
                 done = True
 
@@ -248,8 +250,10 @@ class PopenExecutablePollable(Pollable):
             return self._poll()
         except TimeoutException, toex:
             self._exception = toex
+            cloudinitd.log(self._log, logging.ERROR, str(toex), tb=traceback)
             raise
         except Exception, ex:
+            cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
             self._exception = ProcessException(self, ex, self._stdout_str, self._stderr_str)
             raise self._exception
 

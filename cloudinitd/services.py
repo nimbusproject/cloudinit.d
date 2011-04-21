@@ -365,7 +365,7 @@ class SVCContainer(object):
         self._restart_count = self._restart_count + 1
         if self._restart_count > self._restart_limit:
             emsg = "Retry on error count exceeded (%d)" % (self._restart_count)
-            cloudinitd.log(self._log, logging.ERROR, emsg)
+            cloudinitd.log(self._log, logging.ERROR, emsg, tb=traceback)
             raise APIUsageException(emsg)
 
         if callback == None:
@@ -398,6 +398,7 @@ class SVCContainer(object):
         except Exception, ex:
             self._running = False
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
+                cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
                 raise
 
     def _execute_callback(self, state, msg, ex=None):
