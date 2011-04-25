@@ -43,6 +43,8 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("validate", "x", "Check that boot plan is valid before launching it.", False, flag=True)
     opt.add_opt(parser)
+    opt = bootOpts("dryrun", "y", "Check that boot plan is valid before launching it.", False, flag=True)
+    opt.add_opt(parser)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
     opt = bootOpts("name", "n", "Set the run name, only relevant for boot (by default the system picks)", None)
@@ -164,6 +166,15 @@ def launch_new(options, args):
                 print_chars(1, "Service %s had the error:\n" % (svc.name))
                 print_chars(1, "\t%s" %(str(ex)))
             return 1
+
+    if options.dryrun:
+        print_chars(1, "Performing a dry run...\n", bold=True)
+        os.environ['CLOUDBOOT_TESTENV'] = "2"
+        os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
+        os.environ['CLOUD_BOOT_FAB'] = "/bin/true"
+        os.environ['CLOUD_BOOT_SSH'] = "/bin/true"
+
+        
     cb.pre_start_iaas()
 
     print_chars(1, "Starting the launch plan.\n")
@@ -182,6 +193,8 @@ def launch_new(options, args):
     ex = cb.get_exception()
     if ex == None:
         rc = 0
+        if options.dryrun:
+            print_chars(1, "Dry run successful\n", bold=True, color="green")
     else:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1

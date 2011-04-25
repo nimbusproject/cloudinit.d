@@ -211,12 +211,23 @@ class IaaSBotoConn(object):
 
 class IaaSTestInstance(object):
 
-    def __init__(self, hostname, time_to_hostname=2.0):
+    def __init__(self, hostname, time_to_hostname=1.0):
         global g_fake_instance_table
+
+        env_name = 'CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'
+        if env_name in os.environ:
+            try:
+                waittime = float(os.environ[env_name])
+                time_to_hostname = waittime
+            except Exception, ex:
+                #cloudinitd.log(log, logging.WARN, "%s was set but not to a float. %s" % (env_name, str(ex)))
+                pass
 
         self.public_dns_name = None
         self.state = "pending"
-        
+
+        if os.environ['CLOUDBOOT_TESTENV'] == "2":
+            hostname = "DRY RUN"
         self._hostname = hostname
         self.id = str(uuid.uuid4()).split('-')[0]
         g_fake_instance_table[self.id] = self

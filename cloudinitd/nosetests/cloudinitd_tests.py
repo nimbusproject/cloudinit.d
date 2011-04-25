@@ -91,6 +91,16 @@ class CloudInitDTests(unittest.TestCase):
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
 
+    def test_bad_dryrun(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--dryrun", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
     def test_validate_nolaunch(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
