@@ -1,15 +1,10 @@
-#!/usr/bin/env pythonv
 import os
+from setuptools import setup, find_packages
+import sys
 
 __author__ = 'bresnaha'
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
-import sys
-Version = "0.1"
+Version = "0.1rc2"
 
 if float("%d.%d" % sys.version_info[:2]) < 2.5:
     sys.stderr.write("Your Python version %d.%d.%d is not supported.\n" % sys.version_info[:3])
@@ -33,7 +28,6 @@ def plans_list_dirs(p):
 
 basepath = os.path.dirname(__file__)
 test_plans = plans_list_dirs(os.path.join(basepath, "tests/plans"))
-print test_plans
 
 setup(name='cloudinitd',
       version=Version,
@@ -41,15 +35,18 @@ setup(name='cloudinitd',
       author='Nimbus Development Team',
       author_email='workspace-user@globus.org',
       url='http://www.nimbusproject.org/',
-      packages=[ 'cloudinitd', 'cloudinitd.cli', 'cloudinitd.nosetests' ],
+      packages=[ 'cloudinitd', 'cloudinitd.cli', 'cloudinitd.nosetests', 'tests' ],
        entry_points = {
         'console_scripts': [
             'cloudinitd = cloudinitd.cli.boot:main',
         ],
 
       },
+      include_package_data = True,
+      data_files = test_plans,
+      package_data = {},
+      download_url ="http://www.nimbusproject.org/downloads/cloudinitd-%s.tar.gz" % (Version),
       keywords = "cloud boot tool initialize services",
-      data_files=test_plans,
       long_description="""
 This package can be considered the /etc/rc.d of the cloud!
 

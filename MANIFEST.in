@@ -1,1 +1,1 @@
-recursive-include tests *.conf *.py *.sh
+recursive-include tests *
