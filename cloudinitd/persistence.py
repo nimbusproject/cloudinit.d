@@ -30,7 +30,6 @@ def config_get_or_none(parser, s, v, default=None):
     except:
         return default
 
-
 boot_table = Table('boot', metadata,
     Column('id', Integer, Sequence('event_id_seq'), primary_key=True),
     Column('topconf', String(1024)),
@@ -79,6 +78,13 @@ attrbag_table = Table('attrbag', metadata,
     Column('value', String(50)),
     Column('service_id', Integer, ForeignKey('service.id'))
     )
+
+iaas_history_table = Table('iaas_history', metadata,
+    Column('id', Integer, Sequence('event_id_seq'), primary_key=True),
+    Column('instance_id', String(64)),
+    Column('service_id', Integer, ForeignKey('service.id'))
+    )
+
 
 
 def _resolve_file_or_none(context_dir, conf, conf_file):
@@ -271,9 +277,16 @@ class BagAttrsObject(object):
         self.key = key
         self.value = value
 
+class IaaSHistoryObject(object):
+    def __init__(self, iaas_id):
+        self.id = None
+        self.instance_id = iaas_id
+        self.service_id = None
+
+mapper(IaaSHistoryObject, iaas_history_table)
 mapper(BagAttrsObject, attrbag_table)
 mapper(ServiceObject, service_table, properties={
-    'attrs': relation(BagAttrsObject)})
+    'attrs': relation(BagAttrsObject), 'history': relation(IaaSHistoryObject, backref="service")})
 mapper(LevelObject, level_table, properties={
     'services': relation(ServiceObject)})
 mapper(BootObject, boot_table, properties={
@@ -408,4 +421,6 @@ class CloudInitDDB(object):
         return (level, order)
 
 
-
+    def get_iaas_history(self):
+        bo = self._session.query(IaaSHistoryObject).all()
+        return bo

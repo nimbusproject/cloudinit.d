@@ -1,7 +1,7 @@
 import traceback
 import re
 import cb_iaas
-from cloudinitd.persistence import BagAttrsObject
+from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
 from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable
 import bootfabtasks
 import tempfile
@@ -482,7 +482,6 @@ class SVCContainer(object):
         if action == cloudinitd.callback_action_transition:
             self._execute_callback(action, msg)
 
-
     def _poll(self):
         if not self._running:
             return True
@@ -596,3 +595,8 @@ class SVCContainer(object):
         if self._term_host_pollers:
             self._term_host_pollers.cancel()
 
+    def new_iaas_instance(self, instance):
+        h = IaaSHistoryObject(instance.get_id())
+        self._db.db_obj_add(h)
+        self._db.db_commit()
+        self._s.history.append(h)

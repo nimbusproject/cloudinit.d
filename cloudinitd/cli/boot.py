@@ -6,9 +6,11 @@ from optparse import OptionParser
 import uuid
 import stat
 from cloudinitd.cli.cmd_opts import bootOpts
+from cloudinitd.persistence import CloudInitDDB
 from cloudinitd.user_api import CloudInitD, CloudServiceException
 from cloudinitd.exceptions import MultilevelException, APIUsageException
 import cloudinitd
+import cloudinitd.cb_iaas as cb_iaas
 import os
 import cloudinitd.cli.output
 from optparse import SUPPRESS_HELP
@@ -56,6 +58,8 @@ Run with the command 'commands' to see a list of all possible commands
     opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "info", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
+    opt.add_opt(parser)
+    opt = bootOpts("kill", "k", "This option only applies to the iceage command.  When on it will terminate all VMs started with IaaS associated with this run to date.  This should be considered an extreme measure to prevent IaaS resource leaks.", False, flag=True)
     opt.add_opt(parser)
     opt = bootOpts("outstream", "O", SUPPRESS_HELP, None)
     opt.add_opt(parser)
@@ -334,6 +338,41 @@ def list(options, args):
             print_chars(0, name[:-3] + "\n")
     return 0
 
+
+def iceage(options, args):
+    """
+    List all the iaas instance handles ever run in this launches history
+    """
+    if len(args) < 2:
+        print "The iceage command requires a run name.  See --help"
+        return 1
+    dbname = args[1]
+
+    cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, logdir=options.logdir, terminate=False, boot=False, ready=True)
+    ha = cb.get_iaas_history()
+
+    print_chars(0, "ID     : state\n")
+    for h in ha:
+        print_chars(1, "%s : " % (h.get_id()))
+        state = h.get_state()
+        clean = False
+        color = None
+        if state == "running":
+            color = "green"
+            clean = True
+        elif state == "terminated" or state == "shutting-down":
+            color="red"
+        elif state == "pending":
+            color="yellow"
+            clean = True
+
+        print_chars(1, "%s\n" % (state), color=color)
+        if options.kill and clean:
+            print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
+            h.terminate()
+
+
+
 def repair(options, args):
     """
     Check the status of all services.  If any services fail, reboot them.
@@ -374,6 +413,7 @@ def main(argv=sys.argv[1:]):
     g_commands["list"] = list
     g_commands["commands"] = list_commands
     g_commands["repair"] = repair
+    g_commands["iceage"] = iceage
 
     if command not in g_commands:
         print "Invalid command.  Run with --help"

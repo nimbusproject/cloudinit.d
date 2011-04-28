@@ -125,6 +125,10 @@ class InstanceHostnamePollable(Pollable):
         if not self._instance:
             iaas_con = iaas_get_con(self._svc)
             self._instance = iaas_con.run_instance()
+            # it might be awkward to call back into service here, not sure how i feel
+            if self._svc:
+                # this is for historical records in the database
+                self._svc.new_iaas_instance(self._instance)
 
     def start(self):
         self.pre_start()

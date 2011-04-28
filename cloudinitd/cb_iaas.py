@@ -400,11 +400,11 @@ def iaas_validate(svc, log=logging):
         msgs.append(msg1)
 
     return (rc, str(msgs))
-
-def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
-    if iaas.lower() == "nimbus":
-        conn = None
-    else:
-        Driver = get_driver(Provider.EC2) 
-        conn = Driver(key, secret)
-    return IaaSLibCloudConn(conn, driver)
+#
+#def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
+#    if iaas.lower() == "nimbus":
+#        conn = None
+#    else:
+#        Driver = get_driver(Provider.EC2)
+#        conn = Driver(key, secret)
+#    return IaaSLibCloudConn(conn, driver)

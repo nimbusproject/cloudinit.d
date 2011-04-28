@@ -22,6 +22,7 @@
 #
 #  The configuration is described in detail elsewhere.  Here we show
 #  the API for launching/terminating and gathering status for a bootplan
+from cloudinitd.services import SVCContainer
 
 import os
 import uuid
@@ -337,6 +338,39 @@ class CloudInitD(object):
     def get_exception(self):
         return self._exception
 
+    def get_iaas_history(self):
+        ha = self._db.get_iaas_history()
+
+        l = []
+        for h in ha:
+            svc = SVCContainer(self._db, h.service, None, boot=False, ready=True, terminate=False)
+            con = cb_iaas.iaas_get_con(svc)
+            try:
+                inst = con.find_instance(h.instance_id)
+            except:
+                inst = None
+            i = IaaSHistory(inst, h.instance_id)
+            l.append(i)
+        return l
+
+
+class IaaSHistory(object):
+
+    def __init__(self, inst, id):
+        self._inst = inst
+        self._id = id
+        
+    def get_state(self):
+        if self._inst:
+            return self._inst.get_state()
+        return "unknown"
+
+    def get_id(self):
+        return self._id
+
+    def terminate(self):
+        if self._inst:
+            self._inst.terminate()
 
 
 class CloudService(object):
