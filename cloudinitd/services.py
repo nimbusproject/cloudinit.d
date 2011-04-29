@@ -122,6 +122,11 @@ class SVCContainer(object):
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
+        if self._s.contextualized == 0 and not boot and not terminate:
+            cloudinitd.log(self._log, logging.WARN, "%s was asked not not boot but it has not yet been booted.  We are automatically changing this to boot.  We are also utrning on terminate in case an iaas handle is associate with this" % (self.name))
+            boot = True
+            terminate = True
+
         self._do_boot = boot
         self._do_ready = ready
         self._do_terminate = terminate
@@ -295,6 +300,8 @@ class SVCContainer(object):
         return cmd
 
     def _get_ssh_command(self, host):
+        if not host:
+            raise ConfigException("Trying to create and ssh command to a null hostname, something is not right.")
         sshexec = "ssh"
         try:
             if os.environ['CLOUD_BOOT_SSH']:

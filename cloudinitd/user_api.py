@@ -349,16 +349,20 @@ class CloudInitD(object):
                 inst = con.find_instance(h.instance_id)
             except:
                 inst = None
-            i = IaaSHistory(inst, h.instance_id)
+            i = IaaSHistory(inst, h.instance_id, svc)
             l.append(i)
         return l
 
 
 class IaaSHistory(object):
 
-    def __init__(self, inst, id):
+    def __init__(self, inst, id, svc):
         self._inst = inst
         self._id = id
+        self._svc = svc
+
+    def get_service_name(self):
+        return self._svc.name
         
     def get_state(self):
         if self._inst:

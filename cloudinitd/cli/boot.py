@@ -157,7 +157,7 @@ def launch_new(options, args):
         return 1
 
     config_file = args[1]
-    print_chars(1, "Starting up run ")
+    print_chars(1, "Loading the launch plan for run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
     cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
@@ -171,6 +171,7 @@ def launch_new(options, args):
                 print_chars(1, "\t%s" %(str(ex)))
             return 1
 
+    print_chars(1, "Starting the run\n")
     if options.dryrun:
         print_chars(1, "Performing a dry run...\n", bold=True)
         os.environ['CLOUDBOOT_TESTENV'] = "2"
@@ -353,7 +354,7 @@ def iceage(options, args):
 
     print_chars(0, "ID     : state\n")
     for h in ha:
-        print_chars(1, "%s : " % (h.get_id()))
+        print_chars(1, "%s : %s : " % (h.get_id(), h.get_service_name()))
         state = h.get_state()
         clean = False
         color = None
@@ -366,7 +367,7 @@ def iceage(options, args):
             color="yellow"
             clean = True
 
-        print_chars(1, "%s\n" % (state), color=color)
+        print_chars(1, ": %s\n" % (state), color=color)
         if options.kill and clean:
             print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
             h.terminate()
