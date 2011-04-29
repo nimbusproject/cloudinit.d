@@ -373,6 +373,7 @@ class SVCContainer(object):
             self._bootconf = self._fill_template(self._s.bootconf)
 
     def restart(self, boot, ready, terminate, callback=None):
+        # terminate should have to be true here
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
         self._restart_count = self._restart_count + 1

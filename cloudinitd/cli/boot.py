@@ -49,7 +49,7 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
-    opt = bootOpts("name", "n", "Set the run name, only relevant for boot (by default the system picks)", None)
+    opt = bootOpts("name", "n", "Set the run name, only relevant for boot and reload (by default the system picks)", None)
     opt.add_opt(parser)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
@@ -146,6 +146,29 @@ def service_callback(cb, cloudservice, action, msg):
         if g_repair:
             return cloudinitd.callback_return_restart
     return cloudinitd.callback_return_default
+
+def reload_conf(options, args):
+    """
+    Reload the configuration into this runs data base.  This is typically followed by a repair
+    """
+    if len(args) < 2:
+        print "The boot command requires a top level file.  See --help"
+        return 1
+
+    config_file = args[1]
+    print_chars(1, "Loading the launch plan for run ")
+    print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False)
+    if options.validate:
+        print_chars(1, "Validating the launch plan.\n")
+        errors = cb.boot_validate()
+        if len(errors) > 0:
+            print_chars(0, "The boot plan is not valid.\n", color = "red")
+            for (svc, ex) in errors:
+                print_chars(1, "Service %s had the error:\n" % (svc.name))
+                print_chars(1, "\t%s" %(str(ex)))
+            return 1
+    return 0
 
 
 def launch_new(options, args):
@@ -414,6 +437,7 @@ def main(argv=sys.argv[1:]):
     g_commands["list"] = list
     g_commands["commands"] = list_commands
     g_commands["repair"] = repair
+    g_commands["reload"] = reload_conf
     g_commands["iceage"] = iceage
 
     if command not in g_commands:

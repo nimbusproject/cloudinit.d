@@ -82,7 +82,7 @@ attrbag_table = Table('attrbag', metadata,
 iaas_history_table = Table('iaas_history', metadata,
     Column('id', Integer, Sequence('event_id_seq'), primary_key=True),
     Column('instance_id', String(64)),
-    #Column('timestamp', types.TIMESTAMP(), default=datetime.now()),
+    Column('timestamp', types.TIMESTAMP(), default=datetime.now()),
     Column('service_id', Integer, ForeignKey('service.id'))
     )
 
