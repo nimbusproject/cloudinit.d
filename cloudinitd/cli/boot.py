@@ -158,7 +158,7 @@ def reload_conf(options, args):
     config_file = args[1]
     print_chars(1, "Loading the launch plan for run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False, terminate=False, boot=False, ready=False)
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
         errors = cb.boot_validate()

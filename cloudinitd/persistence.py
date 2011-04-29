@@ -388,6 +388,12 @@ class CloudInitDDB(object):
                 (level, order) = self.build_level(key, level_file)
                 lvl_dict[order] = level
 
+        # we can delete bootobject and levels if they exist
+        all_bo = self._session.query(BootObject).all()
+        for b in all_bo:
+            for l in b.levels:
+                self._session.delete(l)
+            self._session.delete(b)
         bo = BootObject(conf_file)
         x = lvl_dict.keys()
         x.sort()
@@ -415,10 +421,18 @@ class CloudInitDDB(object):
         for s in sections:
             ndx = s.find("svc-")
             if ndx == 0:
-                svc_db = ServiceObject()
+            # first look up the service object by name
+
+                try:
+                    svc_db = self._session.query(ServiceObject).filter(ServiceObject.name==s[4:]).first()
+                except:
+                    svc_db = None
+                if not svc_db:
+                    svc_db = ServiceObject()
+                    self._session.add(svc_db)
                 svc_db._load_from_conf(parser, s, self, context_dir, self._cloudconf_sections, level_file)
                 level.services.append(svc_db)
-                self._session.add(svc_db)
+
         return (level, order)
 
 
