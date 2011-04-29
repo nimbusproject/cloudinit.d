@@ -180,7 +180,7 @@ def launch_new(options, args):
         return 1
 
     config_file = args[1]
-    print_chars(1, "Loading the launch plan for run ")
+    print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
     cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
@@ -194,7 +194,6 @@ def launch_new(options, args):
                 print_chars(1, "\t%s" %(str(ex)))
             return 1
 
-    print_chars(1, "Starting the run\n")
     if options.dryrun:
         print_chars(1, "Performing a dry run...\n", bold=True)
         os.environ['CLOUDBOOT_TESTENV'] = "2"
