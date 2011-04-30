@@ -364,6 +364,9 @@ class IaaSHistory(object):
     def get_service_name(self):
         return self._svc.name
         
+    def get_service_iaas_handle(self):
+        return self._svc._s.instance_id
+
     def get_state(self):
         if self._inst:
             return self._inst.get_state()

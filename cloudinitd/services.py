@@ -114,7 +114,7 @@ class SVCContainer(object):
         
         self._db.db_commit()
         self._bootconf = None
-        self._restart_limit = 4
+        self._restart_limit = 2
         self._restart_count = 0
 
         self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)

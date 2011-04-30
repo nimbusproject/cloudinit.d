@@ -374,7 +374,7 @@ def iceage(options, args):
     cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, logdir=options.logdir, terminate=False, boot=False, ready=True)
     ha = cb.get_iaas_history()
 
-    print_chars(0, "ID     : state\n")
+    print_chars(0, "ID     : state     :  associated service\n")
     for h in ha:
         print_chars(1, "%s : %s : " % (h.get_id(), h.get_service_name()))
         state = h.get_state()
@@ -391,6 +391,27 @@ def iceage(options, args):
 
         print_chars(1, ": %s\n" % (state), color=color)
         if options.kill and clean:
+            print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
+            h.terminate()
+
+
+
+def clean_ice(options, args):
+    """
+    Clean all orphaned VMs
+    """
+    if len(args) < 2:
+        print "The iceage command requires a run name.  See --help"
+        return 1
+    dbname = args[1]
+
+    cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, logdir=options.logdir, terminate=False, boot=False, ready=True)
+    ha = cb.get_iaas_history()
+
+    for h in ha:
+        state = h.get_state()
+        handle = h.get_service_iaas_handle()
+        if state == "running" and handle != h.get_id():
             print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
             h.terminate()
 
@@ -438,6 +459,7 @@ def main(argv=sys.argv[1:]):
     g_commands["repair"] = repair
     g_commands["reload"] = reload_conf
     g_commands["iceage"] = iceage
+    g_commands["clean"] = clean_ice
 
     if command not in g_commands:
         print "Invalid command.  Run with --help"
