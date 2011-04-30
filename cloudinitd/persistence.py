@@ -131,6 +131,9 @@ class LevelObject(object):
 class ServiceObject(object):
 
     def __init__(self):
+        pass
+
+    def new(self):
         # all of the db backed variables
         self.id = None
         self.name = None
@@ -153,28 +156,29 @@ class ServiceObject(object):
         self.iaas_secret = None
         self.contextualized = 0
         self.securitygroups = None
+        pass
 
     def _load_from_conf(self, parser, section, db, conf_dir, cloud_confs, conf_file):
         """conf_dir is the directory of the particular level*conf file"""
 
-        iaas = config_get_or_none(parser, section, "iaas")
-        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
-        iaas_port = config_get_or_none(parser, section, "iaas_port")
+        iaas = config_get_or_none(parser, section, "iaas", self.iaas)
+        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname", self.iaas_hostname)
+        iaas_port = config_get_or_none(parser, section, "iaas_port", self.iaas_port)
 
-        sshkey = config_get_or_none(parser, section, "sshkeyname")
-        localssh = config_get_or_none(parser, section, "localsshkeypath")
-        ssh_user = config_get_or_none(parser, section, "ssh_username")
-        scp_user = config_get_or_none(parser, section, "scp_username")
-        bootconf = config_get_or_none(parser, section, "bootconf")
-        bootpgm = config_get_or_none(parser, section, "bootpgm")
-        hostname = config_get_or_none(parser, section, "hostname")
-        readypgm = config_get_or_none(parser, section, "readypgm")
-        iaas_key = config_get_or_none(parser, section, "iaas_key")
-        iaas_secret = config_get_or_none(parser, section, "iaas_secret")
-        securitygroups = config_get_or_none(parser, section, "securitygroups")
+        sshkey = config_get_or_none(parser, section, "sshkeyname", self.keyname)
+        localssh = config_get_or_none(parser, section, "localsshkeypath", self.localkey)
+        ssh_user = config_get_or_none(parser, section, "ssh_username", self.username)
+        scp_user = config_get_or_none(parser, section, "scp_username", self.scp_username)
+        bootconf = config_get_or_none(parser, section, "bootconf", self.bootconf)
+        bootpgm = config_get_or_none(parser, section, "bootpgm", self.bootpgm)
+        hostname = config_get_or_none(parser, section, "hostname", self.hostname)
+        readypgm = config_get_or_none(parser, section, "readypgm", self.readypgm)
+        iaas_key = config_get_or_none(parser, section, "iaas_key", self.iaas_key)
+        iaas_secret = config_get_or_none(parser, section, "iaas_secret", self.iaas_secret)
+        securitygroups = config_get_or_none(parser, section, "securitygroups", self.securitygroups)
 
-        allo = config_get_or_none(parser, section, "allocation")
-        image = config_get_or_none(parser, section, "image")
+        allo = config_get_or_none(parser, section, "allocation", self.allocation)
+        image = config_get_or_none(parser, section, "image", self.image)
         cloudconf = config_get_or_none(parser, section, "cloud")
         if cloudconf:
             try:
@@ -429,6 +433,7 @@ class CloudInitDDB(object):
                     svc_db = None
                 if not svc_db:
                     svc_db = ServiceObject()
+                    svc_db.new()
                     self._session.add(svc_db)
                 svc_db._load_from_conf(parser, s, self, context_dir, self._cloudconf_sections, level_file)
                 level.services.append(svc_db)
