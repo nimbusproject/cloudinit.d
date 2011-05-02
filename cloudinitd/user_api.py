@@ -343,7 +343,7 @@ class CloudInitD(object):
 
         l = []
         for h in ha:
-            svc = SVCContainer(self._db, h.service, None, boot=False, ready=True, terminate=False)
+            svc = SVCContainer(self._db, h.service, None, log=self._log, boot=False, ready=True, terminate=False)
             con = cb_iaas.iaas_get_con(svc)
             try:
                 inst = con.find_instance(h.instance_id)
@@ -363,6 +363,9 @@ class IaaSHistory(object):
 
     def get_service_name(self):
         return self._svc.name
+
+    def get_context_state(self):
+        return self._svc._s.contextualized
         
     def get_service_iaas_handle(self):
         return self._svc._s.instance_id

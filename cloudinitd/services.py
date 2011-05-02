@@ -123,7 +123,7 @@ class SVCContainer(object):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
         if self._s.contextualized == 0 and not boot and not terminate:
-            cloudinitd.log(self._log, logging.WARN, "%s was asked not not boot but it has not yet been booted.  We are automatically changing this to boot.  We are also utrning on terminate in case an iaas handle is associate with this" % (self.name))
+            cloudinitd.log(self._log, logging.WARN, "%s was asked not to boot but it has not yet been booted.  We are automatically changing this to boot.  We are also turning on terminate in case an iaas handle is associate with this" % (self.name))
             boot = True
             terminate = True
 
@@ -151,7 +151,7 @@ class SVCContainer(object):
         self._s.contextualized = 2
         if self._s.image:
             self._s.hostname = None
-        self._s.instance_id = None
+#        self._s.instance_id = None
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
 

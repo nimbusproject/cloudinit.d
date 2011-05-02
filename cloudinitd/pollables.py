@@ -161,8 +161,10 @@ class InstanceHostnamePollable(Pollable):
 
     def cancel(self):
         self._done = True
+        if self._instance:
+            self._instance.cancel()
         if self._thread:
-            self._thread.join()
+            self._thread.join(3.0)
 
     def get_instance_id(self):
         return self._instance.get_id()

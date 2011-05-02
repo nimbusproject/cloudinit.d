@@ -95,7 +95,7 @@ class IaaSBotoConn(object):
             l = []
             for r in self._con.get_all_instances(instance_ids):
                 l = l + r.instances
-            cb_l = [IaaSBotoInstance(i) for i in l]
+            cb_l = [IaaSBotoInstance(i, self._con) for i in l]
             return cb_l
         finally:
             g_lock.release()
@@ -125,7 +125,7 @@ class IaaSBotoConn(object):
 
         reservation = self._con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
         instance = reservation.instances[0]
-        return IaaSBotoInstance(instance)
+        return IaaSBotoInstance(instance, self._con)
 
     def find_instance(self, instance_id):
         global g_lock
@@ -144,7 +144,7 @@ class IaaSBotoConn(object):
             ex = IaaSException(Exception("There is no instance %s" % (instance_id)))
             raise ex
         instance = reservation[0].instances[0]
-        i = IaaSBotoInstance(instance)
+        i = IaaSBotoInstance(instance, self._con)
         return i
 
 #
@@ -236,6 +236,9 @@ class IaaSTestInstance(object):
         self._time_next_state = datetime.datetime.now() + timedelta(days=0, seconds=time_to_hostname)
         self._next_state = "running"
 
+    def cancel(self):
+        pass
+
     def get_state(self):
         return self.state
 
@@ -261,9 +264,10 @@ class IaaSTestInstance(object):
 
 class IaaSBotoInstance(object):
 
-    def __init__(self, instance):
+    def __init__(self, instance, botocon):
         self._instance = instance
         self._lock = threading.Lock()
+        self._botocon = botocon
 
     def terminate(self):
         self._lock.acquire()
@@ -294,6 +298,9 @@ class IaaSBotoInstance(object):
             return self._instance.state
         finally:
             self._lock.release()
+
+    def cancel(self):
+        self._botocon.close()
 
     def get_id(self):
         self._lock.acquire()

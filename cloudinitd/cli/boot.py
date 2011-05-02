@@ -109,6 +109,7 @@ Run with the command 'commands' to see a list of all possible commands
             print_chars(0, "If you want to do remote debugging please set the env CLOUDINITD_DEBUG_CS to the contact string of you expected debugger.\n", color="red", bold=True)
         except:
             print_chars(0, "Please verify the format of your contact string to be <hostname>:<port>.\n", color="red", bold=True)
+    
     return (args, options)
 
 def level_callback(cb, action, current_level):
@@ -217,6 +218,10 @@ def launch_new(options, args):
     except KeyboardInterrupt:
         print_chars(1, "Canceling (this will not clean up already launched services)...")
         cb.cancel()
+    finally:
+        fake_args = ["clean", options.name]
+        clean_ice(options, fake_args)
+        
     ex = cb.get_exception()
     if ex == None:
         rc = 0
@@ -257,6 +262,10 @@ def _status(options, args):
     except KeyboardInterrupt:
         print_chars(1, "Canceling...")
         cb.cancel()
+    finally:
+        fake_args = ["clean", dbname]
+        clean_ice(options, fake_args)
+
     ex = cb.get_exception()
     if ex == None:
         rc = 0
@@ -274,6 +283,12 @@ def terminate(options, args):
         return 1
     
     for dbname in args[1:]:
+
+        try:
+            fake_args = ["clean", dbname]
+            clean_ice(options, fake_args)
+        except Exception, ex:
+            options.logger.warn("Error on clean up for %s || %s" % (dbname, str(ex)))
         rc = 0
         try:
             cb = CloudInitD(options.database, log_level=options.loglevel, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
@@ -282,6 +297,9 @@ def terminate(options, args):
 
             cb.block_until_complete(poll_period=0.1)
             if not options.noclean:
+                options.kill = True
+                print_chars(1, "Cleaning up any potentially leaked VMs\n")
+                iceage(options, args)
                 path = "%s/cloudinitd-%s.db" % (options.database, dbname)
                 print_chars(1, "deleting the db file %s\n" % (path))
                 if not os.path.exists(path):
@@ -296,6 +314,7 @@ def terminate(options, args):
             print_chars(1, "Canceling...")
             cb.cancel()
             return 1
+
     return rc
 
 def reboot(options, args):
@@ -326,6 +345,9 @@ def reboot(options, args):
     except KeyboardInterrupt:
         print_chars(1, "Canceling...")
         cb.cancel()
+    finally:
+        fake_args = ["clean", dbname]
+        clean_ice(options, fake_args)
     return 1
 
 def list_commands(options, args):
@@ -336,6 +358,8 @@ def list_commands(options, args):
     global g_commands
     for cmd in g_commands:
         func = g_commands[cmd]
+        if not func.__doc__:
+            continue
         print_chars(1, "%s: " % (cmd), bold=True)
         msg = "\n\t" + func.__doc__.strip()
         ndx = line_len
@@ -363,9 +387,6 @@ def list(options, args):
 
 
 def iceage(options, args):
-    """
-    List all the iaas instance handles ever run in this launches history
-    """
     if len(args) < 2:
         print "The iceage command requires a run name.  See --help"
         return 1
@@ -374,9 +395,9 @@ def iceage(options, args):
     cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, logdir=options.logdir, terminate=False, boot=False, ready=True)
     ha = cb.get_iaas_history()
 
-    print_chars(0, "ID     : state     :  associated service\n")
+    print_chars(0, "ID      \t:\tstate:\tassociated service\n")
     for h in ha:
-        print_chars(1, "%s : %s : " % (h.get_id(), h.get_service_name()))
+        print_chars(1, "%s\t:\t%s\t:\t" % (h.get_id(), h.get_service_name()))
         state = h.get_state()
         clean = False
         color = None
@@ -393,6 +414,8 @@ def iceage(options, args):
         if options.kill and clean:
             print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
             h.terminate()
+
+    return 0
 
 
 
@@ -411,10 +434,15 @@ def clean_ice(options, args):
     for h in ha:
         state = h.get_state()
         handle = h.get_service_iaas_handle()
-        if state == "running" and handle != h.get_id():
-            print_chars(1, "Terminating %s\n" % (h.get_id()), bold=True)
-            h.terminate()
+        if state == "running":
+            if handle != h.get_id():
+                print_chars(2, "Terminating an orphaned VM %s\n" % (h.get_id()), bold=True)
+                h.terminate()
+            elif h.get_context_state() == 0:
+                print_chars(2, "Terminating pre-staged VM %s\n" % (h.get_id()), bold=True)
+                h.terminate()
 
+    return 0
 
 
 def repair(options, args):
