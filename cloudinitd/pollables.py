@@ -309,8 +309,8 @@ class PopenExecutablePollable(Pollable):
         eof = self._read_output(self._p, poll_period)
         if not eof:
             return None
-        rc = self._p.poll()
-        return rc
+        self._p.poll()
+        return self._p.returncode
 
     def _read_output(self, p, poll_period):
         selectors = []
@@ -320,6 +320,12 @@ class PopenExecutablePollable(Pollable):
             selectors.append(p.stderr)
 
         (rlist,wlist,elist) = select.select(selectors, [], [], poll_period)
+        if not rlist:
+            p.poll()
+            if p.returncode:
+                self._stdout_eof = True
+                self._stderr_eof = True
+
         for f in rlist:
             line = f.readline()
 
