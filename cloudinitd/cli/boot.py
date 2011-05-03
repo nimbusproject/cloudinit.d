@@ -194,8 +194,12 @@ def launch_new(options, args):
                 print_chars(1, "Service %s had the error:\n" % (svc.name))
                 print_chars(1, "\t%s" %(str(ex)))
             return 1
-
+    orig_env = None
     if options.dryrun:
+        try:
+            orig_env = os.environ['CLOUDBOOT_TESTENV']
+        except:
+            orig_env = None
         print_chars(1, "Performing a dry run...\n", bold=True)
         os.environ['CLOUDBOOT_TESTENV'] = "2"
         os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
@@ -221,6 +225,8 @@ def launch_new(options, args):
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
+        if orig_env:
+            os.environ['CLOUDBOOT_TESTENV'] = orig_env
         
     ex = cb.get_exception()
     if ex == None:
@@ -283,12 +289,6 @@ def terminate(options, args):
         return 1
     
     for dbname in args[1:]:
-
-        try:
-            fake_args = ["clean", dbname]
-            clean_ice(options, fake_args)
-        except Exception, ex:
-            options.logger.warn("Error on clean up for %s || %s" % (dbname, str(ex)))
         rc = 0
         try:
             cb = CloudInitD(options.database, log_level=options.loglevel, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
@@ -297,9 +297,6 @@ def terminate(options, args):
 
             cb.block_until_complete(poll_period=0.1)
             if not options.noclean:
-                options.kill = True
-                print_chars(1, "Cleaning up any potentially leaked VMs\n")
-                iceage(options, args)
                 path = "%s/cloudinitd-%s.db" % (options.database, dbname)
                 print_chars(1, "deleting the db file %s\n" % (path))
                 if not os.path.exists(path):

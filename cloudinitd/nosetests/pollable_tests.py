@@ -130,7 +130,7 @@ class PollableTests(unittest.TestCase):
 
 
     def test_popen_cancel(self):
-        cmd = "/bin/sleep 10000000"
+        cmd = "/bin/sleep 100000"
         pexe1_1 = PopenExecutablePollable(cmd, allowed_errors=0)
 
         pexe1_1.start()

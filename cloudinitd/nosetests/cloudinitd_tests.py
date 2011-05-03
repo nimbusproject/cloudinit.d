@@ -100,6 +100,30 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
+        
+    def test_reload(self):
+
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            #this wont work in fake mode
+            return
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-v", "-v", "boot",  "%s/reloadplan/badtop.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        self.assertNotEqual(rc, 0)
+
+        rc = cloudinitd.cli.boot.main(["--name", runname, "reload",  "%s/reloadplan/goodtop.conf" % (self.plan_basedir)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["repair",  runname])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["terminate",  runname])
+        self.assertEqual(rc, 0)
 
     def test_validate_nolaunch(self):
         (osf, outfile) = tempfile.mkstemp()
@@ -250,8 +274,6 @@ class CloudInitDTests(unittest.TestCase):
         n = "instance:"
         line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
-        ndx = line.find("None")
-        self.assertTrue(ndx >= 0)
         n = "hostname:"
         line = self._find_str(outfile, n)
         self.assertNotEqual(line, None)
