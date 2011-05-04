@@ -13,7 +13,10 @@ f.close()
 print vals_dict['message']
 os.write(osf, vals_dict['message'])
 os.close(osf)
-cmd = "sudo cp %s /var/www/test.txt" % (fname)
+sudo = ""
+if getpass.getuser() != "root":
+    sudo = "sudo"
+cmd = "%s cp %s /var/www/test.txt" % (sudo, fname)
 print cmd
 rc = os.system(cmd)
 
