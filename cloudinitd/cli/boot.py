@@ -8,7 +8,7 @@ import stat
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.persistence import CloudInitDDB
 from cloudinitd.user_api import CloudInitD, CloudServiceException
-from cloudinitd.exceptions import MultilevelException, APIUsageException
+from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException
 import cloudinitd
 import cloudinitd.cb_iaas as cb_iaas
 import os
@@ -225,8 +225,7 @@ def launch_new(options, args):
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
-        if orig_env:
-            os.environ['CLOUDBOOT_TESTENV'] = orig_env
+        os.environ['CLOUDBOOT_TESTENV'] = orig_env
         
     ex = cb.get_exception()
     if ex == None:
@@ -503,6 +502,15 @@ def main(argv=sys.argv[1:]):
         print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
         print_chars(0,  " for more details\n")
         options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program: %s", str(apiex))
+        rc = 1
+    except ConfigException, cex:
+        print_chars(0, str(cex))
+        print_chars(0, "\n")
+        print_chars(0, "see ")
+        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
+        print_chars(0,  " for more details\n")
+        print_chars(0,  "Check your launch plan and associated environment variables for the above listed errors.\n")
+        options.logger.error("A configuration error occured.  Please check your launch plan and its associated environment variables")
         rc = 1
     except Exception, ex:
         print_chars(0, str(ex))
