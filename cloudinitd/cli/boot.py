@@ -225,7 +225,10 @@ def launch_new(options, args):
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
-        os.environ['CLOUDBOOT_TESTENV'] = orig_env
+        if not orig_env:
+            os.unsetenv('CLOUDBOOT_TESTENV')
+        else:
+            os.environ['CLOUDBOOT_TESTENV'] = orig_env
         
     ex = cb.get_exception()
     if ex == None:

@@ -125,6 +125,8 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["terminate",  runname])
         self.assertEqual(rc, 0)
 
+
+
     def test_validate_nolaunch(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
