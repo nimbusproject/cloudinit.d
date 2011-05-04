@@ -2,9 +2,12 @@
 
 import sys
 import os
-import simplejson as json
 import getpass
 import tempfile
+try:
+    import simplejson as json
+except:
+    import json
 
 f = open("bootconf.json", "r")
 vals_dict = json.load(f)

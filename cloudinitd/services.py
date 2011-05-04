@@ -2,7 +2,7 @@ import traceback
 import re
 import cb_iaas
 from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
-from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable
+from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable, PortPollable
 import bootfabtasks
 import tempfile
 import string
@@ -143,6 +143,7 @@ class SVCContainer(object):
         self._shutdown_poller = None
         self.last_exception = None
         self._boot_output_file = None
+        self._port_poller = None
 
         self._iass_started = False
         self._make_first_pollers()
@@ -227,9 +228,12 @@ class SVCContainer(object):
         if self._s.contextualized == 1:
             allowed_es_ssh = 1
         else:
-            allowed_es_ssh = 128
+            allowed_es_ssh = 4
         if self._do_boot:
             # add the ready command no matter what
+            if 'CLOUDBOOT_TESTENV' not in os.environ and self._s.contextualized != 1:
+                self._port_poller = PortPollable(self._s.hostname, 22, log=self._log, timeout=1200)
+                self._pollables.add_level([self._port_poller])
             cmd = self._get_ssh_ready_cmd()
             self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
             self._pollables.add_level([self._ssh_poller])
@@ -464,6 +468,11 @@ class SVCContainer(object):
                 msg = "Service %s error running terminate program on: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
+            if self._port_poller  in multiex.pollable_list:
+                msg = "the poller that attempted to connect to the ssh port on %s failed for %s\n%s" % (self._s.hostname, self._myname)
+                stdout = ""
+                stderr = ""
+
             self._running = False
             if not self._execute_callback(cloudinitd.callback_action_error, msg, multiex):
                 raise ServiceException(multiex, self, msg, stdout, stderr)

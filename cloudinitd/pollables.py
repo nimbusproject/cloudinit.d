@@ -23,6 +23,7 @@ import cloudinitd
 import traceback
 import os
 from cloudinitd.cb_iaas import *
+import socket
 
 
 __author__ = 'bresnaha'
@@ -102,6 +103,54 @@ class InstanceTerminatePollable(Pollable):
 
     def cancel(self):
         pass
+
+
+class PortPollable(Pollable):
+
+    def __init__(self, host, port, retry_count=256, log=logging, timeout=600, done_cb=None):
+        Pollable.__init__(self, timeout, done_cb=done_cb)
+        self._log = log
+        self._started = False
+        self._done = False
+        self.exception = None
+        self._thread = None
+        self._host = host
+        self._port = port
+        self._poll_error_count = 0
+        self._retry_count = retry_count
+        self._time_delay = datetime.timedelta(seconds=10)
+        self._last_run = None
+
+    def start(self):
+        Pollable.start(self)
+        self._started = True
+
+    def poll(self):
+        if not self._started:
+            raise APIUsageException("You must first start the pollable object")
+
+        if self._last_run:
+            now = datetime.datetime.now()
+            if now - self._last_run < self._time_delay:
+                return False
+            self._last_run = now
+
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((self._host, self._port))
+            self._execute_done_cb()
+            return True
+        except Exception, ex:
+            self._poll_error_count = self._poll_error_count + 1
+            if self._poll_error_count > self._retry_count:
+                cloudinitd.log(self._log, logging.ERROR, "safety error count exceeded" + str(ex), tb=traceback)
+                raise
+            
+            return False
+
+    def cancel(self):
+        pass
+
 
 
 class InstanceHostnamePollable(Pollable):
@@ -284,7 +333,7 @@ class PopenExecutablePollable(Pollable):
             now = datetime.datetime.now()
             if now - self._last_run < self._time_delay:
                 return False
-            self._last_run = None
+            self._last_run = now
             self._execute_cb(cloudinitd.callback_action_transition, "retrying the command")
             self._run()
 
