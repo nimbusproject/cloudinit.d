@@ -137,6 +137,7 @@ class PortPollable(Pollable):
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(10.0)
             s.connect((self._host, self._port))
             self._execute_done_cb()
             return True
@@ -145,6 +146,7 @@ class PortPollable(Pollable):
             if self._poll_error_count > self._retry_count:
                 cloudinitd.log(self._log, logging.ERROR, "safety error count exceeded" + str(ex), tb=traceback)
                 raise
+            cloudinitd.log(self._log, logging.INFO, "Retry %d for %s:%d" % (self._poll_error_count, self._host, self._port))
             
             return False
 
