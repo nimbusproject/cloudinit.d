@@ -231,9 +231,6 @@ class SVCContainer(object):
             allowed_es_ssh = 128
         if self._do_boot:
             # add the ready command no matter what
-            #if 'CLOUDBOOT_TESTENV' not in os.environ and self._s.contextualized != 1:
-            #    self._port_poller = PortPollable(self._s.hostname, 22, log=self._log, timeout=1200)
-            #g    self._pollables.add_level([self._port_poller])
             cmd = self._get_ssh_ready_cmd()
             self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
             self._pollables.add_level([self._ssh_poller])

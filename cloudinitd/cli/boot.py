@@ -185,6 +185,16 @@ def _setenv_or_none(k, v):
         os.environ[k] = v
 
 def launch_new(options, args):
+    if options.validate:
+        print_chars(1, "Validating the launch plan.\n")
+        errors = cb.boot_validate()
+        if len(errors) > 0:
+            print_chars(0, "The boot plan is not valid.\n", color = "red")
+            for (svc, ex) in errors:
+                print_chars(1, "Service %s had the error:\n" % (svc.name))
+                print_chars(1, "\t%s" %(str(ex)))
+            return 1
+
     if options.dryrun:
         test_env = _getenv_or_none('CLOUDBOOT_TESTENV')
         host_time_env = _getenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME')
@@ -199,6 +209,7 @@ def launch_new(options, args):
 
         try:
             rc = _launch_new(options, args)
+            print_chars(1, "Dry run successful\n", bold=True, color="green")
         finally:
             _setenv_or_none('CLOUDBOOT_TESTENV', test_env)
             _setenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME', host_time_env)
@@ -224,27 +235,6 @@ def _launch_new(options, args):
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
     cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
 
-    if options.validate:
-        print_chars(1, "Validating the launch plan.\n")
-        errors = cb.boot_validate()
-        if len(errors) > 0:
-            print_chars(0, "The boot plan is not valid.\n", color = "red")
-            for (svc, ex) in errors:
-                print_chars(1, "Service %s had the error:\n" % (svc.name))
-                print_chars(1, "\t%s" %(str(ex)))
-            return 1
-    orig_env = None
-    if options.dryrun:
-        try:
-            orig_env = os.environ['CLOUDBOOT_TESTENV']
-        except:
-            orig_env = None
-        print_chars(1, "Performing a dry run...\n", bold=True)
-        os.environ['CLOUDBOOT_TESTENV'] = "2"
-        os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
-        os.environ['CLOUD_BOOT_FAB'] = cloudinitd.find_true()
-        os.environ['CLOUD_BOOT_SSH'] = cloudinitd.find_true()
-
     cb.pre_start_iaas()
 
     print_chars(1, "Starting the launch plan.\n")
@@ -263,16 +253,10 @@ def _launch_new(options, args):
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
-        if not orig_env:
-            os.unsetenv('CLOUDBOOT_TESTENV')
-        else:
-            os.environ['CLOUDBOOT_TESTENV'] = orig_env
         
     ex = cb.get_exception()
     if ex == None:
         rc = 0
-        if options.dryrun:
-            print_chars(1, "Dry run successful\n", bold=True, color="green")
     else:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1
