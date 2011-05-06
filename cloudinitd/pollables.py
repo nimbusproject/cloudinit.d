@@ -335,7 +335,7 @@ class PopenExecutablePollable(Pollable):
             now = datetime.datetime.now()
             if now - self._last_run < self._time_delay:
                 return False
-            self._last_run = now
+            self._last_run = None
             self._execute_cb(cloudinitd.callback_action_transition, "retrying the command")
             self._run()
 
