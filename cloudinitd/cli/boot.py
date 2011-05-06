@@ -185,6 +185,19 @@ def _setenv_or_none(k, v):
         os.environ[k] = v
 
 def launch_new(options, args):
+    """
+    Boot a new launch plan.  You must supply the path to a top level configuration file.  A run name will be displayed in the output.  See --help for more information.
+    """
+
+    if len(args) < 2:
+        print "The boot command requires a top level file.  See --help"
+        return 1
+
+    config_file = args[1]
+    print_chars(1, "Starting up run ")
+    print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
         errors = cb.boot_validate()
@@ -208,7 +221,7 @@ def launch_new(options, args):
         os.environ['CLOUD_BOOT_SSH'] = cloudinitd.find_true()
 
         try:
-            rc = _launch_new(options, args)
+            rc = _launch_new(options, args, cb)
             print_chars(1, "Dry run successful\n", bold=True, color="green")
         finally:
             _setenv_or_none('CLOUDBOOT_TESTENV', test_env)
@@ -218,23 +231,11 @@ def launch_new(options, args):
             
         return rc
 
-    rc = _launch_new(options, args)
+    rc = _launch_new(options, args, cb)
     return rc
 
 
-def _launch_new(options, args):
-    """
-    Boot a new launch plan.  You must supply the path to a top level configuration file.  A run name will be displayed in the output.  See --help for more information.
-    """
-    if len(args) < 2:
-        print "The boot command requires a top level file.  See --help"
-        return 1
-
-    config_file = args[1]
-    print_chars(1, "Starting up run ")
-    print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
-
+def _launch_new(options, args, cb):
     cb.pre_start_iaas()
 
     print_chars(1, "Starting the launch plan.\n")
