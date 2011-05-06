@@ -171,7 +171,46 @@ def reload_conf(options, args):
     return 0
 
 
+def _getenv_or_none(k):
+    try:
+        return os.environ[k]
+    except KeyError:
+        return None
+
+def _setenv_or_none(k, v):
+    if v == None:
+        os.unsetenv(k)
+    else:
+        os.environ[k] = v
+
 def launch_new(options, args):
+    if options.dryrun:
+        test_env = _getenv_or_none('CLOUDBOOT_TESTENV')
+        host_time_env = _getenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME')
+        fab_env = _getenv_or_none('CLOUD_BOOT_FAB')
+        ssh_env = _getenv_or_none('CLOUD_BOOT_SSH')
+
+        print_chars(1, "Performing a dry run...\n", bold=True)
+        os.environ['CLOUDBOOT_TESTENV'] = "2"
+        os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
+        os.environ['CLOUD_BOOT_FAB'] = cloudinitd.find_true()
+        os.environ['CLOUD_BOOT_SSH'] = cloudinitd.find_true()
+
+        try:
+            rc = _launch_new(options, args)
+        finally:
+            _setenv_or_none('CLOUDBOOT_TESTENV', test_env)
+            _setenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME', host_time_env)
+            _setenv_or_none('CLOUD_BOOT_FAB', fab_env)
+            _setenv_or_none('CLOUD_BOOT_SSH', ssh_env)
+            
+        return rc
+
+    rc = _launch_new(options, args)
+    return rc
+
+
+def _launch_new(options, args):
     """
     Boot a new launch plan.  You must supply the path to a top level configuration file.  A run name will be displayed in the output.  See --help for more information.
     """
@@ -198,10 +237,9 @@ def launch_new(options, args):
         print_chars(1, "Performing a dry run...\n", bold=True)
         os.environ['CLOUDBOOT_TESTENV'] = "2"
         os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
-        os.environ['CLOUD_BOOT_FAB'] = "/bin/true"
-        os.environ['CLOUD_BOOT_SSH'] = "/bin/true"
+        os.environ['CLOUD_BOOT_FAB'] = cloudinitd.find_true()
+        os.environ['CLOUD_BOOT_SSH'] = cloudinitd.find_true()
 
-        
     cb.pre_start_iaas()
 
     print_chars(1, "Starting the launch plan.\n")
