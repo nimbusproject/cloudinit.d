@@ -54,6 +54,7 @@ def readypgm(pgm=None, stagedir=None):
         run(destpgm)
 
 def bootpgm(pgm=None, conf=None, output=None, stagedir=None):
+    run('mkdir %s; chmod 777 %s' % (REMOTE_WORKING_DIR, REMOTE_WORKING_DIR))
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)

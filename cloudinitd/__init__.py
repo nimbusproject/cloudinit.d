@@ -9,6 +9,21 @@ from cloudinitd.statics import *
 
 Version = "0.1"
 
+def find_true():
+    cmds = [
+              "true",
+              "/bin/true",
+              "echo hello"
+           ]
+    for c in cmds:
+        try:
+            rc = os.system(c)
+            if rc == 0:
+                return c
+        except:
+            pass
+
+    raise Exception("There is no way to set true on your system.")
 
 def log(logger, level, msg, tb=None):
 
