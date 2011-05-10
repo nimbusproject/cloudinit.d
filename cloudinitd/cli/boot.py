@@ -45,7 +45,7 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     opt = bootOpts("validate", "x", "Check that boot plan is valid before launching it.", False, flag=True)
     opt.add_opt(parser)
-    opt = bootOpts("dryrun", "y", "Check that boot plan is valid before launching it.", False, flag=True)
+    opt = bootOpts("dryrun", "y", "Perform dry run on the boot plan.  The IaaS service is never contacted but all other actions are performed.  This option offers an addition level of plan validation of -x.", False, flag=True)
     opt.add_opt(parser)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
@@ -508,7 +508,7 @@ def main(argv=sys.argv[1:]):
     g_commands["commands"] = list_commands
     g_commands["repair"] = repair
     g_commands["reload"] = reload_conf
-    g_commands["iceage"] = iceage
+    g_commands["history"] = iceage
     g_commands["clean"] = clean_ice
 
     if command not in g_commands:

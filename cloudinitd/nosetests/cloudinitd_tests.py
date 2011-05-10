@@ -100,6 +100,16 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
+
+    def test_ssh_into_dep(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/intohostname/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
         
     def test_reload(self):
 

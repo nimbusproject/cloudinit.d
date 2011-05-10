@@ -5,6 +5,7 @@ from sqlalchemy.orm import mapper
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Table
 from sqlalchemy import Integer
+from sqlalchemy import Boolean
 from sqlalchemy import String, MetaData, Sequence
 from sqlalchemy import Column
 import ConfigParser
@@ -70,6 +71,7 @@ service_table = Table('service', metadata,
     Column('contextualized', Integer, default=0),
     Column('last_error', sqlalchemy.types.Text()),
     Column('terminatepgm', String(1024)),
+    Column('iaas_launch', Boolean),
     )
 
 attrbag_table = Table('attrbag', metadata,
@@ -156,7 +158,7 @@ class ServiceObject(object):
         self.iaas_secret = None
         self.contextualized = 0
         self.securitygroups = None
-        pass
+        self.iaas_launch = None
 
     def _load_from_conf(self, parser, section, db, conf_dir, cloud_confs, conf_file):
         """conf_dir is the directory of the particular level*conf file"""
@@ -254,6 +256,22 @@ class ServiceObject(object):
         self.iaas_secret = iaas_secret
         self.iaas_key = iaas_key
         self.securitygroups = securitygroups
+
+        x = config_get_or_none(parser, section, "iaas_launch")
+        if x:
+            if x.lower() == 'true':
+                self.iaas_launch = True
+            else:
+                self.iaas_launch = False
+        else:
+            if self.hostname:
+                self.iaas_launch = False
+            else:
+                self.iaas_launch = True
+
+        # allow the plan to over ride the default image if they want to use a hostname
+        if self.iaas_launch is False:
+            self.image = None
 
         item_list = parser.items(section)
         deps_list = []
