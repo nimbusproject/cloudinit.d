@@ -78,7 +78,7 @@ Run with the command 'commands' to see a list of all possible commands
     if not options.name:
         options.name = str(uuid.uuid4()).split("-")[0]
 
-    if options.logdir == None:
+    if options.logdir is None:
         options.logdir = os.path.expanduser("~/.cloudinitd/")
 
     options.logger = cloudinitd.make_logger(options.loglevel, options.name, logdir=options.logdir)
@@ -256,7 +256,7 @@ def _launch_new(options, args, cb):
         clean_ice(options, fake_args)
         
     ex = cb.get_exception()
-    if ex == None:
+    if ex is None:
         rc = 0
     else:
         print_chars(4, "An error occured %s" % (str(ex)))
@@ -298,7 +298,7 @@ def _status(options, args):
         clean_ice(options, fake_args)
 
     ex = cb.get_exception()
-    if ex == None:
+    if ex is None:
         rc = 0
     else:
         print_chars(4, "An error occured %s" % (str(ex)))

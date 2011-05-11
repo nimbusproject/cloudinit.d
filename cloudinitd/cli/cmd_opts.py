@@ -24,7 +24,7 @@ class bootOpts(object):
             emsg = self.get_error_msg()
             raise Exception(emsg)
 
-        if val == None:
+        if val is None:
             return
         if self.flag != None:
             return
