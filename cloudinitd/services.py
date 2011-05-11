@@ -119,10 +119,10 @@ class SVCContainer(object):
 
         self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
 
-    def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None):
+    def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
         if boot and self._s.contextualized == 1 and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
-        if self._s.contextualized == 0 and not boot and not terminate:
+        if self._s.contextualized == 0 and not boot and not terminate and repair:
             cloudinitd.log(self._log, logging.WARN, "%s was asked not to boot but it has not yet been booted.  We are automatically changing this to boot.  We are also turning on terminate in case an iaas handle is associate with this" % (self.name))
             boot = True
             terminate = True
@@ -385,7 +385,7 @@ class SVCContainer(object):
 
         if callback == None:
             callback = self._callback
-        self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
+        self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=True)
         self._start()
 
     def start(self):
