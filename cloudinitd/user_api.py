@@ -388,7 +388,7 @@ class CloudService(object):
     def __init__(self, cloudbooter, svc, name=None):
         """This should only be called by the CloudInitD object"""
         self._svc = svc
-        if svc == None:
+        if svc is None:
             self.name = name
         else:
             self.name = svc.name
@@ -401,13 +401,13 @@ class CloudService(object):
         return self._svc.get_iaas_status()
 
     def get_keys_from_bag(self):
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_dep_keys()
 
 
     def get_attr_from_bag(self, name):
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_dep(name)
     # need various methods for monitoring state. values from attr bag and from db
@@ -424,7 +424,7 @@ class CloudService(object):
 
         returns an pollable object
         """
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         self._svc.restart(boot=False, ready=False, terminate=True, callback=callback)
         return self._svc
@@ -434,18 +434,18 @@ class CloudService(object):
         This will restart the service, or check the results of the ready
         program if the service is already running.
         """
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         self._svc.restart(boot=True, ready=True, terminate=True)
         return self._svc
 
     def get_ssh_command(self):
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_ssh_command()
 
     def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
-        if self._svc == None:
+        if self._svc is None:
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_scp_command(src, dst, upload=upload, recursive=recursive, forcehost=forcehost)
 

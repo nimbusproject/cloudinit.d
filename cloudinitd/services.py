@@ -63,14 +63,14 @@ class BootTopLevel(object):
         if s.name in self.services.keys():
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
 
-        if s.image == None and s.hostname == None:
+        if s.image is None and s.hostname is None:
             raise APIUsageException("You must have an image or a hostname or there will be no VM")    
 
-        if boot == None:
+        if boot is None:
             boot = self._boot
-        if ready == None:
+        if ready is None:
             ready = self._ready
-        if terminate == None:
+        if terminate is None:
             terminate = self._terminate
         if not log:
             log = self._log
@@ -393,7 +393,7 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.ERROR, emsg, tb=traceback)
             raise APIUsageException(emsg)
 
-        if callback == None:
+        if callback is None:
             callback = self._callback
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=True)
         self._start()

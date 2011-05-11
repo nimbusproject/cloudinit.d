@@ -338,7 +338,7 @@ class CloudInitDDB(object):
 
         self._cloudconf_sections = {}
 
-        if module == None:
+        if module is None:
             self._engine = sqlalchemy.create_engine(dburl)
         else:
             self._engine = sqlalchemy.create_engine(dburl, module=module)

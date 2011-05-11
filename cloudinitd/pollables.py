@@ -340,7 +340,7 @@ class PopenExecutablePollable(Pollable):
             self._run()
 
         rc = self._poll_process()
-        if rc == None:
+        if rc is None:
             return False
         self._log.info("process return code %d" % (rc))
         if rc != 0:

@@ -33,7 +33,7 @@ def find_true():
 
 def log(logger, level, msg, tb=None):
 
-    if logger == None:
+    if logger is None:
         print msg
         return
 

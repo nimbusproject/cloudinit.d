@@ -110,7 +110,7 @@ class IaaSBotoConn(object):
         return x
 
     def _run_instance(self):
-        if self._svc == None:
+        if self._svc is None:
             raise ConfigException("You can only launch instances if a service is associated with the connection")
         image = self._svc.get_dep("image")
         instance_type = self._svc.get_dep("allocation")
@@ -180,7 +180,7 @@ class IaaSBotoConn(object):
 #    #def run_instance(self, image, instance_type, key_name, security_groupname=None):
 #
 #    def run_instance(self):
-#        if self._svc == None:
+#        if self._svc is None:
 #            raise ConfigException("You can only launch instances if a service is associated with the connection")
 #
 #        image = self._svc.get_dep("image")
