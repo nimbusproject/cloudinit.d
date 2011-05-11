@@ -129,6 +129,8 @@ class PortPollable(Pollable):
         if not self._started:
             raise APIUsageException("You must first start the pollable object")
 
+        if 'CLOUDBOOT_TESTENV' in os.environ:
+            return True
         if self._last_run:
             now = datetime.datetime.now()
             if now - self._last_run < self._time_delay:

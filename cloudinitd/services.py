@@ -153,6 +153,7 @@ class SVCContainer(object):
         self.last_exception = None
         self._boot_output_file = None
         self._port_poller = None
+        self._ssh_port = 22
 
         self._iass_started = False
         self._make_first_pollers()
@@ -239,10 +240,13 @@ class SVCContainer(object):
             allowed_es_ssh = 1
         else:
             allowed_es_ssh = 128
+
+        self._port_poller = PortPollable(self._s.hostname, self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
+        self._pollables.add_level([self._port_poller])
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
-            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=allowed_es_ssh)
+            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=2)
             self._pollables.add_level([self._ssh_poller])
 
             # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
@@ -262,7 +266,7 @@ class SVCContainer(object):
 
         if self._do_ready:
             cmd = self._get_ssh_ready_cmd()
-            self._ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=allowed_es_ssh)
+            self._ssh_poller2 = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, allowed_errors=2)
             self._pollables.add_level([self._ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
@@ -401,7 +405,6 @@ class SVCContainer(object):
     def start(self):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
-# HOW DO I HANDLE THIS?  THE PROBLEM IS THAT IF THE SERVICE WAS TERMINATED SOMEONE ELSE MAY HAVE GOTTEN THE HOSTNAME
         if self._s.state == cloudinitd.service_state_terminated and not self._do_boot and not self._do_terminate:
             ex = APIUsageException("the service %s has been terminated.  The only action that can be performed on it is a boot" % (self.name))
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
