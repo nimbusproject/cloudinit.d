@@ -365,7 +365,7 @@ class IaaSHistory(object):
         return self._svc.name
 
     def get_context_state(self):
-        return self._svc._s.contextualized
+        return self._svc._s.state
         
     def get_service_iaas_handle(self):
         return self._svc._s.instance_id

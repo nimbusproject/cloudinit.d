@@ -159,7 +159,7 @@ def reload_conf(options, args):
     config_file = args[1]
     print_chars(1, "Loading the launch plan for run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False, terminate=False, boot=False, ready=False)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False, terminate=False, boot=False, ready=False, repair=True)
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
         errors = cb.boot_validate()
@@ -179,7 +179,7 @@ def _getenv_or_none(k):
         return None
 
 def _setenv_or_none(k, v):
-    if v == None:
+    if v is None:
         os.unsetenv(k)
     else:
         os.environ[k] = v
@@ -460,7 +460,7 @@ def clean_ice(options, args):
             if handle != h.get_id():
                 print_chars(2, "Terminating an orphaned VM %s\n" % (h.get_id()), bold=True)
                 h.terminate()
-            elif h.get_context_state() == 0:
+            elif h.get_context_state() == cloudinitd.service_state_initial:
                 print_chars(2, "Terminating pre-staged VM %s\n" % (h.get_id()), bold=True)
                 h.terminate()
 

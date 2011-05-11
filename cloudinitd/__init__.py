@@ -7,6 +7,12 @@ from cloudinitd.exceptions import *
 from cloudinitd.user_api import *
 from cloudinitd.statics import *
 
+service_state_initial = 0
+service_state_launched = 2
+service_state_contextualized = 4
+service_state_terminated = 6
+
+
 Version = "0.1"
 
 def find_true():

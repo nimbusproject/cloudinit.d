@@ -68,7 +68,7 @@ service_table = Table('service', metadata,
     Column('iaas_port', Integer),
     Column('iaas_key', String(64)),
     Column('iaas_secret', String(64)),    
-    Column('contextualized', Integer, default=0),
+    Column('state', Integer, default=0),
     Column('last_error', sqlalchemy.types.Text()),
     Column('terminatepgm', String(1024)),
     Column('iaas_launch', Boolean),
@@ -156,7 +156,7 @@ class ServiceObject(object):
         self.iaas_port = None
         self.iaas_key = None
         self.iaas_secret = None
-        self.contextualized = 0
+        self.state = cloudinitd.service_state_initial
         self.securitygroups = None
         self.iaas_launch = None
 

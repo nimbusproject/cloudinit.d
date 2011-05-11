@@ -7,8 +7,9 @@ import bootfabtasks
 import tempfile
 import string
 from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
-from cloudinitd.statics import *
 import logging
+import cloudinitd
+from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
 import simplejson as json
 
@@ -96,7 +97,7 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False):
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -110,7 +111,13 @@ class SVCContainer(object):
         self._db = db
         self._top_level = top_level
 
-        self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback)
+        # if we are reloading we need to examine the current state to see where things let off
+        if reload:
+            #
+            if self._s.state == 0:
+                pass
+
+        self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
         
         self._db.db_commit()
         self._bootconf = None
@@ -120,12 +127,14 @@ class SVCContainer(object):
         self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
-        if boot and self._s.contextualized == 1 and not terminate:
-            raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.contextualized), str(terminate)))
-        if self._s.contextualized == 0 and not boot and not terminate and repair:
-            cloudinitd.log(self._log, logging.WARN, "%s was asked not to boot but it has not yet been booted.  We are automatically changing this to boot.  We are also turning on terminate in case an iaas handle is associate with this" % (self.name))
-            boot = True
-            terminate = True
+        if boot and self._s.state == cloudinitd.service_state_contextualized and not terminate:
+            raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.state), str(terminate)))
+
+
+        #if self._s.contextualized == 0 and not boot and not terminate and repair:
+        #    cloudinitd.log(self._log, logging.WARN, "%s was asked not to boot but it has not yet been booted.  We are automatically changing this to boot.  We are also turning on terminate in case an iaas handle is associate with this" % (self.name))
+        #    boot = True
+        #    terminate = True
 
         self._do_boot = boot
         self._do_ready = ready
@@ -149,7 +158,7 @@ class SVCContainer(object):
         self._make_first_pollers()
 
     def _teminate_done(self, poller):
-        self._s.contextualized = 2
+        self._s.state = cloudinitd.service_state_terminated
         if self._s.image:
             self._s.hostname = None
 #        self._s.instance_id = None
@@ -166,10 +175,10 @@ class SVCContainer(object):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)
         if self._do_terminate:
-            if self._s.contextualized == 2:
+            if self._s.state == cloudinitd.service_state_terminated:
                 cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
-                if self._s.terminatepgm and self._s.contextualized != 2:
+                if self._s.terminatepgm:
                     cmd = self._get_termpgm_cmd()
                     self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                     self._term_host_pollers.add_level([self._terminate_poller])
@@ -213,6 +222,7 @@ class SVCContainer(object):
         if self._hostname_poller:
             self._s.instance_id = self._hostname_poller.get_instance_id()
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s for %s" % (self._s.instance_id, self.name))
+            self._s.state = cloudinitd.service_state_launched
             self._db.db_commit()            
         self._iass_started = True
         if self._do_boot:
@@ -225,7 +235,7 @@ class SVCContainer(object):
 
         self._pollables = MultiLevelPollable(log=self._log)
 
-        if self._s.contextualized == 1:
+        if self._s.state == cloudinitd.service_state_contextualized:
             allowed_es_ssh = 1
         else:
             allowed_es_ssh = 128
@@ -237,7 +247,7 @@ class SVCContainer(object):
 
             # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
             # the contextualization programs MUST handle multiple executions, but we can be as helpful as possible
-            if self._s.contextualized == 1:
+            if self._s.state == cloudinitd.service_state_contextualized:
                 cloudinitd.log(self._log, logging.DEBUG, "%s is already contextualized" % (self.name))
             else:
                 if self._s.bootpgm:
@@ -392,8 +402,8 @@ class SVCContainer(object):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
 # HOW DO I HANDLE THIS?  THE PROBLEM IS THAT IF THE SERVICE WAS TERMINATED SOMEONE ELSE MAY HAVE GOTTEN THE HOSTNAME
-        if self._s.contextualized == 2 and not self._do_boot and not self._do_terminate:
-            ex = APIUsageException("the service %s has been terminate.  The only action that can be performed on it is a boot" % (self.name))
+        if self._s.state == cloudinitd.service_state_terminated and not self._do_boot and not self._do_terminate:
+            ex = APIUsageException("the service %s has been terminated.  The only action that can be performed on it is a boot" % (self.name))
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
                 raise ex
 
@@ -536,7 +546,7 @@ class SVCContainer(object):
 
     def context_done_cb(self, poller):
         self._read_boot_output()
-        self._s.contextualized = 1
+        self._s.state = cloudinitd.service_state_contextualized
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
 
