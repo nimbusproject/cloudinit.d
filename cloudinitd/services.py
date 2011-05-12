@@ -241,8 +241,9 @@ class SVCContainer(object):
         else:
             allowed_es_ssh = 128
 
-        self._port_poller = PortPollable(self._s.hostname, self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
-        self._pollables.add_level([self._port_poller])
+        if self._do_boot or self._do_ready:
+            self._port_poller = PortPollable(self._s.hostname, self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
+            self._pollables.add_level([self._port_poller])
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
