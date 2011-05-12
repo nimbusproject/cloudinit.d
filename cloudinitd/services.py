@@ -480,7 +480,7 @@ class SVCContainer(object):
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
             if self._port_poller  in multiex.pollable_list:
-                msg = "the poller that attempted to connect to the ssh port on %s failed for %s\n%s" % (self._s.hostname, self._myname)
+                msg = "the poller that attempted to connect to the ssh port on %s failed for %s\n%s" % (self._s.hostname, self._myname, msg)
                 stdout = ""
                 stderr = ""
 
