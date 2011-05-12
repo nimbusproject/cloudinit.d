@@ -353,6 +353,10 @@ class CloudInitD(object):
             l.append(i)
         return l
 
+    def get_json_doc(self):
+        json_doc = {}
+
+
 
 class IaaSHistory(object):
 

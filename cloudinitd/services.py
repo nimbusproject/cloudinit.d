@@ -242,7 +242,7 @@ class SVCContainer(object):
             allowed_es_ssh = 128
 
         if self._do_boot or self._do_ready:
-            self._port_poller = PortPollable(self._s.hostname, self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
+            self._port_poller = PortPollable(self._expand_attr(self._s.hostname), self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
             self._pollables.add_level([self._port_poller])
         if self._do_boot:
             # add the ready command no matter what
@@ -628,7 +628,6 @@ class SVCContainer(object):
         self._db.db_obj_add(h)
         self._db.db_commit()
         self._s.history.append(h)
-
 
     def generate_attr_doc(self):
         json_doc = {}
