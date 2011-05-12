@@ -135,7 +135,7 @@ class PortPollable(Pollable):
             now = datetime.datetime.now()
             if now - self._last_run < self._time_delay:
                 return False
-            self._last_run = now
+        self._last_run = now
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

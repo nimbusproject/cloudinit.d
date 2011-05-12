@@ -628,3 +628,37 @@ class SVCContainer(object):
         self._db.db_obj_add(h)
         self._db.db_commit()
         self._s.history.append(h)
+
+
+    def generate_attr_doc(self):
+        json_doc = {}
+        keys = self.get_dep_keys()
+        for k in keys:
+            json_doc[k] = self.get_dep(k)
+        # now we have to get all the keys not in the list
+        db_keys = [
+            'image',
+            'iaas',
+            'allocation',
+            'keyname',
+            'localkey',
+            'username',
+            'scp_username',
+            'readypgm',
+            'hostname',
+            'bootconf',
+            'bootpgm',
+            'securitygroups'
+
+            'instance_id',
+            'iaas_hostname',
+            'iaas_port',
+            'iaas_key',
+            'iaas_secret',
+            'state',
+            'terminatepgm',
+            'iaas_launch'
+            ]
+        for k in db_keys:
+            json_doc[k] = self.get_dep(k)
+        return json_doc
