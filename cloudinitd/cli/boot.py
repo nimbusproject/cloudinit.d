@@ -14,6 +14,7 @@ import cloudinitd.cb_iaas as cb_iaas
 import os
 import cloudinitd.cli.output
 from optparse import SUPPRESS_HELP
+import simplejson as json
 
 __author__ = 'bresnaha'
 
@@ -64,6 +65,8 @@ Run with the command 'commands' to see a list of all possible commands
     opt = bootOpts("outstream", "O", SUPPRESS_HELP, None)
     opt.add_opt(parser)
     opt = bootOpts("remotedebug", "X", SUPPRESS_HELP, False, flag=True)
+    opt.add_opt(parser)
+    opt = bootOpts("output", "o", "Create an json document which describes the application and write it to the associated file.  Relevant for boot and status", None)
     opt.add_opt(parser)
 
     homedir = os.path.expanduser("~/.cloudinitd")
@@ -184,6 +187,15 @@ def _setenv_or_none(k, v):
     else:
         os.environ[k] = v
 
+def _write_json_doc(options, cb):
+    if options.output:
+        json_doc = cb.get_json_doc()
+        doc_str = json.dumps(json_doc, indent=4)
+        f = open(options.output, "w")
+        f.write(doc_str)
+        f.close()
+
+
 def launch_new(options, args):
     """
     Boot a new launch plan.  You must supply the path to a top level configuration file.  A run name will be displayed in the output.  See --help for more information.
@@ -261,6 +273,9 @@ def _launch_new(options, args, cb):
     else:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1
+
+    _write_json_doc(options, cb)
+
     return rc
 
 def status(options, args):
@@ -303,6 +318,9 @@ def _status(options, args):
     else:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1
+
+    _write_json_doc(options, cb)
+    
     return rc
 
 def terminate(options, args):

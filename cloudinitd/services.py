@@ -99,7 +99,7 @@ class BootTopLevel(object):
             lvl_doc = {}
             lvl_doc['level'] = count
             svc_list = []
-            for s in level.get_level():
+            for s in level:
                 s_doc = s.generate_attr_doc()
                 svc_list.append(s_doc)
             lvl_doc['services'] = svc_list
@@ -664,8 +664,7 @@ class SVCContainer(object):
             'hostname',
             'bootconf',
             'bootpgm',
-            'securitygroups'
-
+            'securitygroups',
             'instance_id',
             'iaas_hostname',
             'iaas_port',
