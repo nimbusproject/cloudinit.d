@@ -444,4 +444,21 @@ class CloudInitDTests(unittest.TestCase):
         self.assertTrue(os.path.exists(logfilename), "%s should exist" % (logfilename))
         os.path.getsize(logfilename)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-        self.assertEqual(rc, 0)        
+        self.assertEqual(rc, 0)
+
+
+    def test_outputwriter(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "status",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
