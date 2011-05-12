@@ -90,6 +90,23 @@ class BootTopLevel(object):
     def get_exception(self):
         return self._multi_top._exception
 
+    def get_json_doc(self):
+        doc = {}
+        count = 0
+        levels = []
+        for level in self._multi_top.levels:
+            count = count + 1
+            lvl_doc = {}
+            lvl_doc['level'] = count
+            svc_list = []
+            for s in level.get_level():
+                s_doc = s.generate_attr_doc()
+                svc_list.append(s_doc)
+            lvl_doc['services'] = svc_list
+            levels.append(lvl_doc)
+        doc['levels'] = levels
+        return doc
+
 
 class SVCContainer(object):
     """

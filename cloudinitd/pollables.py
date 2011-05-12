@@ -131,8 +131,8 @@ class PortPollable(Pollable):
 
         if 'CLOUDBOOT_TESTENV' in os.environ:
             return True
+        now = datetime.datetime.now()
         if self._last_run:
-            now = datetime.datetime.now()
             if now - self._last_run < self._time_delay:
                 return False
         self._last_run = now

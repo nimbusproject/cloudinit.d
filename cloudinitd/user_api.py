@@ -354,8 +354,7 @@ class CloudInitD(object):
         return l
 
     def get_json_doc(self):
-        json_doc = {}
-
+        return self._boot_top.get_json_doc()
 
 
 class IaaSHistory(object):
