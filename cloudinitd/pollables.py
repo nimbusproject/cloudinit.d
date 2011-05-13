@@ -174,7 +174,7 @@ class InstanceHostnamePollable(Pollable):
         self._done = False
         self.exception = None
         self._thread = None
-        self._ok_states = ["networking", "pending", "scheduling"]
+        self._ok_states = ["networking", "pending", "scheduling", "spawning", "launching"]
 
 
     def pre_start(self):

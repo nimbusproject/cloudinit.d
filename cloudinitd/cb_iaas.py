@@ -273,6 +273,8 @@ class IaaSBotoInstance(object):
         self._lock.acquire()
         try:
             x = self._instance.terminate()
+        except IndexError:
+            cloudinitd.log(log, logging.ERROR, "terminate returned an error.  trapping this error is a work around from openstack.  please verify that your instances actually were terminated")
         finally:
             self._lock.release()
         return x
