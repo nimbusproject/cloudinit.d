@@ -174,6 +174,8 @@ class InstanceHostnamePollable(Pollable):
         self._done = False
         self.exception = None
         self._thread = None
+        self._ok_states = ["networking", "pending", "scheduling"]
+
 
     def pre_start(self):
         if not self._instance:
@@ -201,14 +203,13 @@ class InstanceHostnamePollable(Pollable):
         Pollable.poll(self)
         # cache the state at tis time on the local call stack, should be thread safe
         state = self._instance.get_state()
-        cloudinitd.log(self._log, logging.DEBUG, "Current iaas start for %s is %s" % (self.get_instance_id(), state))
+        cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in poll for %s is %s" % (self.get_instance_id(), state))
         if state == "running":
             self._done = True
             self._thread.join()
             self._execute_done_cb()
             return True
-        ok_states = ["networking", "pending", "scheduling"]
-        if state not in ok_states:                
+        if state not in self._ok_states:
             msg = "The current state is %s.  Never reached state running" % (state)
             cloudinitd.log(self._log, logging.DEBUG, msg, tb=traceback)
             self.exception = IaaSException(msg)
@@ -253,7 +254,9 @@ class InstanceHostnamePollable(Pollable):
                 # because update is called in start we will sleep first
                 time.sleep(poll_period)
                 self._update()
-                if self._instance.get_state() != "pending":
+                cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in thread for %s is %s" % (self.get_instance_id(), state))
+                if self._instance.get_state() not in self._ok_states:
+                    cloudinitd.log(self._log, logging.DEBUG, "%s polling thread done" % (self.get_instance_id()))
                     done = True
             except Exception, ex:
                 cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
