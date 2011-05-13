@@ -254,7 +254,7 @@ class InstanceHostnamePollable(Pollable):
                 # because update is called in start we will sleep first
                 time.sleep(poll_period)
                 self._update()
-                cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in thread for %s is %s" % (self.get_instance_id(), state))
+                cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in thread for %s is %s" % (self.get_instance_id(), self._instance.get_state()))
                 if self._instance.get_state() not in self._ok_states:
                     cloudinitd.log(self._log, logging.DEBUG, "%s polling thread done" % (self.get_instance_id()))
                     done = True
