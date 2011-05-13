@@ -6,6 +6,7 @@ __author__ = 'bresnaha'
 from cloudinitd.exceptions import *
 from cloudinitd.user_api import *
 from cloudinitd.statics import *
+import urlparse
 
 service_state_initial = 0
 service_state_launched = 2
@@ -110,3 +111,16 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
     handler.setFormatter(formatter)
 
     return logger
+
+
+def parse_url(url):
+    ndx = url.find("://")
+    if ndx < 0:
+        url = "https://" + url
+    url_parts = urlparse.urlparse(url)
+
+    path = url_parts.path
+    if not path:
+        path = "/"
+
+    return (url_parts.scheme, url_parts.hostname, url_parts.port, path)

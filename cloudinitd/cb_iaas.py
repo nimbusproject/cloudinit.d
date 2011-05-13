@@ -16,6 +16,7 @@ except:
     from boto.ec2.regioninfo import RegionInfo
 import os
 import cloudinitd
+import urlparse
 from cloudinitd.exceptions import ConfigException, IaaSException, APIUsageException
 
 __author__ = 'bresnaha'
@@ -54,7 +55,7 @@ class IaaSTestCon(object):
 
 
 class IaaSBotoConn(object):
-    def __init__(self, svc, key=None, secret=None, iaashostname=None, iaasport=None):
+    def __init__(self, svc, key=None, secret=None, iaasurl=None):
         iaas = None
         self._svc = svc
         if self._svc:
@@ -64,29 +65,28 @@ class IaaSBotoConn(object):
                 raise ConfigException("IaaS key %s not in provided" % (key))
             if not secret:
                 raise ConfigException("IaaS secret %s not in provided" % (secret))
-
-            iaashostname = svc.get_dep("iaas_hostname")
-            iaasport = svc.get_dep("iaas_port")
-            if iaasport:
-                iaasport = int(iaasport)
+            iaasurl = svc.get_dep("iaas_url")
             iaas = svc.get_dep("iaas")
-
 
         if not iaas:
             iaas = "us-east-1"
 
-        if not iaashostname:
+        if not iaasurl:
             region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
             if not region:
                 raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
             self._con =  boto.connect_ec2(key, secret, region=region)
         else:
-            region = RegionInfo(iaashostname)
+            (scheme, iaashost, iaasport, iaaspath) = cloudinitd.parse_url(iaasurl)
+            region = RegionInfo(iaashost)
+
+            secure = scheme == "https"
+
             if not iaasport:
-                self._con =  boto.connect_ec2(key, secret, region=region)
+                self._con =  boto.connect_ec2(key, secret, region=region, path=iaaspath, is_secure=secure)
             else:
-                self._con =  boto.connect_ec2(key, secret, port=iaasport, region=region)
-            self._con.host = iaashostname
+                self._con =  boto.connect_ec2(key, secret, port=iaasport, region=region, path=iaaspath, is_secure=secure)
+            self._con.host = iaashost
 
     def get_all_instances(self, instance_ids=None):
         global g_lock
@@ -333,11 +333,8 @@ class IaaSBotoInstance(object):
 
 
 
-def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
+def iaas_get_con(svc, key=None, secret=None, iaasurl=None):
     # type check the port
-    if iaasport:
-        iaasport = int(iaasport)
-    
     if 'CLOUDBOOT_TESTENV' in os.environ:
         if secret == "fail":
             raise IaaSException("The test env is setup to fail here")
@@ -348,7 +345,7 @@ def iaas_get_con(svc, key=None, secret=None, iaashostname=None, iaasport=None):
         g_lock.acquire()
         try:
         # can hindge the connection type on the iaas type
-            con = IaaSBotoConn(svc, key=key, secret=secret, iaashostname=iaashostname, iaasport=iaasport)
+            con = IaaSBotoConn(svc, key=key, secret=secret, iaasurl=iaasurl)
         finally:
             g_lock.release()
         return con

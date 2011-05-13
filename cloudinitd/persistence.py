@@ -64,8 +64,7 @@ service_table = Table('service', metadata,
     Column('securitygroups', String(1024)),
     Column('deps', String(1024)),
     Column('instance_id', String(64)),
-    Column('iaas_hostname', String(64)),
-    Column('iaas_port', Integer),
+    Column('iaas_url', String(64)),
     Column('iaas_key', String(64)),
     Column('iaas_secret', String(64)),    
     Column('state', Integer, default=0),
@@ -152,8 +151,7 @@ class ServiceObject(object):
         self.bootconf = None
         self.bootpgm = None
         self.instance_id = None
-        self.iaas_hostname = None
-        self.iaas_port = None
+        self.iaas_url = None
         self.iaas_key = None
         self.iaas_secret = None
         self.state = cloudinitd.service_state_initial
@@ -164,8 +162,7 @@ class ServiceObject(object):
         """conf_dir is the directory of the particular level*conf file"""
 
         iaas = config_get_or_none(parser, section, "iaas", self.iaas)
-        iaas_hostname = config_get_or_none(parser, section, "iaas_hostname", self.iaas_hostname)
-        iaas_port = config_get_or_none(parser, section, "iaas_port", self.iaas_port)
+        iaas_url = config_get_or_none(parser, section, "iaas_url", self.iaas_url)
 
         sshkey = config_get_or_none(parser, section, "sshkeyname", self.keyname)
         localssh = config_get_or_none(parser, section, "localsshkeypath", self.localkey)
@@ -190,8 +187,8 @@ class ServiceObject(object):
 
             if not iaas:
                 iaas = conf.iaas
-            if not iaas_hostname:
-                iaas_hostname = conf.iaas_hostname
+            if not iaas_url:
+                iaas_url = conf.iaas_url
             if not sshkey:
                 sshkey = conf.sshkey
             if not localssh:
@@ -209,8 +206,8 @@ class ServiceObject(object):
 
         if not iaas:
             iaas = db.default_iaas
-        if not iaas_hostname:
-            iaas_hostname = db.default_iaas_hostname
+        if not iaas_url:
+            iaas_url = db.default_iaas_url
         if not allo:
             allo = db.default_allo
         if not sshkey:
@@ -229,8 +226,6 @@ class ServiceObject(object):
             securitygroups = db.default_securitygroups
         if not image:
             image = db.default_image
-        if not iaas_port:
-            iaas_port = db.default_iaas_port
         if not bootconf:
             bootconf = db.default_bootconf
         if not bootpgm:
@@ -250,8 +245,7 @@ class ServiceObject(object):
         self.keyname = sshkey
         self.allocation = allo
         self.iaas = iaas
-        self.iaas_hostname = iaas_hostname
-        self.iaas_port = iaas_port
+        self.iaas_url = iaas_url
 
         self.iaas_secret = iaas_secret
         self.iaas_key = iaas_key
@@ -325,8 +319,7 @@ class CloudConfSection(object):
         self.localssh = config_get_or_none(parser, section, "localsshkeypath")
         self.ssh_user = config_get_or_none(parser, section, "ssh_username")
         self.scp_user = config_get_or_none(parser, section, "scp_username")
-        self.iaas_hostname = config_get_or_none(parser, section, "iaas_hostname")
-        self.iaas_port = config_get_or_none(parser, section, "iaas_port", 8444)
+        self.iaas_url = config_get_or_none(parser, section, "iaas_url")
         self.iaas_key = config_get_or_none(parser, section, "iaas_key")
         self.iaas_secret = config_get_or_none(parser, section, "iaas_secret")
         self.securitygroups = config_get_or_none(parser, section, "securitygroups")
@@ -377,8 +370,7 @@ class CloudInitDDB(object):
         self.default_localssh = config_get_or_none(parser, s, "localsshkeypath")
         self.default_ssh_user = config_get_or_none(parser, s, "ssh_username")
         self.default_scp_user = config_get_or_none(parser, s, "scp_username")
-        self.default_iaas_hostname = config_get_or_none(parser, s, "iaas_hostname")
-        self.default_iaas_port = config_get_or_none(parser, s, "iaas_port", 8444)
+        self.default_iaas_url = config_get_or_none(parser, s, "iaas_url")
         self.default_iaas_key = config_get_or_none(parser, s, "iaas_key")
         self.default_iaas_secret = config_get_or_none(parser, s, "iaas_secret")
         self.default_securitygroups = config_get_or_none(parser, s, "securitygroups")

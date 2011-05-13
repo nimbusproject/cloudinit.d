@@ -143,18 +143,16 @@ class CloudInitDTests(unittest.TestCase):
 
         key = None
         secret = None
-        host = None
-        port = None
+        url = None
         try:
             key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
             secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
-            host = os.environ['CLOUDBOOT_IAAS_HOSTNAME']
-            port = os.environ['CLOUDBOOT_IAAS_PORT']
+            url = os.environ['CLOUDBOOT_URL']
         except:
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaashostname=host, iaasport=port)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaasurl=url)
         i_list = con.get_all_instances()
         rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
@@ -343,10 +341,9 @@ class CloudInitDTests(unittest.TestCase):
 
         secret = svc.get_attr_from_bag('iaas_secret')
         key = svc.get_attr_from_bag('iaas_key')
-        iaas_host = svc.get_attr_from_bag('iaas_hostname')
-        iaas_port = svc.get_attr_from_bag('iaas_port')
+        iaas_url = svc.get_attr_from_bag('iaas_url')
         instance_id = svc.get_attr_from_bag('instance_id')
-        con = iaas_get_con(None, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
+        con = iaas_get_con(None, key=key, secret=secret, iaasurl=iaas_url)
         instance = con.find_instance(instance_id)
         instance.terminate()
 
@@ -384,10 +381,9 @@ class CloudInitDTests(unittest.TestCase):
 
         secret = svc.get_attr_from_bag('iaas_secret')
         key = svc.get_attr_from_bag('iaas_key')
-        iaas_host = svc.get_attr_from_bag('iaas_hostname')
-        iaas_port = svc.get_attr_from_bag('iaas_port')
+        url = svc.get_attr_from_bag('iaas_url')
         instance_id = svc.get_attr_from_bag('instance_id')
-        con = iaas_get_con(svc._svc, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
+        con = iaas_get_con(svc._svc, key=key, secret=secret, iaasurl=url)
         instance = con.find_instance(instance_id)
         instance.terminate()
 

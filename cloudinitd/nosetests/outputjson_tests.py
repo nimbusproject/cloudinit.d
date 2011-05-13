@@ -73,10 +73,9 @@ class OutputJsonTests(unittest.TestCase):
 
         secret = svc.get_attr_from_bag('iaas_secret')
         key = svc.get_attr_from_bag('iaas_key')
-        iaas_host = svc.get_attr_from_bag('iaas_hostname')
-        iaas_port = svc.get_attr_from_bag('iaas_port')
+        iaas_url= svc.get_attr_from_bag('iaas_url')
         instance_id = svc.get_attr_from_bag('instance_id')
-        con = iaas_get_con(svc._svc, key=key, secret=secret, iaashostname=iaas_host, iaasport=iaas_port)
+        con = iaas_get_con(svc._svc, key=key, secret=secret, iaasurl=iaas_url)
         instance = con.find_instance(instance_id)
         instance.terminate()
 

@@ -19,18 +19,16 @@ class BanPlanTests(unittest.TestCase):
 
         key = None
         secret = None
-        host = None
-        port = None
+        url = None
         try:
             key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
             secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
-            host = os.environ['CLOUDBOOT_IAAS_HOSTNAME']
-            port = os.environ['CLOUDBOOT_IAAS_PORT']
+            url = os.environ['CLOUDBOOT_URL']
         except:
             pass
 
         # XXX this test may fail for nimbus
-        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaashostname=host, iaasport=port)
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaasurl=url)
         i_list = con.get_all_instances()
         r_list = [i for i in i_list if i.get_state() == "running"]
         return r_list
