@@ -17,15 +17,15 @@ class LeakRepairTests(unittest.TestCase):
         self.bkfab  = None
         self.bkssh = None
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            self.bkfab = os.environ['CLOUD_BOOT_FAB']
-            self.bkssh = os.environ['CLOUD_BOOT_SSH']
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            self.bkfab = os.environ['CLOUDINITD_FAB']
+            self.bkssh = os.environ['CLOUDINITD_SSH']
 
 
     def tearDown(self):
         if self.bkfab:
-            os.environ['CLOUD_BOOT_FAB'] = self.bkfab
-            os.environ['CLOUD_BOOT_SSH'] = self.bkssh
+            os.environ['CLOUDINITD_FAB'] = self.bkfab
+            os.environ['CLOUDINITD_SSH'] = self.bkssh
 
 
     def _find_str(self, filename, needle):
@@ -50,7 +50,7 @@ class LeakRepairTests(unittest.TestCase):
 
     def test_repair_leaks(self):
 
-        if 'CLOUDBOOT_TESTENV' in os.environ:
+        if 'CLOUDINITD_TESTENV' in os.environ:
             #this wont work in fake mode
             return
 
@@ -59,9 +59,9 @@ class LeakRepairTests(unittest.TestCase):
         url= None
 
         try:
-            key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
-            secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
-            url = os.environ['CLOUDBOOT_IAAS_URL']
+            key = os.environ['CLOUDINITD_IAAS_ACCESS_KEY']
+            secret = os.environ['CLOUDINITD_IAAS_SECRET_KEY']
+            url = os.environ['CLOUDINITD_IAAS_URL']
         except:
             pass
 

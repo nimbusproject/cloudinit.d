@@ -17,15 +17,15 @@ class CloudInitDTests(unittest.TestCase):
         self.bkfab  = None
         self.bkssh = None
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            self.bkfab = os.environ['CLOUD_BOOT_FAB']
-            self.bkssh = os.environ['CLOUD_BOOT_SSH']
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            self.bkfab = os.environ['CLOUDINITD_FAB']
+            self.bkssh = os.environ['CLOUDINITD_SSH']
 
 
     def tearDown(self):
         if self.bkfab:
-            os.environ['CLOUD_BOOT_FAB'] = self.bkfab
-            os.environ['CLOUD_BOOT_SSH'] = self.bkssh
+            os.environ['CLOUDINITD_FAB'] = self.bkfab
+            os.environ['CLOUDINITD_SSH'] = self.bkssh
 
 
     def _find_str(self, filename, needle):
@@ -113,7 +113,7 @@ class CloudInitDTests(unittest.TestCase):
         
     def test_reload(self):
 
-        if 'CLOUDBOOT_TESTENV' in os.environ:
+        if 'CLOUDINITD_TESTENV' in os.environ:
             #this wont work in fake mode
             return
 
@@ -145,9 +145,9 @@ class CloudInitDTests(unittest.TestCase):
         secret = None
         url = None
         try:
-            key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
-            secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
-            url = os.environ['CLOUDBOOT_URL']
+            key = os.environ['CLOUDINITD_IAAS_ACCESS_KEY']
+            secret = os.environ['CLOUDINITD_IAAS_SECRET_KEY']
+            url = os.environ['CLOUDINITD_IAAS_URL']
         except:
             pass
 
@@ -310,16 +310,16 @@ class CloudInitDTests(unittest.TestCase):
             rc = p.poll()
             time.sleep(0.1)
 
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            bkfab = os.environ['CLOUD_BOOT_FAB']
-            bkssh = os.environ['CLOUD_BOOT_SSH']
-            os.environ['CLOUD_BOOT_FAB'] = "/bin/false"
-            os.environ['CLOUD_BOOT_SSH'] = "/bin/false"
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            bkfab = os.environ['CLOUDINITD_FAB']
+            bkssh = os.environ['CLOUDINITD_SSH']
+            os.environ['CLOUDINITD_FAB'] = "/bin/false"
+            os.environ['CLOUDINITD_SSH'] = "/bin/false"
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            os.environ['CLOUD_BOOT_FAB'] = bkfab
-            os.environ['CLOUD_BOOT_SSH'] = bkssh
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            os.environ['CLOUDINITD_FAB'] = bkfab
+            os.environ['CLOUDINITD_SSH'] = bkssh
         self._dump_output(outfile)
         n = "ERROR"
         line = self._find_str(outfile, n)
@@ -347,16 +347,16 @@ class CloudInitDTests(unittest.TestCase):
         instance = con.find_instance(instance_id)
         instance.terminate()
 
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            bkfab = os.environ['CLOUD_BOOT_FAB']
-            bkssh = os.environ['CLOUD_BOOT_SSH']
-            os.environ['CLOUD_BOOT_FAB'] = "/bin/false"
-            os.environ['CLOUD_BOOT_SSH'] = "/bin/false"
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            bkfab = os.environ['CLOUDINITD_FAB']
+            bkssh = os.environ['CLOUDINITD_SSH']
+            os.environ['CLOUDINITD_FAB'] = "/bin/false"
+            os.environ['CLOUDINITD_SSH'] = "/bin/false"
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
-        if 'CLOUDBOOT_TESTENV' in os.environ:
-            os.environ['CLOUD_BOOT_FAB'] = bkfab
-            os.environ['CLOUD_BOOT_SSH'] = bkssh
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            os.environ['CLOUDINITD_FAB'] = bkfab
+            os.environ['CLOUDINITD_SSH'] = bkssh
         self._dump_output(outfile)
         n = "ERROR"
         line = self._find_str(outfile, n)
@@ -366,7 +366,7 @@ class CloudInitDTests(unittest.TestCase):
         self.assertEqual(rc, 0)
 
     def check_repair_error_test(self):
-        if 'CLOUDBOOT_TESTENV' in os.environ:
+        if 'CLOUDINITD_TESTENV' in os.environ:
             # we cannot run this one in fake mode yet
             return
         (osf, outfile) = tempfile.mkstemp()

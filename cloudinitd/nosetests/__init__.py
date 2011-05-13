@@ -7,22 +7,22 @@ dir = os.path.dirname(os.path.abspath(cloudinitd.__file__))
 dir = os.path.dirname(dir)
 g_plans_dir = os.path.join(dir, "tests/plans/")
 
-if 'CLOUDBOOT_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDBOOT_IAAS_SECRET_KEY' not in os.environ:
-    os.environ['CLOUDBOOT_TESTENV'] = "1"
-    os.environ['CLOUD_BOOT_FAB'] = "/bin/true"
-    os.environ['CLOUD_BOOT_SSH'] = "/bin/true"
-    os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "NOTHING"
-    os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "NOTHING"
-    os.environ['CLOUDBOOT_IAAS_ACCESS_KEY'] = "notrealkey"
-    os.environ['CLOUDBOOT_IAAS_SECRET_KEY'] = "notrealkey"
-    os.environ['CLOUDBOOT_IAAS_URL'] = "NOTHING"
+if 'CLOUDINITD_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDINITD_IAAS_SECRET_KEY' not in os.environ:
+    os.environ['CLOUDINITD_TESTENV'] = "1"
+    os.environ['CLOUDINITD_FAB'] = "/bin/true"
+    os.environ['CLOUDINITD_SSH'] = "/bin/true"
+    os.environ['CLOUDINITD_IAAS_ACCESS_KEY'] = "NOTHING"
+    os.environ['CLOUDINITD_IAAS_SECRET_KEY'] = "NOTHING"
+    os.environ['CLOUDINITD_IAAS_ACCESS_KEY'] = "notrealkey"
+    os.environ['CLOUDINITD_IAAS_SECRET_KEY'] = "notrealkey"
+    os.environ['CLOUDINITD_IAAS_URL'] = "NOTHING"
 
-    os.environ['CLOUDBOOT_IAAS_IMAGE'] = "NOTHING"
-    #os.environ['CLOUDBOOT_IAAS_TYPE'] =
-    os.environ['CLOUDBOOT_IAAS_ALLOCATION'] = "NOTHING"
-    os.environ['CLOUDBOOT_IAAS_SSHKEYNAME'] ="NOTHING"
-    os.environ['CLOUDBOOT_IAAS_SSHKEY'] = "/etc/group"
-    os.environ['CLOUDBOOT_SSH_USERNAME'] = "NOTHING"
+    os.environ['CLOUDINITD_IAAS_IMAGE'] = "NOTHING"
+    #os.environ['CLOUDINITD_IAAS_TYPE'] =
+    os.environ['CLOUDINITD_IAAS_ALLOCATION'] = "NOTHING"
+    os.environ['CLOUDINITD_IAAS_SSHKEYNAME'] ="NOTHING"
+    os.environ['CLOUDINITD_IAAS_SSHKEY'] = "/etc/group"
+    os.environ['CLOUDINITD_SSH_USERNAME'] = "NOTHING"
 
 
 from cloudinitd.nosetests.service_tests import *

@@ -1,13 +1,13 @@
 #!/bin/bash 
 
 rc=0
-if [ "X" != "X$CLOUDBOOT_FAB_RC" ]; then
-    rc=$CLOUDBOOT_FAB_RC
+if [ "X" != "X$CLOUDINITD_FAB_RC" ]; then
+    rc=$CLOUDINITD_FAB_RC
 fi
 
 slptim=1
-if [ "X" != "X$CLOUDBOOT_FAB_SLEEP" ]; then
-    slptim=$CLOUDBOOT_FAB_SLEEP
+if [ "X" != "X$CLOUDINITD_FAB_SLEEP" ]; then
+    slptim=$CLOUDINITD_FAB_SLEEP
 fi
 
 sleep $slptim

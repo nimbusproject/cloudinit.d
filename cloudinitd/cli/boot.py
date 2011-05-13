@@ -221,25 +221,25 @@ def launch_new(options, args):
             return 1
 
     if options.dryrun:
-        test_env = _getenv_or_none('CLOUDBOOT_TESTENV')
+        test_env = _getenv_or_none('CLOUDINITD_TESTENV')
         host_time_env = _getenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME')
-        fab_env = _getenv_or_none('CLOUD_BOOT_FAB')
-        ssh_env = _getenv_or_none('CLOUD_BOOT_SSH')
+        fab_env = _getenv_or_none('CLOUDINITD_FAB')
+        ssh_env = _getenv_or_none('CLOUDINITD_SSH')
 
         print_chars(1, "Performing a dry run...\n", bold=True)
-        os.environ['CLOUDBOOT_TESTENV'] = "2"
+        os.environ['CLOUDINITD_TESTENV'] = "2"
         os.environ['CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME'] = "0.0"
-        os.environ['CLOUD_BOOT_FAB'] = cloudinitd.find_true()
-        os.environ['CLOUD_BOOT_SSH'] = cloudinitd.find_true()
+        os.environ['CLOUDINITD_FAB'] = cloudinitd.find_true()
+        os.environ['CLOUDINITD_SSH'] = cloudinitd.find_true()
 
         try:
             rc = _launch_new(options, args, cb)
             print_chars(1, "Dry run successful\n", bold=True, color="green")
         finally:
-            _setenv_or_none('CLOUDBOOT_TESTENV', test_env)
+            _setenv_or_none('CLOUDINITD_TESTENV', test_env)
             _setenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME', host_time_env)
-            _setenv_or_none('CLOUD_BOOT_FAB', fab_env)
-            _setenv_or_none('CLOUD_BOOT_SSH', ssh_env)
+            _setenv_or_none('CLOUDINITD_FAB', fab_env)
+            _setenv_or_none('CLOUDINITD_SSH', ssh_env)
             
         return rc
 

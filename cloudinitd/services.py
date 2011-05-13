@@ -299,8 +299,8 @@ class SVCContainer(object):
     def _get_fab_command(self):
         fabexec = "fab"
         try:
-            if os.environ['CLOUD_BOOT_FAB']:
-                fabexec = os.environ['CLOUD_BOOT_FAB']
+            if os.environ['CLOUDINITD_FAB']:
+                fabexec = os.environ['CLOUDINITD_FAB']
         except:
             pass
         fabfile = str(bootfabtasks.__file__).strip()
@@ -315,8 +315,8 @@ class SVCContainer(object):
 
     def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
         scpexec = "scp"
-        if os.environ.has_key('CLOUD_BOOT_SCP'):
-            scpexec = os.environ['CLOUD_BOOT_SCP']
+        if os.environ.has_key('CLOUDINITD_SCP'):
+            scpexec = os.environ['CLOUDINITD_SCP']
         if recursive:
             scpexec += " -r"
         cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s " % (self._s.localkey)
@@ -337,8 +337,8 @@ class SVCContainer(object):
             raise ConfigException("Trying to create and ssh command to a null hostname, something is not right.")
         sshexec = "ssh"
         try:
-            if os.environ['CLOUD_BOOT_SSH']:
-                sshexec = os.environ['CLOUD_BOOT_SSH']
+            if os.environ['CLOUDINITD_SSH']:
+                sshexec = os.environ['CLOUDINITD_SSH']
         except:
             pass
         host = self._expand_attr(host)

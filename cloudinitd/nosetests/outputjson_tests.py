@@ -41,7 +41,7 @@ class OutputJsonTests(unittest.TestCase):
             file.close()
 
     def test_basic(self):
-        if 'CLOUDBOOT_TESTENV' in os.environ:
+        if 'CLOUDINITD_TESTENV' in os.environ:
             return
 
         (osf, outfile) = tempfile.mkstemp()
@@ -58,7 +58,7 @@ class OutputJsonTests(unittest.TestCase):
         self.assertEqual(rc, 0)
 
     def check_repair_error_test(self):
-        if 'CLOUDBOOT_TESTENV' in os.environ:
+        if 'CLOUDINITD_TESTENV' in os.environ:
             # we cannot run this one in fake mode yet
             return
         (osf, outfile) = tempfile.mkstemp()

@@ -20,9 +20,9 @@ class SingleVMTests(unittest.TestCase):
         secret = None
         url = None
         try:
-            key = os.environ['CLOUDBOOT_IAAS_ACCESS_KEY']
-            secret = os.environ['CLOUDBOOT_IAAS_SECRET_KEY']
-            url = os.environ['CLOUDBOOT_IAAS_URL']
+            key = os.environ['CLOUDINITD_IAAS_ACCESS_KEY']
+            secret = os.environ['CLOUDINITD_IAAS_SECRET_KEY']
+            url = os.environ['CLOUDINITD_IAAS_URL']
         except:
             pass
 
