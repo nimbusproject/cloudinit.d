@@ -140,6 +140,7 @@ class PortPollable(Pollable):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(10.0)
+            cloudinitd.log(self._log, logging.DEBUG, "Attempting to connect to %s:%d" % (self._host, self._port))
             s.connect((self._host, self._port))
             self._execute_done_cb()
             return True
@@ -200,12 +201,14 @@ class InstanceHostnamePollable(Pollable):
         Pollable.poll(self)
         # cache the state at tis time on the local call stack, should be thread safe
         state = self._instance.get_state()
+        cloudinitd.log(self._log, logging.DEBUG, "Current iaas start for %s is %s" % (self.get_instance_id(), state))
         if state == "running":
             self._done = True
             self._thread.join()
             self._execute_done_cb()
             return True
-        if state != "pending":
+        ok_states = ["networking", "pending", "scheduling"]
+        if state not in ok_states:                
             msg = "The current state is %s.  Never reached state running" % (state)
             cloudinitd.log(self._log, logging.DEBUG, msg, tb=traceback)
             self.exception = IaaSException(msg)
