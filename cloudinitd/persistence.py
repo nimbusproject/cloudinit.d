@@ -134,10 +134,10 @@ class ServiceObject(object):
     def __init__(self):
         pass
 
-    def new(self):
+    def new(self, name):
         # all of the db backed variables
         self.id = None
-        self.name = None
+        self.name = name
         self.level_id = None
         self.image = None
         self.iaas = None
@@ -232,8 +232,7 @@ class ServiceObject(object):
             bootpgm = db.default_bootpgm
         if not readypgm:
             readypgm = db.default_readypgm
-                    
-        self.name = section.replace("svc-", "")
+
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
         self.bootpgm = _resolve_file_or_none(conf_dir, bootpgm, conf_file)
@@ -436,17 +435,28 @@ class CloudInitDDB(object):
             ndx = s.find("svc-")
             if ndx == 0:
             # first look up the service object by name
+                # get the replica count
+                count = int(config_get_or_none(parser, s, "replica_count", 1))
 
-                try:
-                    svc_db = self._session.query(ServiceObject).filter(ServiceObject.name==s[4:]).first()
-                except:
-                    svc_db = None
-                if not svc_db:
-                    svc_db = ServiceObject()
-                    svc_db.new()
-                    self._session.add(svc_db)
-                svc_db._load_from_conf(parser, s, self, context_dir, self._cloudconf_sections, level_file)
-                level.services.append(svc_db)
+                if count is None or count == 0:
+                    count = 1
+                name = s[4:]
+
+                for i in range(0, count):
+                    l_name = name
+                    if count > 1:
+                        l_name = name + "-%d" % (i)
+
+                    try:
+                        svc_db = self._session.query(ServiceObject).filter(ServiceObject.name==l_name).first()
+                    except:
+                        svc_db = None
+                    if not svc_db:
+                        svc_db = ServiceObject()
+                        svc_db.new(l_name)
+                        self._session.add(svc_db)
+                    svc_db._load_from_conf(parser, s, self, context_dir, self._cloudconf_sections, level_file)
+                    level.services.append(svc_db)
 
         return (level, order)
 

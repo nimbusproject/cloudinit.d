@@ -46,8 +46,17 @@ class BootTopLevel(object):
     def start(self):
         self._multi_top.start()
 
-    def get_services(self):
-        return self.services.items()
+    def get_services(self, basename=None):
+        if not basename:
+            return self.services.items()
+
+        svcs = []
+        for (k, v) in self.services:
+            ndx = k.find(basename)
+            if ndx == 0:
+                svcs.append(v)
+        return svcs
+        
 
     def get_service(self, name):
         return self.services[name]
