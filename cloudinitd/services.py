@@ -55,6 +55,7 @@ class BootTopLevel(object):
             ndx = k.find(basename)
             if ndx == 0:
                 svcs.append(v)
+
         return svcs
         
 
@@ -256,6 +257,8 @@ class SVCContainer(object):
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
 
     def _make_pollers(self):
+        self._do_attr_bag()
+        
         self._ready_poller = None
         self._boot_poller = None
         self._terminate_poller = None
@@ -398,7 +401,10 @@ class SVCContainer(object):
         if match:
             svc_name = match.group(1)
             attr_name = match.group(2)
-            val = self._top_level.find_dep(svc_name, attr_name)
+            if svc_name:
+                val = self._top_level.find_dep(svc_name, attr_name)
+            else:
+                val = self.get_dep(attr_name)
         return val
 
 
@@ -443,7 +449,7 @@ class SVCContainer(object):
         self._running = True
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
         # values
-        self._do_attr_bag()
+        # >>>>> self._do_attr_bag()
         try:
 
             if self._term_host_pollers and not self._iass_started:
