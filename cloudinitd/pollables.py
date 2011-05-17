@@ -133,7 +133,7 @@ class PortPollable(Pollable):
             return True
         now = datetime.datetime.now()
         if self._last_run:
-            if now - self._last_run < self._time_delay:
+            if now - self._last_run > self._time_delay:
                 return False
         self._last_run = now
 

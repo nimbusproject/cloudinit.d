@@ -1,4 +1,5 @@
 import sqlalchemy
+import shlex
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import mapper
@@ -58,9 +59,11 @@ service_table = Table('service', metadata,
     Column('username', String(32)),
     Column('scp_username', String(32)),
     Column('readypgm', String(1024)),
+    Column('readypgm_args', String(1024), default=""),
     Column('hostname', String(64)),
     Column('bootconf', String(1024)),
     Column('bootpgm', String(1024)),
+    Column('bootpgm_args', String(1024), default=""),
     Column('securitygroups', String(1024)),
     Column('deps', String(1024)),
     Column('instance_id', String(64)),
@@ -89,7 +92,7 @@ iaas_history_table = Table('iaas_history', metadata,
 
 
 
-def _resolve_file_or_none(context_dir, conf, conf_file):
+def _resolve_file_or_none(context_dir, conf, conf_file, has_args=False):
     """Return absolute path to file if specified.  If None or empty string return None.
 
     Supports configurations of "../xyz" (or "xyz") being taken relative to the configuration
@@ -147,9 +150,11 @@ class ServiceObject(object):
         self.username = None
         self.scp_username = None
         self.readypgm = None
+        self.readypgm_args = ""
         self.hostname = None
         self.bootconf = None
         self.bootpgm = None
+        self.bootpgm_args = ""
         self.instance_id = None
         self.iaas_url = None
         self.iaas_key = None
@@ -170,8 +175,10 @@ class ServiceObject(object):
         scp_user = config_get_or_none(parser, section, "scp_username", self.scp_username)
         bootconf = config_get_or_none(parser, section, "bootconf", self.bootconf)
         bootpgm = config_get_or_none(parser, section, "bootpgm", self.bootpgm)
+        bootpgm_args = config_get_or_none(parser, section, "bootpgm_args", self.bootpgm_args)
         hostname = config_get_or_none(parser, section, "hostname", self.hostname)
         readypgm = config_get_or_none(parser, section, "readypgm", self.readypgm)
+        readypgm_args = config_get_or_none(parser, section, "readypgm_args", self.readypgm_args)
         iaas_key = config_get_or_none(parser, section, "iaas_key", self.iaas_key)
         iaas_secret = config_get_or_none(parser, section, "iaas_secret", self.iaas_secret)
         securitygroups = config_get_or_none(parser, section, "securitygroups", self.securitygroups)
@@ -230,14 +237,20 @@ class ServiceObject(object):
             bootconf = db.default_bootconf
         if not bootpgm:
             bootpgm = db.default_bootpgm
+        if not bootpgm_args:
+            bootpgm_args = db.default_bootpgm_args
         if not readypgm:
             readypgm = db.default_readypgm
+        if not readypgm_args:
+            readypgm_args = db.default_readypgm_args
 
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
-        self.bootpgm = _resolve_file_or_none(conf_dir, bootpgm, conf_file)
+        self.bootpgm = _resolve_file_or_none(conf_dir, bootpgm, conf_file, has_args=True)
+        self.bootpgm_args = bootpgm_args
         self.hostname = hostname
-        self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file)
+        self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file, has_args=True)
+        self.readypgm_args = readypgm_args
         self.username = ssh_user
         self.scp_username = scp_user
         self.localkey = _resolve_file_or_none(conf_dir, localssh, conf_file)
@@ -376,8 +389,10 @@ class CloudInitDDB(object):
 
         self.default_bootconf = config_get_or_none(parser, s, "bootconf")
         self.default_bootpgm = config_get_or_none(parser, s, "bootpgm")
+        self.default_bootpgm_args = config_get_or_none(parser, s, "bootpgm_args")
         self.default_hostname = config_get_or_none(parser, s, "hostname")
         self.default_readypgm = config_get_or_none(parser, s, "readypgm")
+        self.default_readypgm_args = config_get_or_none(parser, s, "readypgm_args")
         self.default_image = config_get_or_none(parser, s, "image")
 
 

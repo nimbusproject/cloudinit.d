@@ -287,9 +287,9 @@ class CloudInitD(object):
                 cb_iaas.iaas_validate(svc, self._log)
 
                 hash_str = ""
-                hostname = svc.get_dep("iaas_url")
-                if hostname:
-                    hash_str = hash_str + hostname
+                iassurl = svc.get_dep("iaas_url")
+                if iassurl:
+                    hash_str = hash_str + iassurl
                 hash_str = hash_str + "/"
                 iaas = svc.get_dep("iaas")
                 if iaas:
@@ -304,7 +304,7 @@ class CloudInitD(object):
                     hash_str = hash_str + secret
 
                 if hash_str not in connnections.keys():
-                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaashostname=hostname, iaasport=port)
+                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaasurl=iassurl)
                     connnections[hash_str] = (con, [svc])
                 else:
                     (con, svc_list) = connnections[hash_str]

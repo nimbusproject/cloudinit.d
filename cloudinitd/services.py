@@ -1,3 +1,4 @@
+import shlex
 import traceback
 import re
 import cb_iaas
@@ -286,6 +287,7 @@ class SVCContainer(object):
             else:
                 if self._s.bootpgm:
                     cmd = self._get_boot_cmd()
+                    cloudinitd.log(self._log, logging.DEBUG, "%s running the boot pgm command %s" % (self.name, cmd))
                     self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200, done_cb=self.context_done_cb)
                     self._pollables.add_level([self._boot_poller])
                 else:
@@ -300,6 +302,7 @@ class SVCContainer(object):
             self._pollables.add_level([self._ssh_poller2])
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
+                cloudinitd.log(self._log, logging.DEBUG, "%s running the ready pgm command %s" % (self.name, cmd))
                 self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                 self._pollables.add_level([self._ready_poller])
             else:
@@ -603,7 +606,7 @@ class SVCContainer(object):
 
     def _get_readypgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,stagedir=%s" % (host, self._s.readypgm, self._stagedir)
+        cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s'" % (host, self._s.readypgm, self._s.readypgm_args, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
@@ -611,7 +614,7 @@ class SVCContainer(object):
         host = self._expand_attr(self._s.hostname)
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " bootpgm:hosts=%s,pgm=%s,conf=%s,output=%s,stagedir=%s" % (host, self._s.bootpgm, self._bootconf, self._boot_output_file, self._stagedir)
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%sconf=%s,output=%s,stagedir=%s'" % (host, self._s.bootpgm, self._s.bootpgm_args,  self._bootconf, self._boot_output_file, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
