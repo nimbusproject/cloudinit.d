@@ -614,7 +614,7 @@ class SVCContainer(object):
         host = self._expand_attr(self._s.hostname)
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%sconf=%s,output=%s,stagedir=%s'" % (host, self._s.bootpgm, self._s.bootpgm_args,  self._bootconf, self._boot_output_file, self._stagedir)
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,output=%s,stagedir=%s'" % (host, self._s.bootpgm, self._s.bootpgm_args,  self._bootconf, self._boot_output_file, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 

@@ -118,7 +118,7 @@ class PortPollable(Pollable):
         self._port = port
         self._poll_error_count = 0
         self._retry_count = retry_count
-        self._time_delay = datetime.timedelta(seconds=10)
+        self._time_delay = datetime.timedelta(seconds=3                 )
         self._last_run = None
 
     def start(self):
@@ -133,7 +133,7 @@ class PortPollable(Pollable):
             return True
         now = datetime.datetime.now()
         if self._last_run:
-            if now - self._last_run > self._time_delay:
+            if now - self._last_run < self._time_delay:
                 return False
         self._last_run = now
 
