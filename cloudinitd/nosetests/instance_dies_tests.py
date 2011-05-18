@@ -14,6 +14,9 @@ class InstanceDiesTests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def _start_one(self, conf_file):
 
         dir = tempfile.mkdtemp()

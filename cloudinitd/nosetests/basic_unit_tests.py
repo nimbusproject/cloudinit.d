@@ -15,6 +15,9 @@ class FakeSvc(object):
 
 class BasicUnitTests(unittest.TestCase):
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def test_logging(self):
         cloudinitd.log(logging, logging.DEBUG, "testmessage")
         cloudinitd.log(None, logging.DEBUG, "testmessage")

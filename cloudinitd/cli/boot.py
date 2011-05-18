@@ -42,32 +42,46 @@ Run with the command 'commands' to see a list of all possible commands
     version = "cloudinitd " + (cloudinitd.Version)
     parser = OptionParser(usage=u, version=version)
 
+    all_opts = []
     opt = bootOpts("verbose", "v", "Print more output", 1, count=True)
+    all_opts.append(opt)
     opt.add_opt(parser)
     opt = bootOpts("validate", "x", "Check that boot plan is valid before launching it.", False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("dryrun", "y", "Perform dry run on the boot plan.  The IaaS service is never contacted but all other actions are performed.  This option offers an addition level of plan validation of -x.", False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("quiet", "q", "Print no output", False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("name", "n", "Set the run name, only relevant for boot and reload (by default the system picks)", None)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("database", "d", "Path to the db directory", None)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("logdir", "f", "Path to the base log directory.", None)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "info", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("kill", "k", "This option only applies to the iceage command.  When on it will terminate all VMs started with IaaS associated with this run to date.  This should be considered an extreme measure to prevent IaaS resource leaks.", False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("outstream", "O", SUPPRESS_HELP, None)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("remotedebug", "X", SUPPRESS_HELP, False, flag=True)
     opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("output", "o", "Create an json document which describes the application and write it to the associated file.  Relevant for boot and status", None)
     opt.add_opt(parser)
+    all_opts.append(opt)
 
     homedir = os.path.expanduser("~/.cloudinitd")
     try:
@@ -78,6 +92,10 @@ Run with the command 'commands' to see a list of all possible commands
         print_chars(0, "Error creating cloudinit.d directort %s : %s" % (homedir, str(ex)))
         
     (options, args) = parser.parse_args(args=argv)
+
+    for opt in all_opts:
+        opt.validate(options)
+
     if not options.name:
         options.name = str(uuid.uuid4()).split("-")[0]
 

@@ -26,6 +26,7 @@ class LeakRepairTests(unittest.TestCase):
         if self.bkfab:
             os.environ['CLOUDINITD_FAB'] = self.bkfab
             os.environ['CLOUDINITD_SSH'] = self.bkssh
+        cloudinitd.close_log_handlers()
 
 
     def _find_str(self, filename, needle):

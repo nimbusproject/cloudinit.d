@@ -14,6 +14,9 @@ class BasicUserAPITests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def _start_one(self, conf_file):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()

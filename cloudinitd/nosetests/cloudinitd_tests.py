@@ -26,6 +26,7 @@ class CloudInitDTests(unittest.TestCase):
         if self.bkfab:
             os.environ['CLOUDINITD_FAB'] = self.bkfab
             os.environ['CLOUDINITD_SSH'] = self.bkssh
+        cloudinitd.close_log_handlers()
 
 
     def _find_str(self, filename, needle):
@@ -83,7 +84,14 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
         self._dump_output(outfile)
         self.assertNotEqual(rc, 0)
-        
+
+    def test_bad_files(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/badfiles/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
     def test_bad_validate(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
@@ -223,6 +231,11 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["reboot",  "%s" % (runname)])
         self.assertNotEqual(rc, 0)
 
+    def bad_boot_args(self):
+        rc = cloudinitd.cli.boot.main(["boot"])
+        self.assertNotEqual(rc, 0)
+
+
     def check_boot_output_test(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)
@@ -269,6 +282,22 @@ class CloudInitDTests(unittest.TestCase):
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
+
+    def simple_iceage_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "history", runname])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
 
     def check_terminate_output_test(self):
         (osf, outfile) = tempfile.mkstemp()

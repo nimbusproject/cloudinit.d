@@ -15,6 +15,9 @@ class ServiceTests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def dep_not_found_test(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()

@@ -18,7 +18,7 @@ class OutputJsonTests(unittest.TestCase):
 
 
     def tearDown(self):
-        pass
+        cloudinitd.close_log_handlers()
 
     def _dump_output(self, filename):
         file = open(filename, "r")

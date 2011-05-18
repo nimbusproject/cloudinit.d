@@ -14,6 +14,9 @@ class PlanTests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def test_lotsonlevel(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
         dir = tempfile.mkdtemp()

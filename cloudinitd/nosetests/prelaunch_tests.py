@@ -10,10 +10,13 @@ __author__ = 'bresnaha'
 import unittest
 import os
 
-class BasicUserAPITests(unittest.TestCase):
+class PrelaunchTests(unittest.TestCase):
 
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
+
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
 
     def test_prelaunch(self):
 

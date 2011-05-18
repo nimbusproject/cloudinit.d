@@ -15,6 +15,9 @@ class BanPlanTests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def _get_running_vms(self):
 
         key = None
@@ -84,6 +87,7 @@ class BanPlanTests(unittest.TestCase):
         count2 = len(ilist_2)
 
         self.assertEqual(count1, count2, "the vm count before and after should be the same: %d %d" % (count1, count2))
+
 
 if __name__ == '__main__':
     unittest.main()

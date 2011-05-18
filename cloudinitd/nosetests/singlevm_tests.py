@@ -14,6 +14,9 @@ class SingleVMTests(unittest.TestCase):
     def setUp(self):
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def _get_running_vms(self):
 
         key = None

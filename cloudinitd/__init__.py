@@ -13,6 +13,7 @@ service_state_launched = 2
 service_state_contextualized = 4
 service_state_terminated = 6
 
+g_open_loggers = []
 
 Version = "0.1"
 
@@ -110,7 +111,15 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
     formatter = logging.Formatter(fmt)
     handler.setFormatter(formatter)
 
+    global g_open_loggers
+    g_open_loggers.append(handler)
+
     return logger
+
+def close_log_handlers():
+    global g_open_loggers
+    for l in g_open_loggers:
+        l.close()
 
 
 def parse_url(url):

@@ -8,6 +8,9 @@ __author__ = 'bresnaha'
 
 class PollableTests(unittest.TestCase):
 
+    def tearDown(self):
+        cloudinitd.close_log_handlers()
+
     def test_popen_fail(self):
         cmd = "/bin/false"
         pexe = PopenExecutablePollable(cmd, allowed_errors=0)
