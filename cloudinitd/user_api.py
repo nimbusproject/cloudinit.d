@@ -449,6 +449,10 @@ class CloudService(object):
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_scp_command(src, dst, upload=upload, recursive=recursive, forcehost=forcehost)
 
+    def get_scp_username(self):
+        if self._svc is None:
+            raise APIUsageException("This Cloud service has no real backing service")
+        return self._svc.get_scp_username()
 
 
 class CloudServiceException(ServiceException):
