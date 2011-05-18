@@ -347,6 +347,9 @@ class SVCContainer(object):
             cmd += "%s%s:%s %s" % (user, hostname, src, dst)
         return cmd
 
+    def get_scp_username(self):
+        return self._s.scp_username
+
     def _get_ssh_command(self, host):
         if not host:
             raise ConfigException("Trying to create and ssh command to a null hostname, something is not right.")
