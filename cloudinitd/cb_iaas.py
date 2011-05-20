@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter('ignore')
+
 from datetime import timedelta
 import datetime
 import threading
@@ -5,10 +8,13 @@ import uuid
 import boto
 import logging
 import boto.ec2
-##from boto.provider import Provider
-#from libcloud.base import NodeImage, NodeSize
-#from libcloud.providers import get_driver
-#from libcloud.types import Provider
+from libcloud.types import Provider
+from libcloud.providers import get_driver
+import boto.ec2
+from libcloud.drivers import ec2
+from libcloud.base import NodeImage, NodeSize
+#warnings.simplefilter('default')
+
 
 try:
     from boto.regioninfo import RegionInfo
@@ -55,18 +61,9 @@ class IaaSTestCon(object):
 
 
 class IaaSBotoConn(object):
-    def __init__(self, svc, key=None, secret=None, iaasurl=None):
+    def __init__(self, svc, key, secret, iaasurl, iaas):
         iaas = None
         self._svc = svc
-        if self._svc:
-            key = svc.get_dep("iaas_key")
-            secret = svc.get_dep("iaas_secret")
-            if not key:
-                raise ConfigException("IaaS key %s not in provided" % (key))
-            if not secret:
-                raise ConfigException("IaaS secret %s not in provided" % (secret))
-            iaasurl = svc.get_dep("iaas_url")
-            iaas = svc.get_dep("iaas")
 
         if not iaas:
             iaas = "us-east-1"
@@ -147,67 +144,99 @@ class IaaSBotoConn(object):
         i = IaaSBotoInstance(instance, self._con)
         return i
 
-#
-#class IaaSLibCloudConn(object):
-#    def __init__(self, svc, key=None, secret=None):
-#
-#        self._svc = svc
-#        if self._svc:
-#            key = svc.get_dep("iaas_key")
-#            secret = svc.get_dep("iaas_secret")
-#            if not key:
-#                raise ConfigException("IaaS key %s not in env" % (key))
-#            if not secret:
-#                raise ConfigException("IaaS key %s not in env" % (secret))
-#
-#        Driver = get_driver(Provider.EC2)
-#        self._con = Driver(key, secret)
-#        self._driver = Driver
-#
-#    def get_all_instances(self, instance_ids=None):
-#        nodes = self._con.list_nodes()
-#        if instance_ids:
-#            nodes = [IaaSLibCloudInstance(n) for n in nodes if n.name in instance_ids]
-#        else:
-#            nodes = [IaaSLibCloudInstance(n) for n in nodes]
-#        return nodes
-##        name	String with a name for this new node (required) (type: str )#
-#	#size	The size of resources allocated to this node. (required) (type: NodeSize )
-#	#image	OS Image to boot on node. (required) (type: NodeImage )
-#	#location	Which data center to create a node in. If empty, undefined behavoir will be selected. (optional) (type: NodeLocation )
-#	#auth	Initial authentication information for the node (optiona
-#
-#    #def run_instance(self, image, instance_type, key_name, security_groupname=None):
-#
-#    def run_instance(self):
-#        if self._svc is None:
-#            raise ConfigException("You can only launch instances if a service is associated with the connection")
-#
-#        image = self._svc.get_dep("image")
-#        instance_type = self._svc.get_dep("allocation")
-#        key_name = self._svc.get_dep("keyname")
-#        security_groupname = self._svc.get_dep("securitygroups")
-#        name = self._svc.name
-#
-#        image = NodeImage(image, name, self._driver)
-#        sz = ec2.EC2_INSTANCE_TYPES[instance_type]
-#        size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self._driver)
-#        node_data = {
-#            'name':name,
-#            'size':size,
-#            'image':image,
-#            'ex_mincount':str(1),
-#            'ex_maxcount':str(1),
-#            'ex_securitygroup': security_groupname,
-#            'ex_keyname':key_name,
-#        }
-#        node = driver.create_node(**node_data)
-#        return IaaSLibCloudInstance(self, node)
-#
-#
-#    def find_instance(self, instance_id):
-#        i_a = self.get_all_instances([instance_id,])
-#        return i_a[0]
+class IaaSLibCloudConn(object):
+    
+    def __init__(self, svc, key, secret, iaasurl, iaas):
+        self._svc = svc
+
+        self._iaas = iaas
+        if iaas is not None:
+            self._iaas = iaas.replace("libcloud-", "")
+        if self._iaas == "ec2":
+            provider = Provider.EC2
+        else:
+            provider = Provider.EC2
+            
+        self._Driver = get_driver(provider)
+        self._con = self._Driver(key, secret)
+
+    def find_instance(self, instance_id):
+        i_a = self.get_all_instances([instance_id,])
+        return i_a[0]
+
+    def get_all_instances(self, instance_ids=None):
+        nodes = self._con.list_nodes()
+        if instance_ids:
+            nodes = [IaaSLibCloudInstance(self, n, self._Driver, self._con) for n in nodes if n.name in instance_ids]
+        else:
+            nodes = [IaaSLibCloudInstance(self, n, self._Driver, self._con) for n in nodes]
+        return nodes
+
+    def run_instance(self):
+        if self._svc is None:
+            raise ConfigException("You can only launch instances if a service is associated with the connection")
+
+        image = self._svc.get_dep("image")
+        instance_type = self._svc.get_dep("allocation")
+        key_name = self._svc.get_dep("keyname")
+        security_groupname = self._svc.get_dep("securitygroups")
+        name = self._svc.name
+
+        image = NodeImage(image, name, self._Driver)
+        if self._iaas == "ec2":
+
+            sz = ec2.EC2_INSTANCE_TYPES[instance_type]
+            size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self._Driver)
+            node_data = {
+                'name':name,
+                'size':size,
+                'image':image,
+                'ex_mincount':str(1),
+                'ex_maxcount':str(1),
+                'ex_keyname':key_name,
+            }
+            if security_groupname:
+                node_data['ex_securitygroup'] = security_groupname,
+            node = self._con.create_node(**node_data)
+        else:
+            raise Exception("The %s iaas driver is not supported for launching images" % (self._iaas))
+
+        return IaaSLibCloudInstance(self, node, self._Driver, self._con)
+
+
+class IaaSLibCloudInstance(object):
+
+    def __init__(self, con, node, driver, libcloud_con):
+        self._node = node
+        self._con = con
+        self._myid = node.get_uuid()
+        self._Driver = driver
+        self._libcloud_con = libcloud_con
+
+    def terminate(self):
+        self._node.destroy()
+
+    def update(self):
+        all_node = self._libcloud_con.list_nodes()
+
+        for n in all_node:
+            if n.get_uuid() == self._myid:
+                self._node = n
+                return
+
+    def get_hostname(self):
+        return self._node.public_ip[0]
+
+    def get_state(self):
+        return self._node.extra['status']
+
+    def get_id(self):
+        return self._node.id
+
+    def cancel(self):
+        pass
+
+
 
 class IaaSTestInstance(object):
 
@@ -312,46 +341,47 @@ class IaaSBotoInstance(object):
         finally:
             self._lock.release()
 
-#
-#class IaaSLibCloudInstance(object):
-#
-#    def __init__(self, con, node):
-#        self._node = node
-#        self._con = con
-#
-#    def terminate(self):
-#        self._node.destroy()
-#
-#    def update(self):
-#        pass
-#
-#    def get_hostname(self):
-#        pass
-#
-#    def get_state(self):
-#        pass
-#
-#    def get_id(self):
-#        pass
 
-
-
-def iaas_get_con(svc, key=None, secret=None, iaasurl=None):
+def iaas_get_con(svc, key=None, secret=None, iaasurl=None, iaas=None):
     # type check the port
     if 'CLOUDINITD_TESTENV' in os.environ:
         if secret == "fail":
             raise IaaSException("The test env is setup to fail here")
         return IaaSTestCon()
-    else:
-        global g_lock
 
-        g_lock.acquire()
-        try:
-        # can hindge the connection type on the iaas type
-            con = IaaSBotoConn(svc, key=key, secret=secret, iaasurl=iaasurl)
-        finally:
-            g_lock.release()
-        return con
+    if svc:
+        if not key:
+            key = svc.get_dep("iaas_key")
+        if not secret:
+            secret = svc.get_dep("iaas_secret")
+        if not key:
+            raise ConfigException("IaaS key %s not in provided" % (key))
+        if not secret:
+            raise ConfigException("IaaS secret %s not in provided" % (secret))
+        if not iaasurl:
+            iaasurl = svc.get_dep("iaas_url")
+        if not iaas:
+            iaas = svc.get_dep("iaas")
+    if not iaas:
+        iaas = "ec2"
+
+
+    # pick the connection driver
+    ConDriver = IaaSBotoConn
+    ndx = iaas.find("libcloud-")
+    if ndx == 0:
+        ConDriver = IaaSLibCloudConn
+        pass
+
+    global g_lock
+
+    g_lock.acquire()
+    try:
+    # can hindge the connection type on the iaas type
+        con = ConDriver(svc, key, secret, iaasurl, iaas)
+    finally:
+        g_lock.release()
+    return con
 
 def _iaas_nimbus_validate(svc, log):
     rc = 0
@@ -407,11 +437,11 @@ def iaas_validate(svc, log=logging):
         msgs.append(msg1)
 
     return (rc, str(msgs))
-#
-#def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
-#    if iaas.lower() == "nimbus":
-#        conn = None
-#    else:
-#        Driver = get_driver(Provider.EC2)
-#        conn = Driver(key, secret)
-#    return IaaSLibCloudConn(conn, driver)
+
+def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
+    if iaas.lower() == "nimbus":
+        conn = None
+    else:
+        Driver = get_driver(Provider.EC2)
+        conn = Driver(key, secret)
+    return IaaSLibCloudConn(conn, driver)

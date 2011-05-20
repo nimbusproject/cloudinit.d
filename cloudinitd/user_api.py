@@ -287,9 +287,9 @@ class CloudInitD(object):
                 cb_iaas.iaas_validate(svc, self._log)
 
                 hash_str = ""
-                iassurl = svc.get_dep("iaas_url")
-                if iassurl:
-                    hash_str = hash_str + iassurl
+                hostname = svc.get_dep("iaas_url")
+                if hostname:
+                    hash_str = hash_str + hostname
                 hash_str = hash_str + "/"
                 iaas = svc.get_dep("iaas")
                 if iaas:
@@ -304,7 +304,8 @@ class CloudInitD(object):
                     hash_str = hash_str + secret
 
                 if hash_str not in connnections.keys():
-                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaasurl=iassurl)
+                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaas_url=iaas_url)
+                    #con = cb_iaas.iaas_get_con(svc)
                     connnections[hash_str] = (con, [svc])
                 else:
                     (con, svc_list) = connnections[hash_str]
@@ -448,10 +449,6 @@ class CloudService(object):
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_scp_command(src, dst, upload=upload, recursive=recursive, forcehost=forcehost)
 
-    def get_scp_username(self):
-        if self._svc is None:
-            raise APIUsageException("This Cloud service has no real backing service")
-        return self._svc.get_scp_username()
 
 
 class CloudServiceException(ServiceException):
