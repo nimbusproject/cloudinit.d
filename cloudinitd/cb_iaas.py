@@ -185,18 +185,24 @@ class IaaSLibCloudConn(object):
         image = NodeImage(image, name, self._Driver)
         if self._iaas == "ec2":
 
-            sz = ec2.EC2_INSTANCE_TYPES[instance_type]
-            size = NodeSize(sz['id'], sz['name'], sz['ram'], sz['disk'], sz['bandwidth'], sz['price'], self._Driver)
+            sizes = self._con.list_sizes()
+            sz = None
+            for s in sizes:
+                if s.id == instance_type:
+                    sz = s
+            if sz == None:
+                raise Exception("The allocation size %s does not exist" % (instance_type))
+
+            size = sz
             node_data = {
                 'name':name,
                 'size':size,
                 'image':image,
-                'ex_mincount':str(1),
-                'ex_maxcount':str(1),
-                'ex_keyname':key_name,
             }
+            if key_name:
+                node_data['ex_keyname'] = key_name
             if security_groupname:
-                node_data['ex_securitygroup'] = security_groupname,
+                node_data['ex_securitygroup'] = security_groupname
             node = self._con.create_node(**node_data)
         else:
             raise Exception("The %s iaas driver is not supported for launching images" % (self._iaas))

@@ -4,7 +4,7 @@ import sys
 
 __author__ = 'bresnaha'
 
-Version = "0.1rc2"
+Version = "0.1rc3"
 
 if float("%d.%d" % sys.version_info[:2]) < 2.5:
     sys.stderr.write("Your Python version %d.%d.%d is not supported.\n" % sys.version_info[:3])

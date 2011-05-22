@@ -287,9 +287,9 @@ class CloudInitD(object):
                 cb_iaas.iaas_validate(svc, self._log)
 
                 hash_str = ""
-                hostname = svc.get_dep("iaas_url")
-                if hostname:
-                    hash_str = hash_str + hostname
+                iaas_url = svc.get_dep("iaas_url")
+                if iaas_url
+                    hash_str = hash_str + iaas_url
                 hash_str = hash_str + "/"
                 iaas = svc.get_dep("iaas")
                 if iaas:
