@@ -288,7 +288,7 @@ class CloudInitD(object):
 
                 hash_str = ""
                 iaas_url = svc.get_dep("iaas_url")
-                if iaas_url
+                if iaas_url:
                     hash_str = hash_str + iaas_url
                 hash_str = hash_str + "/"
                 iaas = svc.get_dep("iaas")
