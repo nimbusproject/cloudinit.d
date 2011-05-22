@@ -304,7 +304,7 @@ class CloudInitD(object):
                     hash_str = hash_str + secret
 
                 if hash_str not in connnections.keys():
-                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaas_url=iaas_url)
+                    con = cb_iaas.iaas_get_con(svc, key=key, secret=secret, iaasurl=iaas_url)
                     #con = cb_iaas.iaas_get_con(svc)
                     connnections[hash_str] = (con, [svc])
                 else:
