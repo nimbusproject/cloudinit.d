@@ -69,7 +69,7 @@ class BootTopLevel(object):
     def poll(self):
         return self._multi_top.poll()
 
-    def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None):
+    def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None, logfile=None):
 
         if s.name in self.services.keys():
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
@@ -85,9 +85,10 @@ class BootTopLevel(object):
             terminate = self._terminate
         if not log:
             log = self._log
+        self._logfile = logfile
 
         # logname = <log dir>/<runname>/s.name
-        svc = SVCContainer(db, s, self, log=log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate)
+        svc = SVCContainer(db, s, self, log=log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate, logfile=self._logfile)
         self.services[s.name] = svc
         return svc
 
@@ -125,7 +126,7 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False, logfile=None):
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -138,6 +139,7 @@ class SVCContainer(object):
         self.name = s.name
         self._db = db
         self._top_level = top_level
+        self._logfile = logfile
 
         # if we are reloading we need to examine the current state to see where things let off
         if reload:
@@ -646,8 +648,12 @@ class SVCContainer(object):
         # to identify
         prefix = os.path.basename(path)
         prefix += "_"
+        if self._logfile is None:
+            dir = None
+        else:
+            dir = os.path.dirname(self._logfile)
 
-        (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True)
+        (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True, dir=dir)
 
         f = open(newpath, 'w')
         f.write(document)

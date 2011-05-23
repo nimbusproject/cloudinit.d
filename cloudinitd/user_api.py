@@ -116,7 +116,7 @@ class CloudInitD(object):
         if fail_if_db_present and os.path.exists(db_path):
             raise APIUsageException("Already exists: '%s'" % db_path)
 
-        self._log = cloudinitd.make_logger(log_level, db_name, logdir=logdir)
+        (self._log, logfile) = cloudinitd.make_logger(log_level, db_name, logdir=logdir)
 
         self._started = False
         self.run_name = db_name
@@ -135,9 +135,9 @@ class CloudInitD(object):
             level_list = []
             for s in level.services:
                 try:
-                    s_log = cloudinitd.make_logger(log_level, self.run_name, logdir=logdir, servicename=s.name)
+                    (s_log, logfile) = cloudinitd.make_logger(log_level, self.run_name, logdir=logdir, servicename=s.name)
 
-                    svc = self._boot_top.new_service(s, self._db, log=s_log)
+                    svc = self._boot_top.new_service(s, self._db, log=s_log, logfile=logfile)
                     level_list.append(svc)
                 except Exception, svcex:
                     if not continue_on_error:

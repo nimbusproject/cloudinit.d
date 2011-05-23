@@ -102,7 +102,7 @@ Run with the command 'commands' to see a list of all possible commands
     if options.logdir is None:
         options.logdir = os.path.expanduser("~/.cloudinitd/")
 
-    options.logger = cloudinitd.make_logger(options.loglevel, options.name, logdir=options.logdir)
+    (options.logger, logfile) = cloudinitd.make_logger(options.loglevel, options.name, logdir=options.logdir)
     if not options.database:
         dbdir = os.path.expanduser("~/.cloudinitd")
         options.database = dbdir
@@ -251,17 +251,22 @@ def launch_new(options, args):
         os.environ['CLOUDINITD_SSH'] = cloudinitd.find_true()
 
         try:
-            rc = _launch_new(options, args, cb)
+            (rc, cb) = _launch_new(options, args, cb)
             print_chars(1, "Dry run successful\n", bold=True, color="green")
         finally:
             _setenv_or_none('CLOUDINITD_TESTENV', test_env)
             _setenv_or_none('CLOUDINITD_CBIAAS_TEST_HOSTNAME_TIME', host_time_env)
             _setenv_or_none('CLOUDINITD_FAB', fab_env)
             _setenv_or_none('CLOUDINITD_SSH', ssh_env)
+            if not options.noclean:
+                path = "%s/cloudinitd-%s.db" % (options.database, cb.run_name)
+                if not os.path.exists(path):
+                    raise Exception("That DB does not seem to exist: %s" % (path))
+                os.remove(path)
             
         return rc
 
-    rc = _launch_new(options, args, cb)
+    (rc, cb) = _launch_new(options, args, cb)
     return rc
 
 
@@ -294,7 +299,7 @@ def _launch_new(options, args, cb):
 
     _write_json_doc(options, cb)
 
-    return rc
+    return (rc, cb)
 
 def status(options, args):
     """

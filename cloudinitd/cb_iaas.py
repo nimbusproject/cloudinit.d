@@ -11,10 +11,8 @@ import boto.ec2
 from libcloud.types import Provider
 from libcloud.providers import get_driver
 import boto.ec2
-from libcloud.drivers import ec2
 from libcloud.base import NodeImage, NodeSize
 #warnings.simplefilter('default')
-
 
 try:
     from boto.regioninfo import RegionInfo
@@ -149,14 +147,48 @@ class IaaSLibCloudConn(object):
     def __init__(self, svc, key, secret, iaasurl, iaas):
         self._svc = svc
 
+        self._provider_lookup = {
+            "dummy" : Provider.DUMMY,
+            "ec2" : Provider.EC2,
+            "ec2_us_east": Provider.EC2_US_EAST,
+            "ec2_eu": Provider.EC2_EU,
+            "ec2_eu_west": Provider.EC2_EU_WEST,
+            "rackspace": Provider.RACKSPACE,
+            "slicehost": Provider.SLICEHOST,
+            "gogrid": Provider.GOGRID,
+            "vpsnet": Provider.VPSNET,
+            "linode": Provider.LINODE,
+            "vcloud": Provider.VCLOUD,
+            "rmuhosting": Provider.RIMUHOSTING,
+            "ec2_us_west": Provider.EC2_US_WEST,
+            "voxel": Provider.VOXEL,
+            "softlayer": Provider.SOFTLAYER,
+            "eucalyptus": Provider.EUCALYPTUS,
+            "ecp": Provider.ECP,
+            "ibm": Provider.IBM,
+            "opennebula": Provider.OPENNEBULA,
+            "dreamhost": Provider.DREAMHOST,
+            "elastichosts": Provider.ELASTICHOSTS,
+            "elastichosts_uk1": Provider.ELASTICHOSTS_UK1,
+            "elastichosts_uk2": Provider.ELASTICHOSTS_UK2,
+            "elastichosts_us1": Provider.ELASTICHOSTS_US1,
+            "ec2_ap_southeast": Provider.EC2_AP_SOUTHEAST,
+            "rackspace_uk": Provider.RACKSPACE_UK,
+            "brightbox": Provider.BRIGHTBOX,
+            "cloudsigma": Provider.CLOUDSIGMA,
+            }
+
         self._iaas = iaas
         if iaas is not None:
             self._iaas = iaas.replace("libcloud-", "")
-        if self._iaas == "ec2":
-            provider = Provider.EC2
+
+        if self._iaas.isdigit():
+            provider = int(self._iaas)
         else:
-            provider = Provider.EC2
-            
+            if self._iaas not in self._provider_lookup.keys():
+                provider = self._provider_lookup[self._iaas]
+            else:
+                raise ConfigException("%s is not a known libcloud driver" % (self._iaas))
         self._Driver = get_driver(provider)
         self._con = self._Driver(key, secret)
 
@@ -183,29 +215,26 @@ class IaaSLibCloudConn(object):
         name = self._svc.name
 
         image = NodeImage(image, name, self._Driver)
-        if self._iaas == "ec2":
 
-            sizes = self._con.list_sizes()
-            sz = None
-            for s in sizes:
-                if s.id == instance_type:
-                    sz = s
-            if sz == None:
-                raise Exception("The allocation size %s does not exist" % (instance_type))
+        sizes = self._con.list_sizes()
+        sz = None
+        for s in sizes:
+            if s.id == instance_type:
+                sz = s
+        if sz == None:
+            raise Exception("The allocation size %s does not exist" % (instance_type))
 
-            size = sz
-            node_data = {
-                'name':name,
-                'size':size,
-                'image':image,
-            }
-            if key_name:
-                node_data['ex_keyname'] = key_name
-            if security_groupname:
-                node_data['ex_securitygroup'] = security_groupname
-            node = self._con.create_node(**node_data)
-        else:
-            raise Exception("The %s iaas driver is not supported for launching images" % (self._iaas))
+        size = sz
+        node_data = {
+            'name':name,
+            'size':size,
+            'image':image,
+        }
+        if key_name:
+            node_data['ex_keyname'] = key_name
+        if security_groupname:
+            node_data['ex_securitygroup'] = security_groupname
+        node = self._con.create_node(**node_data)
 
         return IaaSLibCloudInstance(self, node, self._Driver, self._con)
 

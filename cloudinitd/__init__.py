@@ -77,6 +77,7 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
     logger = logging.getLogger(logname)
     logger.setLevel(loglevel)
 
+    logfile = None
     if logdir == "-":
         handler = logging.StreamHandler()
     else:
@@ -114,7 +115,7 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
     global g_open_loggers
     g_open_loggers.append(handler)
 
-    return logger
+    return (logger, logfile)
 
 def close_log_handlers():
     global g_open_loggers
