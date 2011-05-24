@@ -11,7 +11,7 @@ import boto.ec2
 from libcloud.types import Provider
 from libcloud.providers import get_driver
 import boto.ec2
-from libcloud.base import NodeImage, NodeSize
+from libcloud.base import NodeImage, NodeAuthSSHKey
 #warnings.simplefilter('default')
 
 try:
@@ -145,6 +145,7 @@ class IaaSBotoConn(object):
 class IaaSLibCloudConn(object):
     
     def __init__(self, svc, key, secret, iaasurl, iaas):
+        #cloudinitd.log(log, logging.INFO, "loading up a lobcloud driver %s" % (iaas))
         self._svc = svc
 
         self._provider_lookup = {
@@ -178,14 +179,16 @@ class IaaSLibCloudConn(object):
             "cloudsigma": Provider.CLOUDSIGMA,
             }
 
-        self._iaas = iaas
-        if iaas is not None:
-            self._iaas = iaas.replace("libcloud-", "")
+
+        if not iaas:
+            raise ConfigException("the iaas type must be set")
+        self._iaas = iaas.lower().strip()
+        self._iaas = iaas.replace("libcloud-", "")
 
         if self._iaas.isdigit():
             provider = int(self._iaas)
         else:
-            if self._iaas not in self._provider_lookup.keys():
+            if self._iaas in self._provider_lookup:
                 provider = self._provider_lookup[self._iaas]
             else:
                 raise ConfigException("%s is not a known libcloud driver" % (self._iaas))
@@ -213,6 +216,7 @@ class IaaSLibCloudConn(object):
         key_name = self._svc.get_dep("keyname")
         security_groupname = self._svc.get_dep("securitygroups")
         name = self._svc.name
+        key_file = self._svc.get_dep("localkey")
 
         image = NodeImage(image, name, self._Driver)
 
@@ -230,6 +234,14 @@ class IaaSLibCloudConn(object):
             'size':size,
             'image':image,
         }
+
+        if key_file:
+            f = open(key_file, "r")
+            pubkey = f.read()
+            f.close()
+            auth = NodeAuthSSHKey(pubkey)
+            node_data['auth'] = auth
+
         if key_name:
             node_data['ex_keyname'] = key_name
         if security_groupname:
