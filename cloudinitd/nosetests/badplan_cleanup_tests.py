@@ -4,7 +4,7 @@ from cloudinitd.user_api import CloudInitD
 import tempfile
 import logging
 
-__author__ = 'bresnaha'
+
 
 import time
 import unittest

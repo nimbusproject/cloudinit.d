@@ -16,7 +16,7 @@ import cloudinitd.cli.output
 from optparse import SUPPRESS_HELP
 import simplejson as json
 
-__author__ = 'bresnaha'
+
 
 g_verbose = 1
 g_action = ""

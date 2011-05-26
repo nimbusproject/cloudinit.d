@@ -7,7 +7,7 @@ from cloudinitd.user_api import CloudInitD
 import tempfile
 import os
 
-__author__ = 'bresnaha'
+
 
 
 class ManyAtOnceTests(unittest.TestCase):

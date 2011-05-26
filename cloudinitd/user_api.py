@@ -35,7 +35,7 @@ from cloudinitd.persistence import CloudInitDDB
 from cloudinitd.services import BootTopLevel
 import cloudinitd
 
-__author__ = 'bresnaha'
+
 
 
 

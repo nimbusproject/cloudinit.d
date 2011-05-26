@@ -23,7 +23,7 @@ import cloudinitd
 import urlparse
 from cloudinitd.exceptions import ConfigException, IaaSException, APIUsageException
 
-__author__ = 'bresnaha'
+
 
 g_fake_instance_table = {}
 

@@ -26,7 +26,7 @@ from cloudinitd.cb_iaas import *
 import socket
 
 
-__author__ = 'bresnaha'
+
 
 
 class Pollable(object):

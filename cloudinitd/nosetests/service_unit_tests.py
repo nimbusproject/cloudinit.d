@@ -4,7 +4,7 @@ from cloudinitd.exceptions import APIUsageException
 from cloudinitd.pollables import InstanceHostnamePollable
 from cloudinitd.user_api import CloudInitD
 
-__author__ = 'bresnaha'
+
 
 import unittest
 

@@ -7,7 +7,7 @@ import os
 import cloudinitd
 import cloudinitd.cli.boot
 import  time
-__author__ = 'bresnaha'
+
 
 
 

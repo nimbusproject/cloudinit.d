@@ -17,7 +17,7 @@ import cloudinitd
 from cloudinitd.exceptions import APIUsageException
 
 
-__author__ = 'bresnaha'
+
 
 metadata = MetaData()
 

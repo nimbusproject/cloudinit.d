@@ -2,7 +2,7 @@ import traceback
 import sys
 import os
 
-__author__ = 'bresnaha'
+
 
 class CloudInitDException(Exception):
     def __init__(self, ex):

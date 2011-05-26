@@ -1,4 +1,4 @@
-__author__ = 'bresnaha'
+
 
 callback_action_started = "starting"
 callback_action_transition = "transition"

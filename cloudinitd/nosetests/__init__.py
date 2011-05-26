@@ -1,4 +1,4 @@
-__author__ = 'bresnaha'
+
 
 import cloudinitd
 import os

@@ -1,4 +1,4 @@
-__author__ = 'bresnaha'
+
 
 import os
 from fabric.api import env, run, put, sudo, cd, get

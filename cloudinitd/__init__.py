@@ -1,7 +1,7 @@
 import sys
 import os
 
-__author__ = 'bresnaha'
+
 
 from cloudinitd.exceptions import *
 from cloudinitd.user_api import *

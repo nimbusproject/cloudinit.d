@@ -14,7 +14,7 @@ from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
 import simplejson as json
 
-__author__ = 'bresnaha'
+
 
 
 class BootTopLevel(object):

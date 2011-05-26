@@ -3,7 +3,7 @@ import uuid
 import cloudinitd
 from cloudinitd.pollables import *
 
-__author__ = 'bresnaha'
+
 
 
 class PollableTests(unittest.TestCase):

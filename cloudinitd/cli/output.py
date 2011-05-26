@@ -1,6 +1,6 @@
 import sys
 
-__author__ = 'bresnaha'
+
 
 g_operations_dict = {}
 g_operations_dict['red'] = '\x1b[31m'

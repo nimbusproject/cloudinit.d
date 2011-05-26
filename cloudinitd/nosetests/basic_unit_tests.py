@@ -1,7 +1,7 @@
 import os
 from cloudinitd.exceptions import ConfigException, CloudInitDException, APIUsageException, IaaSException, IaaSException, MultilevelException, ServiceException
 
-__author__ = 'bresnaha'
+
 
 import uuid
 import unittest
