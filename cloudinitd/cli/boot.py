@@ -279,10 +279,10 @@ def _launch_new(options, args, cb):
         cb.block_until_complete(poll_period=0.1)
     except CloudServiceException, svcex:
         print svcex
-        return 1
+        return (1, cb)
     except MultilevelException, mex:
         print mex
-        return 1
+        return (1, cb)
     except KeyboardInterrupt:
         print_chars(1, "Canceling (this will not clean up already launched services)...")
         cb.cancel()
