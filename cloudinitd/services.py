@@ -151,6 +151,7 @@ class SVCContainer(object):
         
         self._db.db_commit()
         self._bootconf = None
+        self._bootenv_file = None
         self._restart_limit = 2
         self._restart_count = 0
 
@@ -427,6 +428,7 @@ class SVCContainer(object):
 
         if self._s.bootconf:
             self._bootconf = self._fill_template(self._s.bootconf)
+            self._bootenv_file = self._json_file_to_env(self._bootconf)
 
     def restart(self, boot, ready, terminate, callback=None):
         # terminate should have to be true here
@@ -619,7 +621,7 @@ class SVCContainer(object):
         host = self._expand_attr(self._s.hostname)
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,output=%s,stagedir=%s'" % (host, self._s.bootpgm, self._s.bootpgm_args,  self._bootconf, self._boot_output_file, self._stagedir)
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s'" % (host, self._s.bootpgm, self._s.bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
@@ -654,12 +656,36 @@ class SVCContainer(object):
             dir = os.path.dirname(self._logfile)
 
         (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True, dir=dir)
+        os.close(fd)
 
         f = open(newpath, 'w')
         f.write(document)
         f.close()
 
         return newpath
+
+    def _json_file_to_env(self, jsonfile):
+        f = open(jsonfile, "r")
+        vals_dict = json.load(f)
+        f.close()
+
+        prefix = os.path.basename(jsonfile)
+        prefix += "_"
+        if self._logfile is None:
+            dir = None
+        else:
+            dir = os.path.dirname(self._logfile)
+        (fd, newpath) = tempfile.mkstemp(prefix=prefix, text=True, dir=dir)
+        os.close(fd)
+        outf = open(newpath, "w")
+        for v in vals_dict:
+            line = 'export %s="%s"' % (v, vals_dict[v])
+            outf.write(line)
+            outf.write(os.linesep)
+        outf.close()
+
+        return newpath
+
 
     def cancel(self):
         if self._pollables:

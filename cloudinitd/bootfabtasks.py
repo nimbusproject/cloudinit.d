@@ -53,7 +53,7 @@ def readypgm(pgm=None, args=None, stagedir=None):
     with cd(stagedir):
         run(destpgm)
 
-def bootpgm(pgm=None, args=None, conf=None, output=None, stagedir=None):
+def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None):
     run('mkdir %s; chmod 777 %s' % (REMOTE_WORKING_DIR, REMOTE_WORKING_DIR))
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
@@ -65,6 +65,9 @@ def bootpgm(pgm=None, args=None, conf=None, output=None, stagedir=None):
     if conf and conf != "None":
         destconf = "%s/bootconf.json" % stagedir
         put(conf, destconf)
+    if env_conf and env_conf != "None":
+        destenv = "%s/bootenv.sh" % stagedir
+        put(env_conf, destenv)
     destpgm = destpgm + " " + args
     with cd(stagedir):
         run(destpgm)
