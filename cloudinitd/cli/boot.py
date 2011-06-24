@@ -276,16 +276,17 @@ def _launch_new(options, args, cb):
     print_chars(1, "Starting the launch plan.\n")
     cb.start()
     try:
-        cb.block_until_complete(poll_period=0.1)
-    except CloudServiceException, svcex:
-        print svcex
-        return (1, cb)
-    except MultilevelException, mex:
-        print mex
-        return (1, cb)
-    except KeyboardInterrupt:
-        print_chars(1, "Canceling (this will not clean up already launched services)...")
-        cb.cancel()
+        try:
+            cb.block_until_complete(poll_period=0.1)
+        except CloudServiceException, svcex:
+            print svcex
+            return (1, cb)
+        except MultilevelException, mex:
+            print mex
+            return (1, cb)
+        except KeyboardInterrupt:
+            print_chars(1, "Canceling (this will not clean up already launched services)...")
+            cb.cancel()
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
@@ -321,16 +322,17 @@ def _status(options, args):
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
     cb.start()
     try:
-        cb.block_until_complete(poll_period=0.1)
-    except CloudServiceException, svcex:
-        print svcex
-        return 1
-    except MultilevelException, mex:
-        print mex
-        return 1
-    except KeyboardInterrupt:
-        print_chars(1, "Canceling...")
-        cb.cancel()
+        try:
+            cb.block_until_complete(poll_period=0.1)
+        except CloudServiceException, svcex:
+            print svcex
+            return 1
+        except MultilevelException, mex:
+            print mex
+            return 1
+        except KeyboardInterrupt:
+            print_chars(1, "Canceling...")
+            cb.cancel()
     finally:
         fake_args = ["clean", dbname]
         clean_ice(options, fake_args)
@@ -392,22 +394,23 @@ def reboot(options, args):
     print_chars(1, "Rebooting %s\n" % (cb.run_name))
     cb.shutdown()
     try:
-        print_chars(1, "Terminating all services %s\n" % (cb.run_name))
-        options.logger.info("Terminating all services")
-        cb.block_until_complete(poll_period=0.1)
-        options.logger.info("Starting services back up")
-        cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, continue_on_error=False)
-        print_chars(1, "Booting all services %s\n" % (cb.run_name))
-        cb.start()
-        cb.block_until_complete(poll_period=0.1)
-        return 0
-    except CloudServiceException, svcex:
-        print svcex
-    except MultilevelException, mex:
-        print mex
-    except KeyboardInterrupt:
-        print_chars(1, "Canceling...")
-        cb.cancel()
+        try:
+            print_chars(1, "Terminating all services %s\n" % (cb.run_name))
+            options.logger.info("Terminating all services")
+            cb.block_until_complete(poll_period=0.1)
+            options.logger.info("Starting services back up")
+            cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, continue_on_error=False)
+            print_chars(1, "Booting all services %s\n" % (cb.run_name))
+            cb.start()
+            cb.block_until_complete(poll_period=0.1)
+            return 0
+        except CloudServiceException, svcex:
+            print svcex
+        except MultilevelException, mex:
+            print mex
+        except KeyboardInterrupt:
+            print_chars(1, "Canceling...")
+            cb.cancel()
     finally:
         fake_args = ["clean", dbname]
         clean_ice(options, fake_args)
@@ -558,36 +561,37 @@ def main(argv=sys.argv[1:]):
 
     func = g_commands[command]
     try:
-        rc = func(options, args)
-        print ""
-    except SystemExit:
-        raise
-    except APIUsageException, apiex:
-        print_chars(0, str(apiex))
-        print_chars(0, "\n")
-        print_chars(0, "see ")
-        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
-        print_chars(0,  " for more details\n")
-        options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program: %s", str(apiex))
-        rc = 1
-    except ConfigException, cex:
-        print_chars(0, str(cex))
-        print_chars(0, "\n")
-        print_chars(0, "see ")
-        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
-        print_chars(0,  " for more details\n")
-        print_chars(0,  "Check your launch plan and associated environment variables for the above listed errors.\n")
-        options.logger.error("A configuration error occured.  Please check your launch plan and its associated environment variables")
-        rc = 1
-    except Exception, ex:
-        print_chars(0, str(ex))
-        print_chars(0, "\n")
-        print_chars(0, "see ")
-        print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
-        print_chars(0,  " for more details\n")
-        if options.verbose > 1:
+        try:
+            rc = func(options, args)
+            print ""
+        except SystemExit:
             raise
-        rc = 1
+        except APIUsageException, apiex:
+            print_chars(0, str(apiex))
+            print_chars(0, "\n")
+            print_chars(0, "see ")
+            print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
+            print_chars(0,  " for more details\n")
+            options.logger.error("An internal usage error occurred.  Most likely due to an update to the services db without the use of the cloudinitd program: %s", str(apiex))
+            rc = 1
+        except ConfigException, cex:
+            print_chars(0, str(cex))
+            print_chars(0, "\n")
+            print_chars(0, "see ")
+            print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
+            print_chars(0,  " for more details\n")
+            print_chars(0,  "Check your launch plan and associated environment variables for the above listed errors.\n")
+            options.logger.error("A configuration error occured.  Please check your launch plan and its associated environment variables")
+            rc = 1
+        except Exception, ex:
+            print_chars(0, str(ex))
+            print_chars(0, "\n")
+            print_chars(0, "see ")
+            print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
+            print_chars(0,  " for more details\n")
+            if options.verbose > 1:
+                raise
+            rc = 1
     finally:
         if g_outfile:
             g_outfile.close()

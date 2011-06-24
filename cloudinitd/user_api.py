@@ -36,9 +36,6 @@ from cloudinitd.services import BootTopLevel
 import cloudinitd
 
 
-
-
-
 class CloudInitD(object):
     """
         This class is the top level boot description. It holds the parent Multilevel boot object which contains a set
