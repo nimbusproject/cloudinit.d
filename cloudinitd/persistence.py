@@ -73,6 +73,7 @@ service_table = Table('service', metadata,
     Column('state', Integer, default=0),
     Column('last_error', sqlalchemy.types.Text()),
     Column('terminatepgm', String(1024)),
+    Column('terminatepgm_args', String(1024), default=""),
     Column('iaas_launch', Boolean),
     )
 
@@ -155,6 +156,8 @@ class ServiceObject(object):
         self.bootconf = None
         self.bootpgm = None
         self.bootpgm_args = ""
+        self.terminatepgm = None
+        self.terminatepgm_args = ""
         self.instance_id = None
         self.iaas_url = None
         self.iaas_key = None
@@ -182,6 +185,10 @@ class ServiceObject(object):
         iaas_key = config_get_or_none(parser, section, "iaas_key", self.iaas_key)
         iaas_secret = config_get_or_none(parser, section, "iaas_secret", self.iaas_secret)
         securitygroups = config_get_or_none(parser, section, "securitygroups", self.securitygroups)
+
+        terminatepgm = config_get_or_none(parser, section, "terminatepgm", self.terminatepgm)
+        terminatepgm_args = config_get_or_none(parser, section, "terminatepgm_args", self.terminatepgm_args)
+
 
         allo = config_get_or_none(parser, section, "allocation", self.allocation)
         image = config_get_or_none(parser, section, "image", self.image)
@@ -243,11 +250,19 @@ class ServiceObject(object):
             readypgm = db.default_readypgm
         if not readypgm_args:
             readypgm_args = db.default_readypgm_args
+        if not terminatepgm:
+            terminatepgm = db.default_terminatepgm
+        if not terminatepgm_args:
+            terminatepgm_args = db.default_terminatepgm_args
+
 
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
         self.bootpgm = _resolve_file_or_none(conf_dir, bootpgm, conf_file, has_args=True)
         self.bootpgm_args = bootpgm_args
+        self.terminatepgm = _resolve_file_or_none(conf_dir, terminatepgm, conf_file, has_args=True)
+        self.terminatepgm_args = terminatepgm_args
+
         self.hostname = hostname
         self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file, has_args=True)
         self.readypgm_args = readypgm_args
@@ -394,7 +409,8 @@ class CloudInitDDB(object):
         self.default_readypgm = config_get_or_none(parser, s, "readypgm")
         self.default_readypgm_args = config_get_or_none(parser, s, "readypgm_args")
         self.default_image = config_get_or_none(parser, s, "image")
-
+        self.default_terminatepgm = config_get_or_none(parser, s, "terminatepgm")
+        self.default_terminatepgm_args = config_get_or_none(parser, s, "terminatepgm_args")
 
         all_sections = parser.sections()
         for s in all_sections:

@@ -15,8 +15,6 @@ from cloudinitd.cb_iaas import *
 import simplejson as json
 
 
-
-
 class BootTopLevel(object):
     """
     This class is the top level boot description. It holds the parent Multilevel boot object which contains a set
@@ -147,6 +145,7 @@ class SVCContainer(object):
             if self._s.state == 0:
                 pass
 
+        self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
         
         self._db.db_commit()
@@ -155,7 +154,6 @@ class SVCContainer(object):
         self._restart_limit = 2
         self._restart_count = 0
 
-        self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
         if boot and self._s.state == cloudinitd.service_state_contextualized and not terminate:
@@ -627,8 +625,8 @@ class SVCContainer(object):
 
     def _get_termpgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,stagedir=%s" % (host, self._s.terminatepgm, self._stagedir)
-        cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s" % (host, self._s.terminatepgm, self._s.terminatepgm_args, self._stagedir)
+        cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
         return cmd
 
     def _fill_template(self, path):
