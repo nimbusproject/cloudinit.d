@@ -370,6 +370,9 @@ def terminate(options, args):
                 if not os.path.exists(path):
                     raise Exception("That DB does not seem to exist: %s" % (path))
                 os.remove(path)
+            ex = cb.get_exception()
+            if ex is not None:
+                raise ex
         except CloudServiceException, svcex:
             print svcex
             rc = 1

@@ -222,7 +222,7 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
-    def bad_name_tests(self):
+    def bad_name_test(self):
         runname = str(uuid.uuid4()).split("-")[0]
         rc = cloudinitd.cli.boot.main(["status",  "%s" % (runname)])
         self.assertNotEqual(rc, 0)
@@ -231,7 +231,7 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["reboot",  "%s" % (runname)])
         self.assertNotEqual(rc, 0)
 
-    def bad_boot_args(self):
+    def bad_boot_args_test(self):
         rc = cloudinitd.cli.boot.main(["boot"])
         self.assertNotEqual(rc, 0)
 
@@ -487,3 +487,25 @@ class CloudInitDTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
+
+    def termfails_test(self):
+
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            return
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/termfail/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self._dump_output(outfile)
+        line = self._find_str(outfile, "ERROR")
+        self.assertNotEqual(line, None)
+
