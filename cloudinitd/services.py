@@ -646,7 +646,7 @@ class SVCContainer(object):
 
         # having the template name in the temp file name makes it easier
         # to identify
-        prefix = os.path.basename(path)
+        prefix = self.name + "_" + os.path.basename(path)
         prefix += "_"
         if self._logfile is None:
             dir = None
