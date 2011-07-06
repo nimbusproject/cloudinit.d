@@ -60,7 +60,6 @@ class IaaSTestCon(object):
 
 class IaaSBotoConn(object):
     def __init__(self, svc, key, secret, iaasurl, iaas):
-        iaas = None
         self._svc = svc
 
         if not iaas:
