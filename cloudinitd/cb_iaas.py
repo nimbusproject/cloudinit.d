@@ -409,8 +409,7 @@ def iaas_get_con(svc, key=None, secret=None, iaasurl=None, iaas=None):
         if not iaas:
             iaas = svc.get_dep("iaas")
     if not iaas:
-        iaas = "ec2"
-
+        iaas = "us-east-1"
 
     # pick the connection driver
     ConDriver = IaaSBotoConn
@@ -488,6 +487,6 @@ def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
     if iaas.lower() == "nimbus":
         conn = None
     else:
-        Driver = get_driver(Provider.EC2)
+        Driver = get_driver(Provider.Provider.EC2_US_EAST)
         conn = Driver(key, secret)
     return IaaSLibCloudConn(conn, driver)
