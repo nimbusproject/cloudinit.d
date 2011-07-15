@@ -301,7 +301,7 @@ class IaaSTestInstance(object):
         self.public_dns_name = None
         self.state = "pending"
 
-        if os.environ['CLOUDINITD_TESTENV'] == "2":
+        if 'CLOUDINITD_TESTENV' in os.environ and os.environ['CLOUDINITD_TESTENV'] == "2":
             hostname = "DRY RUN"
         self._hostname = hostname
         self.id = str(uuid.uuid4()).split('-')[0]
