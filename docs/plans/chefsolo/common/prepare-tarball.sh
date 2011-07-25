@@ -12,20 +12,9 @@ if [ ! -d cookbooks ]; then
   exit 1
 fi
 
-if [ ! -f chefsolo.sh ]; then
-  echo "error, packaging script cannot orient itself, no chefsolo.sh file?"
-  exit 1
-fi
-
 if [ -f cookbooks.tar.gz ]; then
   rm cookbooks.tar.gz
   echo "Removed old cookbooks.tar.gz"
-fi
-
-cp chefsolo.sh cookbooks/run.sh
-if [ $? -ne 0 ]; then
-  echo "could not create run.sh"
-  exit 1
 fi
 
 tar czf cookbooks.tar.gz cookbooks
