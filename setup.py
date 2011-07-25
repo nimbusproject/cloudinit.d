@@ -6,7 +6,7 @@ __author__ = 'bresnaha'
 
 Version = "1.0rc2"
 
-if float("%d.%d" % sys.version_info[:2]) < 2.5:
+if sys.version_info[:2] < (2,5):
     sys.stderr.write("Your Python version %d.%d.%d is not supported.\n" % sys.version_info[:3])
     sys.stderr.write("cloudinitd requires Python 2.5 or newer.\n")
     sys.exit(1)
