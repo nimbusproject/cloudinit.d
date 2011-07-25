@@ -1,0 +1,8 @@
+{
+  "something":{
+    "some_key": "${some_value}"
+  },
+  "username":"basenode",
+  "groupname":"users",
+  "recipes":["user"]
+}
