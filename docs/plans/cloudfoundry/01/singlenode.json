@@ -2,7 +2,7 @@
   "something":{
     "some_key": "${some_value}"
   },
-  "username":"basenode",
+  "username":"singlenode",
   "groupname":"users",
   "recipes":["user", "cf"]
 }
