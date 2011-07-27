@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 CHEF_LOGLEVEL="info"
 
 
@@ -36,6 +38,31 @@ fi
 
 
 # ========================================================================
+# Install chef-solo if necessary
+# ========================================================================
+
+which chef-solo
+if [ $? -ne 0 ]; then
+    
+  which apt-get
+  if [ $? -ne 0 ]; then
+     echo "chef-solo is missing. If this were a Debian system we would install it."
+     exit 1
+  fi
+    
+  export DEBIAN_FRONTEND=noninteractive
+  export TERM=dumb
+
+  sudo apt-get update
+  sudo apt-get install -y ruby-dev libopenssl-ruby rubygems
+  sudo gem install chef ohai --no-ri --no-rdoc --source http://gems.opscode.com --source http://gems.rubyforge.org
+  sudo ln -s /var/lib/gems/1.8/bin/chef-solo /usr/local/bin/
+  sudo ln -s /var/lib/gems/1.8/bin/ohai /usr/local/bin/
+    
+fi
+
+
+# ========================================================================
 # Prepare chef-solo configuration files
 # ========================================================================
 
@@ -45,14 +72,8 @@ if [ `id -u` -ne 0 ]; then
 fi
 
 $CMDPREFIX mkdir -p $COOKBOOK_DIR/run/$RUN_NAME
-if [ $? -ne 0 ]; then
-  exit 1
-fi
 
 $CMDPREFIX mv $TOPDIR_ABS/bootconf.json $COOKBOOK_DIR/run/$RUN_NAME/chefroles.json
-if [ $? -ne 0 ]; then
-  exit 1
-fi
 
 cat >> chefconf.rb << "EOF"
 log_level :info
@@ -66,9 +87,6 @@ echo "file_store_path '$COOKBOOK_DIR/tmp'" >> chefconf.rb
 echo "file_cache_path '$COOKBOOK_DIR/tmp'" >> chefconf.rb
 
 $CMDPREFIX mv chefconf.rb $COOKBOOK_DIR/run/$RUN_NAME/chefconf.rb
-if [ $? -ne 0 ]; then
-  exit 1
-fi
 
 
 # ========================================================================
@@ -86,14 +104,8 @@ EOF
 echo "chef-solo -l $CHEF_LOGLEVEL -c $COOKBOOK_DIR/run/$RUN_NAME/chefconf.rb -j $COOKBOOK_DIR/run/$RUN_NAME/chefroles.json" >> rerun-chef-$RUN_NAME.sh
 
 chmod +x rerun-chef-$RUN_NAME.sh
-if [ $? -ne 0 ]; then
-  exit 1
-fi
 
 $CMDPREFIX mv rerun-chef-$RUN_NAME.sh /opt/rerun-chef-$RUN_NAME.sh
-if [ $? -ne 0 ]; then
-  exit 1
-fi
 
 
 # ========================================================================
@@ -102,6 +114,3 @@ fi
 
 echo "Running chef-solo"
 $CMDPREFIX /opt/rerun-chef-$RUN_NAME.sh
-if [ $? -ne 0 ]; then
-  exit 1
-fi
