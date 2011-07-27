@@ -27,7 +27,7 @@ TODO: talk about common/cookbooks directory
 Run the sample
 --------------
 
-$ ./common/prepare-tarball.sh
+$ ../common/prepare-tarball.sh
 $ cloudinitd boot main.conf -v -v -v -l debug 
 
 TODO: talk about this error:
