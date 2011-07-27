@@ -1,4 +1,4 @@
 *.pyc
 *.pyo
 cloudboot.egg-info
-/docs/plans/chefsolo/common/cookbooks.tar.gz
+/docs/plans/common/cookbooks.tar.gz
