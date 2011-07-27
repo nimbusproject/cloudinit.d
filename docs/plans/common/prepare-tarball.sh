@@ -19,7 +19,7 @@ fi
 
 tar czf cookbooks.tar.gz cookbooks
 if [ $? -ne 0 ]; then
-  echo "could not create tarball"
+  echo "Failed to create cookbooks tarball"
   exit 1
 fi
 
