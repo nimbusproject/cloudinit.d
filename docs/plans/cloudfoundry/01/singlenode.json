@@ -1,5 +1,5 @@
 {
-  "username":"basenode",
+  "username":"singlenode",
   "groupname":"users",
   "recipes":["cf"],
    "name" : "cloud foundry single",
