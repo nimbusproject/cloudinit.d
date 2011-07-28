@@ -81,6 +81,7 @@ fi
      interpreter "bash"
      user "#{username}"
      cwd "/tmp"
+     not_if "test -e /home/#{username}/.rvm/gems/ruby-1.9.2-p180/bin/vmc"
      code <<-EOH
 echo "Activate rvm"
 rvm_path="$HOME/.rvm"
@@ -146,7 +147,6 @@ directory "/home/#{username}/cloudfoundry" do
   group "#{username}"
   mode "0755"
   action :create
-    creates "/home/#{username}/cloudfoundry/vcap"
 end
 
 execute "Getting CF from git" do
