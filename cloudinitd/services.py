@@ -1,5 +1,7 @@
+import pipes
 import shlex
 import traceback
+import urllib
 import re
 import cb_iaas
 from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
@@ -399,11 +401,25 @@ class SVCContainer(object):
         keys = ["hostname", "instance_id"] + self._attr_bag.keys()# + self._s.__dict__.keys()
         return keys
 
+    def _expand_attr_list(self, val):
+        if not val:
+            return val
+
+        val = str(val)
+        val_a = shlex.split(val)
+        cmd_args = []
+
+        for v in val_a:
+            new_v = self._expand_attr(v)
+            cmd_args.append(new_v)
+
+        return " ".join(pipes.quote(s) for s in cmd_args)
+
     def _expand_attr(self, val):
         if not val:
             return val
         pattern = re.compile('\$\{(.*?)\.(.*)\}')
-                
+
         match = pattern.search(val)
         if match:
             svc_name = match.group(1)
@@ -612,8 +628,9 @@ class SVCContainer(object):
     def _get_readypgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
         readypgm = self._expand_attr(self._s.readypgm)
-        readypgm_args = self._expand_attr(self._s.readypgm_args)
-
+        readypgm_args = self._expand_attr_list(self._s.readypgm_args)
+        readypgm_args = urllib.quote(readypgm_args)
+        
         cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s'" % (host, readypgm, readypgm_args, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
@@ -622,7 +639,8 @@ class SVCContainer(object):
         host = self._expand_attr(self._s.hostname)
 
         bootpgm = self._expand_attr(self._s.bootpgm)
-        bootpgm_args = self._expand_attr(self._s.bootpgm_args)
+        bootpgm_args = self._expand_attr_list(self._s.bootpgm_args)
+        bootpgm_args = urllib.quote(bootpgm_args)
 
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
@@ -633,7 +651,8 @@ class SVCContainer(object):
     def _get_termpgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
         terminatepgm = self._expand_attr(self._s.terminatepgm)
-        terminatepgm_args = self._expand_attr(self._s.terminatepgm_args)
+        terminatepgm_args = self._expand_attr_list(self._s.terminatepgm_args)
+        terminatepgm_args = urllib.quote(terminatepgm_args)
 
         cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s" % (host, terminatepgm, terminatepgm_args, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))

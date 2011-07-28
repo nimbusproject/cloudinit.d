@@ -1,5 +1,4 @@
-
-
+import urllib
 import os
 from fabric.api import env, run, put, sudo, cd, get
 from cloudinitd.statics import *
@@ -40,6 +39,7 @@ def _tartask(directory, basename, tarball):
     return destpgm
 
 def readypgm(pgm=None, args=None, stagedir=None):
+    args = urllib.unquote(args)
     env.warn_only = True
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
@@ -54,6 +54,7 @@ def readypgm(pgm=None, args=None, stagedir=None):
         run(destpgm)
 
 def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None):
+    args = urllib.unquote(args)
     run('mkdir %s; chmod 777 %s' % (REMOTE_WORKING_DIR, REMOTE_WORKING_DIR))
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
