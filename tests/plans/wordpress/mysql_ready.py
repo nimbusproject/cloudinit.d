@@ -15,7 +15,7 @@ password=vals_dict['dbpassword']
 dbname=vals_dict['dbname']
 
 commands = []
-commands.append('sudo mysql --password=monkey -e "select now();"')
+commands.append('sudo mysql --password=%s -e "select now();"' % (password))
 
 for cmd in commands:
     print cmd

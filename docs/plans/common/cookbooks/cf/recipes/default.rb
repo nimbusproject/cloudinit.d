@@ -2,6 +2,7 @@
 mysql_pass = node[:mysql][:password]
 postgres_pass = node[:postgres][:password]
 basedir = node[:filesystem][:basedir]
+username = node[:username]
 
 packages = [
     'coreutils',
@@ -30,16 +31,17 @@ end
     source "https://rvm.beginrescueend.com/install/rvm"
     mode "0755"
  end
+
  execute "Installing rvm" do
-  user "ubuntu"
+  user "#{username}"
   action :run
   command "/tmp/install_rvm"
-  creates "/home/ubuntu/.rvm"
+  creates "/home/#{username}/.rvm"
  end
 
  script "configure bash" do
      interpreter "bash"
-     user "ubuntu"
+     user "#{username}"
      cwd "/tmp"
      code <<-EOH
 
@@ -75,10 +77,10 @@ fi
      EOH
  end
 
- execute "Installing gems" do
+ script "Installing gems" do
      interpreter "bash"
-     user "ubuntu"
-     cwd "/home/ubuntu/"
+     user "#{username}"
+     cwd "/tmp"
      code <<-EOH
 echo "Activate rvm"
 rvm_path="$HOME/.rvm"
@@ -139,26 +141,27 @@ exit 0
      EOH
  end
 
-directory "/home/ubuntu/cloudfoundry" do
-  owner "ubuntu"
-  group "ubuntu"
+directory "/home/#{username}/cloudfoundry" do
+  owner "#{username}"
+  group "#{username}"
   mode "0755"
   action :create
+    creates "/home/#{username}/cloudfoundry/vcap"
 end
 
 execute "Getting CF from git" do
-    user "ubuntu"
+    user "#{username}"
     action :run
     command "git clone https://github.com/cloudfoundry/vcap.git"
-    creates "/home/ubuntu/cloudfoundry/vcap"
-    cwd "/home/ubuntu/cloudfoundry"
+    creates "/home/#{username}/cloudfoundry/vcap"
+    cwd "/home/#{username}/cloudfoundry"
 end
 
 execute "Update git" do
-    user "ubuntu"
+    user "#{username}"
     action :run
     command "git submodule update --init"
-    cwd "/home/ubuntu/cloudfoundry/vcap"
+    cwd "/home/#{username}/cloudfoundry/vcap"
 end
 
 
@@ -166,7 +169,7 @@ execute "setup vcap" do
     user "root"
     action :run
     command "setup/vcap_setup -a -s -p \"#{mysql_pass}\" -q \"#{postgres_pass}\""
-    cwd "/home/ubuntu/cloudfoundry/vcap"
+    cwd "/home/#{username}/cloudfoundry/vcap"
 end
 
 execute "setup mysql" do
@@ -174,41 +177,41 @@ execute "setup mysql" do
     action :run
     command "sed -i.bkup -e \"s/pass: root/pass: #{mysql_pass}/\" mysql_node.yml
 "
-    cwd "/home/ubuntu/cloudfoundry/vcap/services/mysql/config"
+    cwd "/home/#{username}/cloudfoundry/vcap/services/mysql/config"
 end
 
 execute "setup postgres" do
-    user "ubuntu"
+    user "#{username}"
     action :run
     command "sed -i.bkup -e \"s/9.0/8.4/g\" postgresql_gateway.yml"
-    cwd "/home/ubuntu/cloudfoundry/vcap/services/postgresql/config"
+    cwd "/home/#{username}/cloudfoundry/vcap/services/postgresql/config"
 end
 
 execute "setup postgres 2" do
-    user "ubuntu"
+    user "#{username}"
     action :run
     command "sed -i.bkup -e \"s/user: vcap/user: postgres/\" -e \"s/pass: vcap/pass: #{postgres_pass}/\" postgresql_node.yml"
-    cwd "/home/ubuntu/cloudfoundry/vcap/services/postgresql/config"
+    cwd "/home/#{username}/cloudfoundry/vcap/services/postgresql/config"
 end
 
 execute "copy in nginx conf" do
     user "root"
     action :run
     command "cp setup/simple.nginx.conf /etc/nginx/nginx.conf"
-    cwd "/home/ubuntu/cloudfoundry/vcap/"
+    cwd "/home/#{username}/cloudfoundry/vcap/"
 end
 
 execute "restart nginx" do
     user "root"
     action :run
     command "/etc/init.d/nginx restart"
-    cwd "/home/ubuntu/cloudfoundry/vcap/"
+    cwd "/home/#{username}/cloudfoundry/vcap/"
 end
 
- execute "Installing rake on vcap" do
+ script "Installing rake on vcap" do
      interpreter "bash"
-     user "ubuntu"
-     cwd "/home/ubuntu/cloudfoundry/vcap"
+     user "#{username}"
+     cwd "/home/#{username}/cloudfoundry/vcap"
      code <<-EOH
 echo "Activate rvm"
 rvm_path="$HOME/.rvm"
