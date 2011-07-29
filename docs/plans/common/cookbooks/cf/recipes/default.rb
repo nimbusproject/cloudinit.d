@@ -34,35 +34,39 @@ end
 
  execute "Installing rvm" do
   user "#{username}"
+  group "ubuntu"
   action :run
   command "/tmp/install_rvm"
   creates "/home/#{username}/.rvm"
+  environment ({'HOME' => "/home/#{username}"})
  end
 
  script "configure bash" do
      interpreter "bash"
      user "#{username}"
+     group "ubuntu"
      cwd "/tmp"
+     environment ({'HOME' => "/home/#{username}"})
      code <<-EOH
 
-echo "export rvm_trust_rvmrcs_flag=1" >> ~/.bashrc
-if [ -f ~/.bashrc ]; then
-  if [ ! -f ~/.bash_profile ]; then
+echo "export rvm_trust_rvmrcs_flag=1" >> $HOME/.bashrc
+if [ -f $HOME/.bashrc ]; then
+  if [ ! -f $HOME/.bash_profile ]; then
     # rvm install is going to write into .bash_profile in this
     # case and short circuit loading of .bashrc so we need to
     # create a proper .bash_profile if its missing
-    echo "# This file is sourced by bash for login shells.  The following line" >> ~/.bash_profile
-    echo "# runs your .bashrc and is recommended by the bash info pages." >> ~/.bash_profile
-    echo "[[ -f ~/.bashrc ]] && . ~/.bashrc" >> ~/.bash_profile
+    echo "# This file is sourced by bash for login shells.  The following line" >> $HOME/.bash_profile
+    echo "# runs your .bashrc and is recommended by the bash info pages." >> $HOME/.bash_profile
+    echo "[[ -f $HOME/.bashrc ]] && . $HOME/.bashrc" >> $HOME/.bash_profile
   fi
 fi
 echo "Fixing init scripts to work with rvm"
 init_file=""
-if [ -f ~/.bashrc ]; then
+if [ -f $HOME/.bashrc ]; then
   init_file="$HOME/.bashrc"
-elif [ -f ~/.bash_profile ]; then
+elif [ -f $HOME/.bash_profile ]; then
   init_file="$HOME/.bash_profile"
-elif [ -f ~/.zshrc ]; then
+elif [ -f $HOME/.zshrc ]; then
   init_file="$HOME/.zshrc"
 fi
 if [ -f "$init_file" ]; then
@@ -80,7 +84,9 @@ fi
  script "Installing gems" do
      interpreter "bash"
      user "#{username}"
+     group "ubuntu"
      cwd "/tmp"
+     environment ({'HOME' => "/home/#{username}"})
      not_if "test -e /home/#{username}/.rvm/gems/ruby-1.9.2-p180/bin/vmc"
      code <<-EOH
 echo "Activate rvm"
@@ -89,8 +95,8 @@ rvm_path="$HOME/.rvm"
 type rvm | head -1
 
 # remove rake from default and global gems and instead install manually
-rm ~/.rvm/gemsets/default.gems
-rm ~/.rvm/gemsets/global.gems
+rm $HOME/.rvm/gemsets/default.gems
+rm $HOME/.rvm/gemsets/global.gems
 
 echo "Installing various rubies"
 rvm install 1.9.2-p180
@@ -144,13 +150,14 @@ exit 0
 
 directory "/home/#{username}/cloudfoundry" do
   owner "#{username}"
-  group "#{username}"
+  group "ubuntu"
   mode "0755"
   action :create
 end
 
 execute "Getting CF from git" do
     user "#{username}"
+    group "ubuntu"
     action :run
     command "git clone https://github.com/cloudfoundry/vcap.git"
     creates "/home/#{username}/cloudfoundry/vcap"
@@ -159,6 +166,7 @@ end
 
 execute "Update git" do
     user "#{username}"
+    group "ubuntu"
     action :run
     command "git submodule update --init"
     cwd "/home/#{username}/cloudfoundry/vcap"
@@ -212,6 +220,7 @@ end
      interpreter "bash"
      user "#{username}"
      cwd "/home/#{username}/cloudfoundry/vcap"
+     environment ({'HOME' => "/home/#{username}"})
      code <<-EOH
 echo "Activate rvm"
 rvm_path="$HOME/.rvm"
@@ -224,7 +233,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd ~/cloudfoundry/vcap
+cd $HOME/cloudfoundry/vcap
 gem install bundler --no-rdoc --no-ri
 if [ $? -ne 0 ]; then
     echo "failed to gem install bundler --no-rdoc --no-ri"
