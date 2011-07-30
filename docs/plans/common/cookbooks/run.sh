@@ -53,12 +53,15 @@ if [ $? -ne 0 ]; then
   export DEBIAN_FRONTEND=noninteractive
   export TERM=dumb
 
-  sudo apt-get update
-  sudo apt-get install -y ruby-dev libopenssl-ruby rubygems
-  sudo gem install chef ohai --no-ri --no-rdoc --source http://gems.opscode.com --source http://gems.rubyforge.org
-  sudo ln -s /var/lib/gems/1.8/bin/chef-solo /usr/local/bin/
-  sudo ln -s /var/lib/gems/1.8/bin/ohai /usr/local/bin/
-    
+  sudo apt-get update  -f -y --force-yes --quiet --yes
+  sudo apt-get install  -f -y --force-yes --quiet --yes ruby ruby-dev libopenssl-ruby rdoc ri irb build-essential wget ssl-cert
+  cd /tmp
+  wget http://production.cf.rubygems.org/rubygems/rubygems-1.7.2.tgz
+  tar zxf rubygems-1.7.2.tgz
+  cd rubygems-1.7.2
+  sudo ruby setup.rb --no-format-executable
+  sudo gem install chef --no-rdoc --no-ri
+  sudo gem install ohai --no-rdoc --no-ri
 fi
 
 
