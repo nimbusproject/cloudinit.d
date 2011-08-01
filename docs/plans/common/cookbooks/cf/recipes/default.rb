@@ -9,7 +9,6 @@ packages = [
     'autoconf',
     'curl',
     'git-core',
-    'ruby',
     'bison',
     'build-essential',
     'zlib1g-dev',

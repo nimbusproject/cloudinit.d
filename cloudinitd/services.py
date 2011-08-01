@@ -556,11 +556,14 @@ class SVCContainer(object):
     def _log_poller_output(self, poller):
         if not poller:
             return
-        stdout = poller.get_stdout()
-        stderr = poller.get_stderr()
-        cmd = poller.get_command()
-        # this is reapeated info but at a convient location.  Changing to DEBUG from INFO so that it can be disabled
-        cloudinitd.log(self._log, logging.DEBUG, "Output for the command %s:\nstdout\n------\n%s\nstderr\n------\n%s" % (cmd, stdout, stderr))
+        try:
+            stdout = str(poller.get_stdout())
+            stderr = str(poller.get_stderr())
+            cmd = poller.get_command()
+            # this is reapeated info but at a convient location. 
+            cloudinitd.log(self._log, logging.DEBUG, "Output for the command %s:\nstdout\n------\n%s\nstderr\n------\n%s" % (cmd, stdout, stderr))
+        except Exception, ex:
+            cloudinitd.log(self._log, logging.ERROR, "Failed to log output info | %s" % (str(ex)))
 
     def _context_cb(self, popen_poller, action, msg):
         if action == cloudinitd.callback_action_transition:
