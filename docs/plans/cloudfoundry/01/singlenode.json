@@ -1,7 +1,7 @@
 {
   "username":"${base_username}",
   "groupname":"ubuntu",
-  "recipes":["user", "cf"],
+  "recipes":["user", "cf_base", "cf_single"],
    "name" : "cloud foundry single",
    "mysql" : { "password" : "${mysql_pw}" },
    "postgres" : { "password" : "${postgres_pw}" }

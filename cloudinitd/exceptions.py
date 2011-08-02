@@ -58,9 +58,12 @@ class ServiceException(PollableException):
         s = "Error while processing the service: %s" % (self._svc.name)
         if self.msg:
             s = s + os.linesep + self.msg
-        s = s + os.linesep + "stdout : %s" % (self.stdout)
-        s = s + os.linesep + "stderr : %s" % (self.stderr)
-        s = s + os.linesep + str(self._base_ex)
+        try:
+            s = s + os.linesep + "stdout : %s" % (str(self.stdout))
+            s = s + os.linesep + "stderr : %s" % (str(self.stderr))
+            s = s + os.linesep + str(self._base_ex)
+        except Exception, ex:
+            s = str(s)
         return s
 
 class ProcessException(PollableException):

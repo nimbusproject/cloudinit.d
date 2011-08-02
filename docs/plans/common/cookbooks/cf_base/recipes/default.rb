@@ -48,35 +48,10 @@ end
      environment ({'HOME' => "/home/#{username}"})
      code <<-EOH
 
-echo "export rvm_trust_rvmrcs_flag=1" >> $HOME/.bashrc
-if [ -f $HOME/.bashrc ]; then
-  if [ ! -f $HOME/.bash_profile ]; then
-    # rvm install is going to write into .bash_profile in this
-    # case and short circuit loading of .bashrc so we need to
-    # create a proper .bash_profile if its missing
-    echo "# This file is sourced by bash for login shells.  The following line" >> $HOME/.bash_profile
-    echo "# runs your .bashrc and is recommended by the bash info pages." >> $HOME/.bash_profile
-    echo "[[ -f $HOME/.bashrc ]] && . $HOME/.bashrc" >> $HOME/.bash_profile
-  fi
-fi
-echo "Fixing init scripts to work with rvm"
-init_file=""
-if [ -f $HOME/.bashrc ]; then
-  init_file="$HOME/.bashrc"
-elif [ -f $HOME/.bash_profile ]; then
-  init_file="$HOME/.bash_profile"
-elif [ -f $HOME/.zshrc ]; then
-  init_file="$HOME/.zshrc"
-fi
-if [ -f "$init_file" ]; then
-  if grep '^ *\[ -z "$PS1" \] && return *$' $init_file; then
-    sed -i.bkup -e 's/^ *\[ -z "$PS1" \] && return *$/if [ -n "$PS1" ]; then/' $init_file
-    echo "fi" >> $init_file
-  fi
+echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"' > $HOME/.bashrc
+export rvm_trust_rvmrcs_flag=1 >> $HOME/.bashrc
 
-  echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"' >> $init_file
-fi
-
+echo '[[ -f /home/cf/.bashrc ]] && . /home/cf/.bashrc' > $HOME/.bash_profile
      EOH
  end
 
