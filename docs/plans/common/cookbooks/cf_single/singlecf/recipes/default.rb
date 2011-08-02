@@ -1,14 +1,21 @@
+require 'resolv'
 
 mysql_pass = node[:mysql][:password]
 postgres_pass = node[:postgres][:password]
 basedir = node[:filesystem][:basedir]
 username = node[:username]
+api_host = node[:api_host]
+controller_host = node[:controller_host]
+controller_ip = Resolv.new.getaddress(controller_host)
+vcap_home = "/home/#{username}/cloudfoundry/vcap"
+to_start = node[:services]
 
 packages = [
     'coreutils',
     'autoconf',
     'curl',
     'git-core',
+    'ruby',
     'bison',
     'build-essential',
     'zlib1g-dev',
@@ -225,4 +232,87 @@ exit 0
      EOH
  end
 
+script "Setup /etc/hosts" do
+  interpreter "bash"
+  user "root"
+  environment ({'IP' => controller_ip, 'API' => api_host})
+  not_if "grep vcap /etc/hosts"
+  code <<-EOH
+  echo $IP $API >> /etc/hosts
+  echo '#Add app hostnames here:' >> /etc/hosts
+  echo "#\$IP testapp.vcap" >> /etc/hosts
+  EOH
+end
 
+controller_conf = "#{vcap_home}/cloud_controller/config/cloud_controller.yml"
+script "Setup cloud_controller" do
+  interpreter "bash"
+  user username
+  environment ({'CONTROLLER' => controller_ip,
+                'CONF' => controller_conf,
+                'API' => api_host})
+  not_if "grep #{controller_ip} #{controller_conf}"
+  code <<-EOH
+  sed -i "s|external_uri:.*|external_uri: $API|" $CONF
+  sed -i "s|local_route:.*|local_route: $CONTROLLER|" $CONF
+  sed -i "s|mbus:.*|mbus: nats://$CONTROLLER:4222/|" $CONF
+  EOH
+end
+
+router_conf = "#{vcap_home}/router/config/router.yml"
+script "Setup router" do
+  interpreter "bash"
+  user username
+  environment ({'CONTROLLER' => controller_ip, 'CONF' => router_conf})
+  not_if "grep #{controller_ip} #{router_conf}"
+  code <<-EOH
+  sed -i "s|mbus:.*|mbus: nats://$CONTROLLER:4222/|" $CONF
+  EOH
+end
+
+health_manager_conf = "#{vcap_home}/health_manager/config/health_manager.yml"
+script "Setup health_manager" do
+  interpreter "bash"
+  user username
+  environment ({'CONTROLLER' => controller_ip, 'CONF' => health_manager_conf})
+  not_if "grep #{controller_ip} #{health_manager_conf}"
+  code <<-EOH
+  sed -i "s|local_route:.*|local_route: $CONTROLLER|" $CONF
+  sed -i "s|mbus:.*|mbus: nats://$CONTROLLER:4222/|" $CONF
+  EOH
+end
+
+dea_conf = "#{vcap_home}/dea/config/dea.yml"
+script "Setup dea" do
+  interpreter "bash"
+  user username
+  environment ({'CONTROLLER' => controller_ip, 'CONF' => dea_conf})
+  not_if "grep #{controller_ip} #{dea_conf}"
+  code <<-EOH
+  sed -i "s|local_route:.*|local_route: $CONTROLLER|" $CONF
+  sed -i "s|mbus:.*|mbus: nats://$CONTROLLER:4222/|" $CONF
+  EOH
+end
+
+script "Start vcap" do
+  interpreter "bash"
+  user "#{username}"
+  cwd "/home/#{username}/cloudfoundry/vcap"
+  environment ({'VCAP' => vcap_home, 'HOME' => "/home/#{username}",
+                'SERVICES' => to_start})
+  code <<-EOH
+  echo "Activate rvm"
+  rvm_path="$HOME/.rvm"
+  [[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"
+  type rvm | head -1
+
+  rvm use 1.9.2-p180
+  if [ $? -ne 0 ]; then
+    echo "failed to rvm use 1.9.2"
+    exit 1
+  fi
+
+  cd $VCAP
+  bin/vcap start $SERVICES
+  EOH
+end

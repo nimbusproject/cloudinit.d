@@ -1,8 +1,11 @@
 {
   "username":"${base_username}",
   "groupname":"ubuntu",
+  "controller_host":"${controller_host}",
+  "api_host":"${api_host}",
+  "vcap_services":"${vcap_services}",
   "recipes":["user", "cf_base", "cf_single"],
-   "name" : "cloud foundry single",
-   "mysql" : { "password" : "${mysql_pw}" },
-   "postgres" : { "password" : "${postgres_pw}" }
+  "name" : "cloud foundry single",
+  "mysql" : { "password" : "${mysql_pw}" },
+  "postgres" : { "password" : "${postgres_pw}" }
 }
