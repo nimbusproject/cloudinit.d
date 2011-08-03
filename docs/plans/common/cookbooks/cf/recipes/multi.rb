@@ -68,8 +68,8 @@ end
 
 script "Start vcap" do
   interpreter "bash"
-  user "#{username}"
-  cwd "/home/#{username}/cloudfoundry/vcap"
+  user username
+  cwd vcap_home
   environment ({'VCAP' => vcap_home, 'HOME' => "/home/#{username}",
                 'SERVICES' => vcap_services})
   code <<-EOH

@@ -2,10 +2,11 @@
   "username":"${base_username}",
   "groupname":"ubuntu",
   "controller_host":"${controller_host}",
-  "api_host":"${api_host}",
+  "vcap_domain":"${vcap_domain}",
+  "api_host":"api.${vcap_domain}",
   "vcap_services":"${vcap_services}",
-  "recipes":["user", "cf", "cf::hosts", "cf::multi"],
-  "name" : "cloud foundry single",
+  "recipes":["user", "cf", "cf::dnsmasq", "cf::multi"],
+  "name" : "cloud foundry controller",
   "mysql" : { "password" : "${mysql_pw}" },
   "postgres" : { "password" : "${postgres_pw}" }
 }
