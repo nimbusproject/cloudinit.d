@@ -2,8 +2,6 @@
 #
 # cloudfoundry_ready.sh - script to test the readyness of Cloud Foundry Services
 
-source bootenv.sh
-
 # List of services to test
 SERVICES="router cloud_controller dea health_manager"
 VCAP="/home/$username/cloudfoundry/vcap/bin/vcap"

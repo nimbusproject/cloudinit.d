@@ -1,8 +1,3 @@
-import sys
-import os
-
-
-
 from cloudinitd.exceptions import *
 from cloudinitd.user_api import *
 from cloudinitd.statics import *
@@ -35,6 +30,7 @@ def find_true():
 
 def log(logger, level, msg, tb=None):
 
+    msg = msg.decode("utf8")
     if logger is None:
         print msg
         return

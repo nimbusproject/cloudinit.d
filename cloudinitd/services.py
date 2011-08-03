@@ -557,8 +557,8 @@ class SVCContainer(object):
         if not poller:
             return
         try:
-            stdout = str(poller.get_stdout())
-            stderr = str(poller.get_stderr())
+            stdout = poller.get_stdout()
+            stderr = poller.get_stderr()
             cmd = poller.get_command()
             # this is reapeated info but at a convient location. 
             cloudinitd.log(self._log, logging.DEBUG, "Output for the command %s:\nstdout\n------\n%s\nstderr\n------\n%s" % (cmd, stdout, stderr))
