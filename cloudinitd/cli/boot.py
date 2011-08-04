@@ -22,8 +22,8 @@ g_verbose = 1
 g_action = ""
 g_repair = False
 g_outfile = None
-
 g_commands = {}
+g_options = None # just a lame way to thread info to callbacks.
 
 def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False, inverse=False):
     global g_outfile
@@ -130,7 +130,9 @@ Run with the command 'commands' to see a list of all possible commands
             print_chars(0, "If you want to do remote debugging please set the env CLOUDINITD_DEBUG_CS to the contact string of you expected debugger.\n", color="red", bold=True)
         except:
             print_chars(0, "Please verify the format of your contact string to be <hostname>:<port>.\n", color="red", bold=True)
-    
+
+    global g_options
+    g_options = options
     return (args, options)
 
 def level_callback(cb, action, current_level):
@@ -152,6 +154,9 @@ def service_callback(cb, cloudservice, action, msg):
     
     if action == cloudinitd.callback_action_started:
         print_chars(3, "\t%s\n" % (msg))
+
+        global g_options
+        print_chars(3, "\tlogging to %s%s/%s.log\n" % (g_options.logdir, g_options.name, cloudservice.name))
         sys.stdout.flush()
     elif action == cloudinitd.callback_action_transition:
         print_chars(5, "\t%s\n" % (msg))
@@ -226,7 +231,9 @@ def launch_new(options, args):
     config_file = args[1]
     print_chars(1, "Starting up run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
+
     cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=True, ready=True, fail_if_db_present=True)
+    print_chars(3, "Logging to: %s%s.log\n"  % (options.logdir, options.name))
 
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
