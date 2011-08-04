@@ -1,5 +1,7 @@
 {
+  "username":"${base_username}",
   "controller_host":"${controller_host}",
   "vcap_domain":"${vcap_domain}",
   "vcap_services":"${vcap_services}",
+  "api_host":"api.${vcap_domain}"
 }

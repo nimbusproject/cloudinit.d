@@ -3,6 +3,7 @@
   "groupname":"ubuntu",
   "controller_host":"${controller_host}",
   "api_host":"api.${vcap_domain}",
+  "vcap_domain":"${vcap_domain}",
   "vcap_services":"${vcap_services}",
   "recipes":["user", "cf", "cf::multi"],
   "name" : "cloud foundry dea",
