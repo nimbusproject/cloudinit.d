@@ -30,7 +30,7 @@ def print_chars(lvl, msg, color="default", bg_color="default", bold=False, under
     if g_outfile:
         g_outfile.write(msg)
     cloudinitd.cli.output.write_output(lvl, g_verbose, msg, color=color, bg_color=bg_color, bold=bold, underline=underline, inverse=inverse)
-    
+
 # setup and validate options
 def parse_commands(argv):
     global g_verbose

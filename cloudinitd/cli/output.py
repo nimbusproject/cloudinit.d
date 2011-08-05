@@ -48,11 +48,27 @@ g_background_dict['white'] = '\x1b[47m'
 g_background_dict['default'] = '\x1b[49m'
 
 
+def _tty_format_msg(msg, color="default", bg_color="default", bold=False, underline=False, strikethrough=False, inverse=False):
+    msg = g_background_dict[bg_color] + g_colors_dict[color] + msg + g_operations_dict['reset']
+    if bold:
+        msg = g_operations_dict['bold'] + msg# + g_operations_dict['bold_off']
+    if underline:
+        msg = g_operations_dict['underline'] + msg
+    if strikethrough:
+        msg = g_operations_dict['strikethrough'] + msg
+    if inverse:
+        msg = g_operations_dict['inverse'] + msg
+
+    return msg
+
 
 def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", bold=False, underline=False, strikethrough=False, inverse=False):
     global g_colors_dict
     global g_background_dict
     global g_operations_dict
+
+#    status_bar = _tty_format_msg(" STATUS ", bg_color="red")
+    status_bar = None
 
     if string_lvl > pgm_lvl:
         return
@@ -60,6 +76,24 @@ def write_output(string_lvl, pgm_lvl, msg, color="default", bg_color="default", 
     orig_msg = msg
     try:
         if hasattr(sys.stdout, "isatty") and sys.stdout.isatty():
+            if status_bar:
+                msg_a = msg.split('\n')
+
+                if msg[-1] != '\n':
+                    last_msg = msg_a.pop(-1)
+                else:
+                    last_msg = None
+                    msg_a.pop(-1)
+                for m in msg_a:
+                    m = _tty_format_msg(m, color, bg_color, bold, underline, strikethrough, inverse)
+                    sys.stdout.write(m + '\n')
+                    sys.stdout.write(str(status_bar))
+                if last_msg:
+                    m = _tty_format_msg(last_msg, color, bg_color, bold, underline, strikethrough, inverse)
+                    sys.stdout.write(m)
+                return
+
+
             msg = g_background_dict[bg_color] + g_colors_dict[color] + msg + g_operations_dict['reset']
             if bold:
                 msg = g_operations_dict['bold'] + msg# + g_operations_dict['bold_off']
