@@ -6,11 +6,9 @@ from optparse import OptionParser
 import uuid
 import stat
 from cloudinitd.cli.cmd_opts import bootOpts
-from cloudinitd.persistence import CloudInitDDB
 from cloudinitd.user_api import CloudInitD, CloudServiceException
 from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException
 import cloudinitd
-import cloudinitd.cb_iaas as cb_iaas
 import os
 import cloudinitd.cli.output
 from optparse import SUPPRESS_HELP

@@ -156,6 +156,19 @@ class SVCContainer(object):
         self._restart_limit = 2
         self._restart_count = 0
 
+    def _clean_up(self):
+        self._hostname_poller = None
+        self._term_host_pollers = None
+        self._pollables = None
+        self._ssh_poller = None
+        self._ssh_poller2 = None
+        self._ready_poller = None
+        self._boot_poller = None
+        self._terminate_poller = None
+        self._shutdown_poller = None
+        self.last_exception = None
+        self._port_poller = None
+
 
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
         if boot and self._s.state == cloudinitd.service_state_contextualized and not terminate:
@@ -184,6 +197,7 @@ class SVCContainer(object):
         self.last_exception = None
         self._boot_output_file = None
         self._port_poller = None
+
         self._ssh_port = 22
 
         self._iass_started = False
@@ -583,6 +597,7 @@ class SVCContainer(object):
                 poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
                 for p in poller_list:
                     self._log_poller_output(p)
+                self._clean_up()
 
             return rc
 
@@ -715,7 +730,6 @@ class SVCContainer(object):
         outf.close()
 
         return newpath
-
 
     def cancel(self):
         if self._pollables:

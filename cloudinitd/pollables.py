@@ -362,6 +362,7 @@ class PopenExecutablePollable(Pollable):
         self._done = True
         self._execute_cb(cloudinitd.callback_action_complete, "Pollable complete")
         self._execute_done_cb()
+        self._p = None
         return True
 
     def _poll_process(self, poll_period=0.1):
