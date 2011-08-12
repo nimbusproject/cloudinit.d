@@ -115,7 +115,7 @@ class IaaSBotoConn(object):
         if security_groupname:
              sec_group_a = self._con.get_all_security_groups(groupnames=[security_groupname,])
              if sec_group_a:
-                 sec_group = sec_group_a[0]
+                 sec_group = sec_group_a
 
         reservation = self._con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
         instance = reservation.instances[0]
@@ -445,6 +445,7 @@ def _ec2_nimbus_validate(svc, log):
 g_validate_funcs = {}
 g_validate_funcs['nimbus'] = _iaas_nimbus_validate
 g_validate_funcs['ec2'] = _ec2_nimbus_validate
+g_validate_funcs['eucalyptus'] = _ec2_nimbus_validate
 
 def iaas_validate(svc, log=logging):
     global g_validate_funcs
@@ -483,10 +484,4 @@ def iaas_validate(svc, log=logging):
 
     return (rc, str(msgs))
 
-def _libcloud_iaas_get_con(key, secret, iaas, iaashostname=None, iaasport=None):
-    if iaas.lower() == "nimbus":
-        conn = None
-    else:
-        Driver = get_driver(Provider.Provider.EC2_US_EAST)
-        conn = Driver(key, secret)
-    return IaaSLibCloudConn(conn, driver)
+
