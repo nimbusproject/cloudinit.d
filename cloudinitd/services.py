@@ -438,10 +438,13 @@ class SVCContainer(object):
         while match:
             svc_name = match.group(1)
             attr_name = match.group(2)
+            subs = None
             if svc_name:
-                val = self._top_level.find_dep(svc_name, attr_name)
+                subs = self._top_level.find_dep(svc_name, attr_name)
             else:
-                val = self.get_dep(attr_name)
+                subs = self.get_dep(attr_name)
+            if subs:
+                val = val.replace(match.group(0), subs)
             match = pattern.search(val)
         return val
 
