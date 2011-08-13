@@ -157,7 +157,6 @@ class SVCContainer(object):
         self._restart_count = 0
 
     def _clean_up(self):
-        self._hostname_poller = None
         self._term_host_pollers = None
         self._pollables = None
         self._ssh_poller = None

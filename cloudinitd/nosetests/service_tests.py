@@ -48,7 +48,7 @@ class ServiceTests(unittest.TestCase):
 
         svc = cb.get_service("sampleservice")
         status = svc.get_iaas_status()
-        self.assertEqual("running", status)
+        self.assertEqual("running", status, "status is %s" % (status))
 
         cb = CloudInitD(dir, db_name=cb.run_name, terminate=True, boot=False, ready=False)
         cb.shutdown()
