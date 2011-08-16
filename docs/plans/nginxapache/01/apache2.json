@@ -1,0 +1,5 @@
+{
+  "recipes":["apache2"],
+  "name" : "Apache2",
+  "web_message" : "${web_message}"
+}

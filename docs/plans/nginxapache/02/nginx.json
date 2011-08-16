@@ -1,0 +1,7 @@
+{
+  "recipes":["nginx", "nginx_loadbalancer"],
+  "name" : "Nginx",
+  "host1" : "${host1}",
+  "host2" : "${host2}",
+  "my_hostname" : "${my_hostname}"
+}
