@@ -1,11 +1,9 @@
+import os
 import uuid
 from cloudinitd.cb_iaas import IaaSTestInstance
 from cloudinitd.exceptions import APIUsageException
 from cloudinitd.pollables import InstanceHostnamePollable
 from cloudinitd.user_api import CloudInitD
-
-
-
 import unittest
 
 class ServiceUnitTests(unittest.TestCase):
@@ -27,6 +25,9 @@ class ServiceUnitTests(unittest.TestCase):
         self.assertFalse(fail)
 
     def test_service_poll(self):
+        x = os.environ['CLOUDINITD_TESTENV']
+
+        os.environ['CLOUDINITD_TESTENV'] = "1"
         h1 = str(uuid.uuid1())
         instance = IaaSTestInstance(h1, time_to_hostname=1)
         p = InstanceHostnamePollable(instance=instance)
@@ -38,6 +39,10 @@ class ServiceUnitTests(unittest.TestCase):
         self.assertEquals(h1, h2)
         i = p.get_instance()
         self.assertEqual(instance, i)
+        if x:
+            os.environ['CLOUDINITD_TESTENV'] = x
+        else:
+            del(os.environ['CLOUDINITD_TESTENV'])
 
 
 if __name__ == '__main__':

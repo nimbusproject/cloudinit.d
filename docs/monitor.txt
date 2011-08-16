@@ -1,0 +1,90 @@
+Automated Monitoring of a cloudinit.d Application
+=================================================
+
+This document explains how to use cloudinit.d as an automated monitoring 
+tool with a service such as pingdom, nagios, or crond.   To simplify the
+instruction we will use an example based on crond, but the concepts should
+easily transfer to more sophisticated monitoring services.
+
+cloudinit.d functionality
+-------------------------
+
+cloudinit.d is not only used to launch sophisticated multi-node cloud 
+applications, but it can also be used to monitor them, and automatically
+repair them.  This can be done manually with operator issued console
+commands, but it can also be automated with tools such as crond.
+
+Manual Monitoring
+-----------------
+
+First let us take a look at how to manually use cloudinit.d for monitoring
+and repair.
+We take for example the CloudFoundry reference launch plan.  In the 
+example an operator launches CloundFoundry with 1 head node and 8
+dea nodes.  It is important that all the nodes remain up and function 
+to handle the expected load of this CloudFoundry application.  If (when)
+something does go wrong the operator would like to repair it as quickly
+and surgically as possible.  cloudinit.d is well suited for this task.
+
+To launch an application the user simply runs:
+
+    cloudinitd -v -v boot main.conf
+
+In the command output is the 'runname'.  The operator must hang onto this 
+value in order to further monitor the run.  When the operator wishes to 
+check that the system is still running she uses the following command:
+
+    cloudinitd -vv status <runname>
+
+This will display user friendly output indicating that either everything is 
+working (in which case its exit code is also 0) or that something is wrong
+(in which case its exit code is non-0).  If something is wrong the operator
+can automatically repair the application with the command:
+
+    cloudinitd -vv repair <runname>
+
+This will locate the problem VM, reboot it, and then check to see if all
+services that depended upon the newly rebooted service need a repair as
+well.  If the repair is successful the exit code will be 0, if something could
+not be repaired after a few retries then the exit code is non-0.  Repair can 
+be run on a healthy system.  In which case it does nothing and returns a 0.
+
+
+Automated monitoring
+--------------------
+
+While there is a time and a place for manual monitoring, it is often more 
+convenient to have automated monitoring that only interrupts the operator 
+if a problem is solved.  Because cloudinit.d is careful about its exit codes
+it can easily be configured to work with automated tools like crond.
+
+The following script can be run every hour from crond to test and repair
+a cloudinitd launched application.
+
+
+#/bin/bash
+
+runname=$1
+
+cloudinitd status $runname >> /dev/null
+if [ $? -eq 0 ]; then
+    exit 0
+fi
+echo "WARNING $runname experienced an error, attempting to repair"
+cloudinitd repair $runname >> /dev/null
+if [ $? -eq 0 ]; then
+    "The repair was successful"
+    exit 0
+else
+    "We were unable to repair $runname.  Please examine the logs"
+    exit 1
+fi
+
+When nothing goes wrong this script will generate no output and therefore crond
+will not generate any email.  However, if the initial status indicates a 
+failure it will output a warning and then attempt to repair the application.
+It then outputs a message indicating the success of the repair command. Crond
+will email all of the output to the operator notifying her that the application 
+experienced some turbulence.
+
+
