@@ -4,7 +4,7 @@
 
 # List of services to test
 SERVICES="router cloud_controller dea health_manager"
-VCAP="/home/$username/cloudfoundry/vcap/bin/vcap"
+VCAP="/var/vcap/bin/vcap"
 
 if [ -n "$vcap_services" ]; then
     SERVICES="$vcap_services"
