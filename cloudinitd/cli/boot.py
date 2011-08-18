@@ -322,6 +322,7 @@ def _status(options, args):
 
     dbname = args[1]
     c_on_e = not g_repair
+    options.name = dbname
 
     cb = CloudInitD(options.database, db_name=dbname, log_level=options.loglevel, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=False, boot=False, ready=True, continue_on_error=c_on_e)
     print_chars(1, "Checking status on %s\n" % (cb.run_name))
@@ -362,6 +363,7 @@ def terminate(options, args):
         return 1
     
     for dbname in args[1:]:
+        options.name = dbname
         rc = 0
         try:
             cb = CloudInitD(options.database, log_level=options.loglevel, db_name=dbname, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, terminate=True, boot=False, ready=False, continue_on_error=True)
