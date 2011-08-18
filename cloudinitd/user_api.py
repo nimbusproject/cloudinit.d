@@ -222,8 +222,8 @@ class CloudInitD(object):
             if not done:
                 time.sleep(poll_period)
 
-
         self._db.db_commit()
+        cloudinitd.log(self._log, logging.DEBUG, "block_until_complete exiting")
 
     # poll one pass at the boot plan.
     def poll(self):

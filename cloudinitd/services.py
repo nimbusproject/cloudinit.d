@@ -157,6 +157,7 @@ class SVCContainer(object):
         self._restart_count = 0
 
     def _clean_up(self):
+        cloudinitd.log(self._log, logging.DEBUG, "Cleanup")
         self._term_host_pollers = None
         self._pollables = None
         self._ssh_poller = None
@@ -203,12 +204,14 @@ class SVCContainer(object):
         self._make_first_pollers()
 
     def _teminate_done(self, poller):
+        cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
+
         self._s.state = cloudinitd.service_state_terminated
         if self._s.image:
             self._s.hostname = None
 #        self._s.instance_id = None
         self._db.db_commit()
-        cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
+        cloudinitd.log(self._log, logging.INFO, "%s terminate done callback completed" % (self.name))
 
     def get_iaas_status(self):
         if not self._hostname_poller:
@@ -225,6 +228,7 @@ class SVCContainer(object):
             else:
                 if self._s.terminatepgm:
                     cmd = self._get_termpgm_cmd()
+                    cloudinitd.log(self._log, logging.INFO, "%s adding the terminate program to the poller %s" % (self.name, cmd))
                     self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
                     self._term_host_pollers.add_level([self._terminate_poller])
                     pass
@@ -288,11 +292,13 @@ class SVCContainer(object):
             allowed_es_ssh = 128
 
         if self._do_boot or self._do_ready:
+            cloudinitd.log(self._log, logging.DEBUG, "Adding the port poller to %s " % (self._s.hostname))
             self._port_poller = PortPollable(self._expand_attr(self._s.hostname), self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
             self._pollables.add_level([self._port_poller])
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
+            cloudinitd.log(self._log, logging.DEBUG, "Adding a ssh poller %s " % (cmd))
             self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=2)
             self._pollables.add_level([self._ssh_poller])
 
@@ -591,6 +597,7 @@ class SVCContainer(object):
             return True
         # if we already have a hostname move onto polling the fab tasks
         if not self._term_host_pollers:
+            cloudinitd.log(self._log, logging.DEBUG, "No terminate pollers in _poll")
             if not self._pollables:
                 self._make_pollers()
             rc = self._pollables.poll()
@@ -599,6 +606,7 @@ class SVCContainer(object):
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
                 poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
                 for p in poller_list:
+                    cloudinitd.log(self._log, logging.DEBUG, "Getting the output of %s" % (str(p)))
                     self._log_poller_output(p)
                 self._clean_up()
 
