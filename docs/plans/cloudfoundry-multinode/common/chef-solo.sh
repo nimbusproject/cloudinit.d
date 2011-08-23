@@ -13,6 +13,7 @@ COOKBOOK_DIR="$COOKBOOK_REPO_DIR/dev_setup/cookbooks"
 ROLES_DIR="$COOKBOOK_REPO_DIR/dev_setup/roles"
 CHEF_LOGLEVEL="info"
 MAKE_DIRS="/var/vcap.local"
+IP_ADDRESS=`host $HOSTNAME`
 
 function exit_on_error_with_error {
   is_error="$1"
@@ -120,6 +121,11 @@ exit_on_error_with_error $? "Couldn't pull '$COOKBOOK_GIT_URL'"
 
 echo "Retrieved Chef Cookbook from '$COOKBOOK_GIT_URL'"
 
+# Check for replicated run name
+REPLICA_RUN=`(cd /tmp/nimbusready/ && ls -d $RUN_NAME*)`
+if [ -n $REPLICA_RUN ]; then
+    RUN_NAME=$REPLICA_RUN
+fi
 
 if [ ! -f $TOPDIR_ABS/$RUN_NAME/bootconf.json ]; then
   echo "Cannot find chefroles.json ($TOPDIR_ABS/$RUN_NAME/bootconf.json)"
@@ -183,8 +189,12 @@ $CMDPREFIX mv rerun-chef-$RUN_NAME.sh /opt/rerun-chef-$RUN_NAME.sh
 echo "Running chef-solo"
 $CMDPREFIX /opt/rerun-chef-$RUN_NAME.sh
 
+#workaround to ensure new password is picked up
+echo "Kill nats"
+ps aux | awk '/nats-server/ && !/awk/ {print $2}' | xargs $CMDPREFIX kill
+
 echo "Start vcap"
+echo . $vcap_profile
+echo $vcap_home/bin/vcap -c $vcap_config start $vcap_start
 . $vcap_profile
-# Kill nats server in case there's a config change we want to take effect
-$CMDPREFIX kill `ps aux | grep nats-server | grep -v grep |awk '{print $2}'`
-$vcap_home/bin/vcap -c $vcap_config start
+$vcap_home/bin/vcap -c $vcap_config start $vcap_start

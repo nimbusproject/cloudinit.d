@@ -6,8 +6,8 @@
 SERVICES="router cloud_controller dea health_manager"
 VCAP="/var/vcap/bin/vcap"
 
-if [ -n "$vcap_services" ]; then
-    SERVICES="$vcap_services"
+if [ -n "$vcap_start" ]; then
+    SERVICES="$vcap_start"
 fi
 
 for service in $SERVICES ; do

@@ -1,12 +1,67 @@
 {
-  "username":"${base_username}",
-  "groupname":"ubuntu",
-  "controller_host":"${controller_host}",
-  "vcap_domain":"${vcap_domain}",
-  "api_host":"api.${vcap_domain}",
-  "vcap_services":"${vcap_services}",
-  "recipes":["user", "cf", "cf::dnsmasq", "cf::multi"],
-  "name" : "cloud foundry controller",
-  "mysql" : { "password" : "${mysql_pw}" },
-  "postgres" : { "password" : "${postgres_pw}" }
+  "username": "${base_username}",
+  "vcap_profile": "${vcap_profile}",
+  "vcap_home": "${vcap_home}",
+  "vcap_config": "${vcap_config}",
+  "deployment":{
+      "name": "${deployment_name}",
+      "home": "${deployment_home}",
+      "config_path": "${vcap_config}",
+      "user": "${base_username}",
+      "group": "ubuntu",
+      "profile": "${vcap_profile}"
+  },
+  "cloudfoundry": {
+      "revision": "HEAD",
+      "path": "${vcap_home}"
+  },
+  "ruby": {
+      "version": "${ruby_version}",
+      "path": "${deployment_home}/deploy/rubies/ruby-${ruby_version}"
+  },
+  "ruby18": {
+      "version": "${ruby18_version}",
+      "path": "${deployment_home}/deploy/rubies/ruby-${ruby18_version}"
+  },
+  "rubygems": {
+      "version": "${rubygems_version}",
+      "bundler": {"version": "${bundler_version}"},
+      "rake": {"version": "${rake_version}"}
+  },
+  "mongodb": {
+      "version": "${mongodb_version}",
+      "path": "${deployment_home}/deploy/mongodb"
+  },
+  "redis": {
+      "version": "${redis_version}",
+      "path": "${deployment_home}/deploy/redis"
+  },
+  "nodejs": {
+      "version": "${nodejs_version}",
+      "path": "${deployment_home}/deploy/nodejs"
+  },
+  "mysql": {
+      "server_root_password": "${mysql_pw}",
+      "server_repl_password": "${mysql_pw}",
+      "bind_address": "${mysql_address}"
+  },
+  "postgresql": {
+      "server_root_password": "${postgres_pw}"
+  },
+  "erlang": {
+      "version": "${erlang_version}",
+      "path": "${deployment_home}/deploy/erlang"
+  },
+  "nats": {
+      "user": "nats",
+      "password": "${nats_pw}",
+      "host": "0.0.0.0",
+      "port": "4222"
+  },
+  "cloud_controller": {
+      "local_route": "${controller_hostname}"
+  },
+  "vcap_start": "${vcap_start}",
+  "services": ["redis", "mysql", "mongodb", "postgresql"],
+  "recipes":["role[nats]","role[router]","role[ruby]","role[cloudfoundry]","role[cloud_controller]","role[health_manager]","role[dea]","role[ccdb]","role[redis]","role[mysql]","role[mongodb]","role[postgresql]"]
 }

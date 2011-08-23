@@ -1,9 +1,13 @@
 #!/bin/bash
 
-source bootenv.sh
 start_dir=`pwd`
 cd `dirname $0`
 set -e
+source ../bootenv.sh
+
+
+$vcap_home/bin/vcap -c $vcap_config restart $vcap_start
+
 if [ "X$vcaptests" != "X" ]; then
     sudo -H -i -u $username `pwd`/vcap_tests.sh
 fi

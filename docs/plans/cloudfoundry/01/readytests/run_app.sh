@@ -14,6 +14,7 @@ cd $1
 vmc target $api_host
 vmc register --email foo@bar.com --passwd password
 vmc login --email foo@bar.com --passwd password
+vmc delete env # Delete just in case left from a failed run
 
 # the above may already be there and i cannot seem to clean them up
 set -e

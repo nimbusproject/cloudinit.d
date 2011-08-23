@@ -6,10 +6,10 @@ source bootenv.sh
 
 # List of services to test
 SERVICES="router cloud_controller dea health_manager"
-VCAP="/home/$username/cloudfoundry/vcap/bin/vcap"
+VCAP="$vcap_home/bin/vcap"
 
-if [ -n "$vcap_services" ]; then
-    SERVICES="$vcap_services"
+if [ -n "$vcap_start" ]; then
+    SERVICES="$vcap_start"
 fi
 
 for service in $SERVICES ; do

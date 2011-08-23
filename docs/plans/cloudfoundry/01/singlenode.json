@@ -2,11 +2,11 @@
   "username": "${base_username}",
   "vcap_profile": "${vcap_profile}",
   "vcap_home": "${vcap_home}",
-  "vcap_config": "${deployment_config}",
+  "vcap_config": "${vcap_config}",
   "deployment":{
       "name": "${deployment_name}",
       "home": "${deployment_home}",
-      "config_path": "${deployment_config}",
+      "config_path": "${vcap_config}",
       "user": "${base_username}",
       "group": "ubuntu",
       "profile": "${vcap_profile}"
