@@ -1,12 +1,15 @@
-# Load balanced web server
+Load balanced web server
+========================
 
-## Introduction
+Introduction
+------------
 
 This example plan will setup several apache servers fronted by an nginx 
 load balancer.
 
 
-## Prerequisites
+Prerequisites
+-------------
 
 Ensure that you have cloudinit.d installed. See the [cloudinit.d documentation]
 for instructions.
@@ -18,7 +21,8 @@ Ensure that you have your IaaS credentials exported into your environment:
     $ export CLOUDINITD_IAAS_SSHKEY=<EC2 ssh key name>
     $ export CLOUDINITD_IAAS_SSHKEYNAME=<path to the matching ssh key>
 
-## Boot The Launch Plan
+Boot The Launch Plan
+--------------------
 
 Once you have your credentials set up, you need to build a tarball for both the
 Chef cookbooks used to build your webserver installation.  This processes is
@@ -43,14 +47,16 @@ Now run cloudinit.d to boot a single node installation:
         Started apache2
 
 
-## Testing Installation
+Testing Installation
+--------------------
 
 To test your installation, simply point a web browser at the ip addresses
 printed out for the ngix service.  You should get a basic web page telling
 you what backend host you were redirected to.  This should change with
 ever load of the page.
 
-## Teardown
+Teardown
+--------
 
 It is important to cleanup all the allocated resources.  To do this, run the
 following:
