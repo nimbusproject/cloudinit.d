@@ -7,8 +7,8 @@
 APP_NAME="Cloud Foundry"
 
 COOKBOOK_GIT_URL="https://github.com/oldpatricka/vcap"
-COOKBOOK_GIT_BRANCH="cloudinit"
-COOKBOOK_REPO_DIR="/opt/vcap"
+COOKBOOK_GIT_BRANCH="cloudinit-merge"
+COOKBOOK_REPO_DIR="/var/vcap"
 COOKBOOK_DIR="$COOKBOOK_REPO_DIR/dev_setup/cookbooks"
 ROLES_DIR="$COOKBOOK_REPO_DIR/dev_setup/roles"
 CHEF_LOGLEVEL="info"
@@ -110,13 +110,21 @@ else
 
   $CMDPREFIX git clone $COOKBOOK_GIT_URL $COOKBOOK_REPO_DIR
   exit_on_error_with_error $? "Couldn't clone git repo '$COOKBOOK_GIT_URL'"
+
 fi
+
 
 (cd $COOKBOOK_REPO_DIR && $CMDPREFIX git checkout $COOKBOOK_GIT_BRANCH)
 exit_on_error_with_error $? "Couldn't checkout '$COOKBOOK_GIT_BRANCH' branch"
 
 (cd $COOKBOOK_REPO_DIR && $CMDPREFIX git pull)
 exit_on_error_with_error $? "Couldn't pull '$COOKBOOK_GIT_URL'"
+
+(cd $COOKBOOK_REPO_DIR && $CMDPREFIX git submodule update --init)
+exit_on_error_with_error $? "Couldn't update submodules for '$COOKBOOK_GIT_URL'"
+
+$CMDPREFIX chown -R $username $COOKBOOK_REPO_DIR
+exit_on_error_with_error $? "Couldn't chown '$COOKBOOK_REPO_DIR'"
 
 echo "Retrieved Chef Cookbook from '$COOKBOOK_GIT_URL'"
 

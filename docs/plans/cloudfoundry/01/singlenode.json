@@ -48,16 +48,19 @@
   "postgresql": {
       "server_root_password": "${postgres_pw}"
   },
+  "ccdb": {
+      "user": "cc",
+      "password": "${ccdb_pw}"
+  },
   "erlang": {
       "version": "${erlang_version}",
       "path": "${deployment_home}/deploy/erlang"
   },
-  "nats": {
+  "nats_server": {
       "user": "nats",
       "password": "${nats_pw}",
       "host": "localhost",
       "port": "4222"
   },
-  "services": ["redis", "mysql", "mongodb", "postgresql"],
-  "recipes":["role[nats]","role[router]","role[ruby]","role[cloudfoundry]","role[cloud_controller]","role[health_manager]","role[dea]","role[ccdb]","role[redis]","role[mysql]","role[mongodb]","role[postgresql]"]
+  "recipes":["role[cloudfoundry]", "role[nats_server]", "role[ccdb]", "role[router]", "role[cloud_controller]", "role[health_manager]","role[dea]","role[redis]", "role[redis_gateway]", "role[mysql]", "role[mysql_gateway]", "role[mongodb]", "role[mongodb_gateway]"]
 }
