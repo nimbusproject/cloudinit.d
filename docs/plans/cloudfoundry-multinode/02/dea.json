@@ -52,7 +52,7 @@
       "version": "${erlang_version}",
       "path": "${deployment_home}/deploy/erlang"
   },
-  "nats": {
+  "nats_server": {
       "user": "nats",
       "password": "${nats_pw}",
       "host": "${controller_host}",
