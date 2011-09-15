@@ -142,7 +142,7 @@ configuration file has three boot levels. The first level starts everything but
 the DEA service, and is otherwise the same as the single level in the single
 node example above. The second level is more interesting. The file
 02/level2.conf file defines the scaffolding for our DEA nodes. Let's take a
-look:
+look::
 
     [svc-dea]
     bootconf: dea.json
@@ -157,7 +157,7 @@ look:
 
 This file points to the bootconf file for our DEA service (a Chef configuration script), the boot program (a Chef bootstrap script), and the dependencies for that configuration file. Also note the replica_count option, which means cloudinit.d will start 4 copies of the DEA.
 
-Next look at the beginning of the deps.conf file. It is used to set up variablesfor the JSON file that is fed to Chef:
+Next look at the beginning of the deps.conf file. It is used to set up variablesfor the JSON file that is fed to Chef::
 
     [deps]
     controller_host: ${controller.hostname}
@@ -166,7 +166,7 @@ Next look at the beginning of the deps.conf file. It is used to set up variables
     ...
     nats_pw: ${controller.nats_pw}
 
-Take a look at how we set the controller_host variable. The ${controller.hostname} string is replaced with the full hostname of the controller node started in level 1. We can see how this is used in the Chef configuration file, dea.json.
+Take a look at how we set the controller_host variable. The ${controller.hostname} string is replaced with the full hostname of the controller node started in level 1. We can see how this is used in the Chef configuration file, dea.json::
   
     {
       "username": "${base_username}",
@@ -182,7 +182,7 @@ Take a look at how we set the controller_host variable. The ${controller.hostnam
 
 You should note that the nats password also comes from the controller. This configuration is used to automatically connect our booted DEA nodes with our controller node.
 
-This JSON file is fed to the Cloud Foundry Chef recipe, and will produce a configuration string like in the DEA's configuration file:
+This JSON file is fed to the Cloud Foundry Chef recipe, and will produce a configuration string like in the DEA's configuration file::
 
     mbus: nats://nats:ham@ec2-184-73-108-198.compute-1.amazonaws.com:4222/
 
@@ -198,7 +198,7 @@ Adding a MySQL node
 To add a new MySQL node to our setup, lets start by disabling the MySQL service
 on our controller node. To do this, open up 01/controller.json, and remove
 mysql and mysql_gateway from the list of recipes to install. The recipes line
-should look like this now:
+should look like this now::
 
     "recipes":["role[cloudfoundry]", "role[nats_server]", "role[ccdb]", "role[router]", "role[cloud_controller]", "role[health_manager]", "role[redis]", "role[redis_gateway]", "role[mongodb]", "role[mongodb_gateway]"]
 
@@ -206,13 +206,13 @@ This will ensure that the MySQL chef recipes don't get run unnecessarily on
 your controller node. To make sure MySQL isn't started on your controller,
 you'll need to remove MySQL from the list of services to start. To do this,
 open up deps.conf, and remove "mysql" from the vcap_start line. It should now
-look like this:
+look like this::
 
     vcap_start: router cloud_controller health_manager mongodb redis
 
 Now that MySQL is disabled on the controller, we can set it up as a new service
 in level 2. To do this, open up 02/level2.conf, and add a MySQL service after
-the DEA service:
+the DEA service::
 
     [svc-mysql]
     bootconf: mysql.json
@@ -223,7 +223,7 @@ the DEA service:
     bootpgm_args: mysql
     readypgm: ../common/cf_ready.sh
 
-Pretty simple. Now create a mysql.json bootconf file, with the following contents:
+Pretty simple. Now create a mysql.json bootconf file, with the following contents::
 
     {
       "username": "${base_username}",
@@ -256,7 +256,7 @@ Pretty simple. Now create a mysql.json bootconf file, with the following content
       "recipes":["role[mysql]"]
     }
 
-It's only differs from the DEA json config file by a few lines:
+It's only differs from the DEA json config file by a few lines::
 
     17a18,21
     >   "mysql": {
@@ -273,7 +273,7 @@ It's only differs from the DEA json config file by a few lines:
     >   "vcap_start": "mysql",
     >   "recipes":["role[mysql]"]
 
-Now we should be able to start our vcap system, and we should have four DEA nodes, and a dedicated MySQL node. As above, start our modified plan with:
+Now we should be able to start our vcap system, and we should have four DEA nodes, and a dedicated MySQL node. As above, start our modified plan with::
 
     $ cloudinitd boot -v -v -v cloudfoundry-multi/main.conf -n cf-multi
 
