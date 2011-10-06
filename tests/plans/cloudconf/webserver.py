@@ -23,5 +23,4 @@ if getpass.getuser() != "root":
 cmd = "%s cp %s /var/www/test.txt && %s chmod 644 /var/www/test.txt" % (sudo, fname, sudo)
 print cmd
 rc = os.system(cmd)
-
 sys.exit(rc)

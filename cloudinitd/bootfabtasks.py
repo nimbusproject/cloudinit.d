@@ -1,6 +1,6 @@
 import urllib
 import os
-from fabric.api import env, run, put, sudo, cd, get
+from fabric.api import env, run, put, cd, get, local
 from cloudinitd.statics import *
 
 def _iftar(filename):
@@ -38,6 +38,42 @@ def _tartask(directory, basename, tarball):
     
     return destpgm
 
+def _make_ssh(pgm, args=""):
+
+    ssh_opts = "-A -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no"
+    try:
+        if 'CLOUDINITD_SSH_OPTS' in os.environ:
+            ssh_opts = os.environ['CLOUDINITD_SSH_OPTS']
+    except:
+        pass
+
+    sshexec = "ssh"
+    try:
+        if os.environ['CLOUDINITD_SSH']:
+            sshexec = os.environ['CLOUDINITD_SSH']
+    except:
+        pass
+
+    args = urllib.unquote(args)
+    user = ""
+    if env.user:
+        user = env.user + '@'
+    port = ""
+    if env.port:
+        port = "-p " + env.port
+    key = ""
+    if env.key_filename and env.key_filename[0]:
+        key = "-i " + env.key_filename[0]
+
+    cmd = "%s %s %s %s %s%s %s %s" % (sshexec, port, ssh_opts, key, user, env.host, pgm, args)
+
+    f = open("/tmp/balls", "w")
+    f.write(cmd)
+    f.close()
+
+    return cmd
+
+
 def readypgm(pgm=None, args=None, stagedir=None):
     args = urllib.unquote(args)
     env.warn_only = True
@@ -55,7 +91,8 @@ def readypgm(pgm=None, args=None, stagedir=None):
 
 def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None):
     args = urllib.unquote(args)
-    run('mkdir %s; chmod 777 %s' % (REMOTE_WORKING_DIR, REMOTE_WORKING_DIR))
+    run('mkdir %s' % (REMOTE_WORKING_DIR))
+    run('chmod 777 %s' % (REMOTE_WORKING_DIR))
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)
@@ -70,8 +107,13 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
         destenv = "%s/bootenv.sh" % stagedir
         put(env_conf, destenv)
     destpgm = destpgm + " " + args
+
+    local_cmd = _make_ssh("'cd %s;%s'" %(stagedir, destpgm))
+    if local_cmd:
+        local(local_cmd)
+
     with cd(stagedir):
-        run(destpgm)
+        #run(destpgm)
         try:
             fetch_conf(output=output, stagedir=stagedir)
         except:

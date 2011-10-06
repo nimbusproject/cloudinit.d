@@ -1,0 +1,1 @@
+{"SSHFS_MOUNTHOST": "${mounthost}", "SSHFS_MOUNTDIR" : "${mountdir}", "SSHFS_MOUNTUSER": "${mountuser}"}
