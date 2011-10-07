@@ -67,10 +67,6 @@ def _make_ssh(pgm, args=""):
 
     cmd = "%s %s %s %s %s%s %s %s" % (sshexec, port, ssh_opts, key, user, env.host, pgm, args)
 
-    f = open("/tmp/balls", "w")
-    f.write(cmd)
-    f.close()
-
     return cmd
 
 
