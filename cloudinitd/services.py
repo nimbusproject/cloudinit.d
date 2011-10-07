@@ -345,8 +345,10 @@ class SVCContainer(object):
         if fabfile[-4:] == ".pyc":
             fabfile = fabfile[0:-4] + ".py"
             cloudinitd.log(self._log, logging.DEBUG, "modfiled fabfile is: %s" % (fabfile))
-
-        cmd = fabexec + " -f %s -D -u %s -i %s " % (fabfile, self._s.username, self._s.localkey)
+        key_str = ""
+        if self._s.localkey:
+            key_str = "-i %s" % (self._s.localkey)
+        cmd = fabexec + " -f %s -D -u %s %s " % (fabfile, self._s.username, key_str)
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
@@ -356,7 +358,11 @@ class SVCContainer(object):
             scpexec = os.environ['CLOUDINITD_SCP']
         if recursive:
             scpexec += " -r"
-        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s " % (self._s.localkey)
+        key_str = ""
+        if self._s.localkey:
+            key_str = "-i %s" % (self._s.localkey)
+
+        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s " % (key_str)
         hostname = self._expand_attr(self._s.hostname)
         if forcehost:
             hostname = forcehost
@@ -385,7 +391,11 @@ class SVCContainer(object):
         user = ""
         if self._s.username:
             user = "%s@" % (self._s.username)
-        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i %s %s%s" % (self._s.localkey, user, host)
+
+        key_str = ""
+        if self._s.localkey:
+            key_str = "-i %s" % (self._s.localkey)
+        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s %s%s" % (key_str, user, host)
         return cmd
 
     def get_db_id(self):
