@@ -460,9 +460,9 @@ def iaas_validate(svc, log=logging):
     rc = 0
     msgs = []
     # make sure they have a local key if they are trying to ssh anywhere
-    if not svc._s.localkey:
+    if not svc._s.localkey and 'SSH_AUTH_SOCK' not in os.environ:
         if svc._s.readypgm or svc._s.bootpgm:
-            raise ConfigException("If you are using a readypgm or a bootpgm you must have an ssh key")
+            raise ConfigException("If you are using a readypgm or a bootpgm you must have an ssh key.  Either in the launch plan or via ssh forwarding")
         msgs.append("You have no localsshkeyname set for this plan.")
         rc = 1
 
