@@ -20,7 +20,6 @@ except:
     from boto.ec2.regioninfo import RegionInfo
 import os
 import cloudinitd
-import urlparse
 from cloudinitd.exceptions import ConfigException, IaaSException, APIUsageException
 
 
@@ -131,6 +130,7 @@ class IaaSBotoConn(object):
         return x
 
     def _find_instance(self, instance_id):
+
         reservation = self._con.get_all_instances(instance_ids=[instance_id,])
         if len(reservation) < 1:
             raise IaaSException(Exception("There is no instance %s" % (instance_id)))
@@ -350,7 +350,7 @@ class IaaSBotoInstance(object):
             try:
                 x = self._instance.terminate()
             except IndexError:
-                return None
+                raise
         finally:
             self._lock.release()
         return x

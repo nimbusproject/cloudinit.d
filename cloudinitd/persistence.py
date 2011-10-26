@@ -17,8 +17,6 @@ import cloudinitd
 from cloudinitd.exceptions import APIUsageException
 
 
-
-
 metadata = MetaData()
 
 
