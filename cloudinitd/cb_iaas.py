@@ -8,10 +8,16 @@ import uuid
 import boto
 import logging
 import boto.ec2
-from libcloud.types import Provider
-from libcloud.providers import get_driver
+try:
+    from libcloud.types import Provider
+    from libcloud.providers import get_driver
+    from libcloud.base import NodeImage, NodeAuthSSHKey
+except ImportError:
+    from libcloud.compute.types import Provider
+    from libcloud.compute.providers import get_driver
+    from libcloud.compute.base import NodeImage, NodeAuthSSHKey
+
 import boto.ec2
-from libcloud.base import NodeImage, NodeAuthSSHKey
 #warnings.simplefilter('default')
 
 try:
