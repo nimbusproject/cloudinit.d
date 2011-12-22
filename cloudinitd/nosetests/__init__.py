@@ -9,8 +9,8 @@ g_plans_dir = os.path.join(dir, "tests/plans/")
 
 if 'CLOUDINITD_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDINITD_IAAS_SECRET_KEY' not in os.environ:
     os.environ['CLOUDINITD_TESTENV'] = "1"
-    os.environ['CLOUDINITD_FAB'] = "/bin/true"
-    os.environ['CLOUDINITD_SSH'] = "/bin/true"
+    os.environ['CLOUDINITD_FAB'] = cloudinitd.find_true()
+    os.environ['CLOUDINITD_SSH'] = cloudinitd.find_true()
     os.environ['CLOUDINITD_IAAS_ACCESS_KEY'] = "NOTHING"
     os.environ['CLOUDINITD_IAAS_SECRET_KEY'] = "NOTHING"
     os.environ['CLOUDINITD_IAAS_ACCESS_KEY'] = "notrealkey"

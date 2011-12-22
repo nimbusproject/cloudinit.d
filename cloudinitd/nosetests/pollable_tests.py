@@ -46,7 +46,7 @@ class PollableTests(unittest.TestCase):
         self.assertTrue(rc)
 
     def test_popen_true(self):
-        cmd = "/bin/true"
+        cmd = cloudinitd.find_true()
         pexe = PopenExecutablePollable(cmd, allowed_errors=0)
         pexe.start()
         rc = pexe.poll()
@@ -94,7 +94,7 @@ class PollableTests(unittest.TestCase):
         self.assertFalse(failed)
 
     def test_multilevel_simple(self):
-        cmd = "/bin/true"
+        cmd = cloudinitd.find_true()
         pexe1_1 = PopenExecutablePollable(cmd, allowed_errors=0)
         pexe1_2 = PopenExecutablePollable(cmd, allowed_errors=0)
         pexe2_1 = PopenExecutablePollable(cmd, allowed_errors=0)
@@ -111,7 +111,7 @@ class PollableTests(unittest.TestCase):
             rc = mcp.poll()
 
     def test_multilevel_error(self):
-        cmd = "/bin/true"
+        cmd = cloudinitd.find_true()
         pexe1_1 = PopenExecutablePollable(cmd, allowed_errors=0, timeout=60)
         pexe1_2 = PopenExecutablePollable(cmd, allowed_errors=0, timeout=60)
         pexe2_1 = PopenExecutablePollable(cmd, allowed_errors=0, timeout=60)

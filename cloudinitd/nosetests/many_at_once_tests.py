@@ -17,7 +17,16 @@ class ManyAtOnceTests(unittest.TestCase):
     def tearDown(self):
         cloudinitd.close_log_handlers()
 
-    def simple_test(self, conf_file):
+    def _start_one(self, conf_file):
+
+        dir = tempfile.mkdtemp()
+        conf_file = self.plan_basedir + "/" + conf_file + "/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        return (dir, cb)
+
+    def _simple_test(self, conf_file):
 
         dir = tempfile.mkdtemp()
         conf_file = self.plan_basedir + "/oneservice/top.conf"
