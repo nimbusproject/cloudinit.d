@@ -84,7 +84,7 @@ VM to another and are described in the next section.
 
 The next parameter 'readypgm' is a path to a localfile that tests to see 
 if the VM is ready for use.  Once the VM is launched and configured this 
-file is transfered to it and run.  The program should check to see that 
+file is transferred to it and run.  The program should check to see that
 all services needed by this host are running properly and thus the 
 machine is ready to be used.  The program should block until either it 
 determines that machine and all of its services have booted and are 
@@ -136,14 +136,14 @@ boot-levels.
 Each boot-level is a single configuration file that consists of [svc-*] 
 sections as described above. (Details on the svc-* sections can be found 
 in sample-level.conf).  Every service in this section is started, 
-configured and tested at the same time.  The have no dependencies on 
-each.  The boot level is not considered complete until every single 
-service has started and its ready program has completed successfully.  
-If any svc fails, the entire boot level fails.
+configured and tested at the same time.  They have no dependencies
+between each other.  The boot level is not considered complete until
+every single service has started and its ready program has completed
+successfully.  If any svc fails, the entire boot level fails.
 
 Once we have boot levels described we simply need to describe their 
 order. This is done in a top-level configuration file.  (see 
-sample-top.conf for details).  here is an example:
+sample-top.conf for details).  Here is an example:
 
     [runlevels]
     level1: sample-level1.conf
@@ -180,5 +180,3 @@ template is.  cloudinit.d then uses all the values it has from the
 services 'deps' file to fill in the template. This file is always 
 uploaded to: /tmp/nimbusconf/bootconf.json.  The users bootconf program 
 can read it in to determine the needed values.
-
-
