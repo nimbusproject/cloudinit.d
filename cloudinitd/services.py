@@ -10,8 +10,6 @@ import bootfabtasks
 import tempfile
 import string
 from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
-import logging
-import cloudinitd
 from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
 import simplejson as json
@@ -147,7 +145,7 @@ class SVCContainer(object):
             if self._s.state == 0:
                 pass
 
-        self._stagedir = "%s/%s" % (REMOTE_WORKING_DIR, self.name)
+        self._stagedir = "%s/%s" % (get_remote_working_dir(), self.name)
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
         
         self._db.db_commit()
@@ -684,7 +682,7 @@ class SVCContainer(object):
 
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s'" % (host, bootpgm, bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir)
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s'" % (host, bootpgm, bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir())
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 

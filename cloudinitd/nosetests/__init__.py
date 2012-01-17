@@ -24,17 +24,5 @@ if 'CLOUDINITD_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDINITD_IAAS_SECRET_KE
     os.environ['CLOUDINITD_IAAS_SSHKEY'] = "/etc/group"
     os.environ['CLOUDINITD_SSH_USERNAME'] = "NOTHING"
 
-
-from cloudinitd.nosetests.service_tests import *
-from cloudinitd.nosetests.basic_tests import *
-from cloudinitd.nosetests.basic_unit_tests import *
-from cloudinitd.nosetests.instance_dies_tests import *
-from cloudinitd.nosetests.pollable_tests import *
-from cloudinitd.nosetests.service_unit_tests import *
-from cloudinitd.nosetests.cloudinitd_tests import *
-from cloudinitd.nosetests.prelaunch_tests import *
-from cloudinitd.nosetests.plan_tests import *
-from cloudinitd.nosetests.outputjson_tests import *
-from cloudinitd.nosetests.validate_tests import *
-from cloudinitd.nosetests.singlevm_tests import *
-from cloudinitd.nosetests.badplan_cleanup_tests import *
+def is_a_test():
+    return 'CLOUDINITD_TESTENV' in os.environ and os.environ['CLOUDINITD_TESTENV'] == "1"

@@ -59,7 +59,7 @@ class ManyAtOnceTests(unittest.TestCase):
         self._status(dir, cb.run_name)
         self._terminate(dir, cb.run_name)
 
-    def test_ge_service(self):
+    def test_get_service(self):
         tst_name = "multilevelsimple"
         (dir, cb) = self._start_one(tst_name)
         svc = cb.get_service("Two")

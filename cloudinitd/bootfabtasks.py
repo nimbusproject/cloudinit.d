@@ -85,9 +85,9 @@ def readypgm(pgm=None, args=None, stagedir=None):
     with cd(stagedir):
         run(destpgm)
 
-def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None):
+def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None, remotedir=None):
     args = urllib.unquote(args)
-    run('mkdir %s;chmod 777 %s' % (REMOTE_WORKING_DIR, REMOTE_WORKING_DIR))
+    run('mkdir %s;chmod 777 %s' % (remotedir, remotedir))
     run('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)

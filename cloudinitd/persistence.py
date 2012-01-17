@@ -1,5 +1,4 @@
 import sqlalchemy
-import shlex
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import mapper
