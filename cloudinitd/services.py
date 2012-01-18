@@ -229,14 +229,14 @@ class SVCContainer(object):
                 if self._s.terminatepgm:
                     cmd = self._get_termpgm_cmd()
                     cloudinitd.log(self._log, logging.INFO, "%s adding the terminate program to the poller %s" % (self.name, cmd))
-                    self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                    self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=self._s.pgm_timeout)
                     self._term_host_pollers.add_level([self._terminate_poller])
                     pass
                 else:
                     cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
 
                 cmd = self._get_directory_cleanup_cmd()
-                self._rmdir_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, timeout=1200)
+                self._rmdir_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, timeout=self._s.pgm_timeout)
                 self._term_host_pollers.add_level([self._rmdir_poller])
                 if self._s.instance_id:
                     iaas_con = iaas_get_con(self)
@@ -260,7 +260,7 @@ class SVCContainer(object):
 
         if self._s.image:
             cloudinitd.log(self._log, logging.INFO, "%s launching IaaS %s" % (self.name, self._s.image))
-            self._hostname_poller = InstanceHostnamePollable(svc=self, log=self._log, timeout=1200, done_cb=self._hostname_poller_done)
+            self._hostname_poller = InstanceHostnamePollable(svc=self, log=self._log, timeout=self._s.pgm_timeout, done_cb=self._hostname_poller_done)
             self._term_host_pollers.add_level([self._hostname_poller])
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
@@ -298,13 +298,13 @@ class SVCContainer(object):
 
         if self._do_boot or self._do_ready:
             cloudinitd.log(self._log, logging.DEBUG, "Adding the port poller to %s " % (self._s.hostname))
-            self._port_poller = PortPollable(self._expand_attr(self._s.hostname), self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=1200)
+            self._port_poller = PortPollable(self._expand_attr(self._s.hostname), self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=self._s.pgm_timeout)
             self._pollables.add_level([self._port_poller])
         if self._do_boot:
             # add the ready command no matter what
             cmd = self._get_ssh_ready_cmd()
             cloudinitd.log(self._log, logging.DEBUG, "Adding a ssh poller %s " % (cmd))
-            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=1200, allowed_errors=2)
+            self._ssh_poller = PopenExecutablePollable(cmd, log=self._log, callback=self._context_cb, timeout=self._s.pgm_timeout, allowed_errors=2)
             self._pollables.add_level([self._ssh_poller])
 
             # if already contextualized, dont do it again (could be problematic).  we probably need to make a rule
@@ -315,7 +315,7 @@ class SVCContainer(object):
                 if self._s.bootpgm:
                     cmd = self._get_boot_cmd()
                     cloudinitd.log(self._log, logging.DEBUG, "%s running the boot pgm command %s" % (self.name, cmd))
-                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=1200, done_cb=self.context_done_cb)
+                    self._boot_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=0, callback=self._context_cb, timeout=self._s.pgm_timeout, done_cb=self.context_done_cb)
                     self._pollables.add_level([self._boot_poller])
                 else:
                     self.context_done_cb(None)
@@ -330,7 +330,7 @@ class SVCContainer(object):
             if self._s.readypgm:
                 cmd = self._get_readypgm_cmd()
                 cloudinitd.log(self._log, logging.DEBUG, "%s running the ready pgm command %s" % (self.name, cmd))
-                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=1200)
+                self._ready_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=self._s.pgm_timeout)
                 self._pollables.add_level([self._ready_poller])
             else:
                 cloudinitd.log(self._log, logging.DEBUG, "%s has no ready program" % (self.name))

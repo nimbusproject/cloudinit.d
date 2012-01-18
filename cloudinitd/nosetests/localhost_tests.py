@@ -2,14 +2,10 @@ import tempfile
 import unittest
 from unittest.case import SkipTest
 import uuid
-from cloudinitd.cb_iaas import iaas_get_con
 from cloudinitd.statics import get_remote_working_dir
-from cloudinitd.user_api import CloudInitD
 import os
 import cloudinitd
 import cloudinitd.cli.boot
-import  time
-
 
 
 class CloudInitDLocalhostTests(unittest.TestCase):
@@ -71,7 +67,7 @@ class CloudInitDLocalhostTests(unittest.TestCase):
         self.assertEqual(rc, 0)
 
         rc = os.path.exists(wd)
-        self.assertTrue(rc, "Thdirectory %s should NOT exist" % (wd))
+        self.assertTrue(rc, "The directory %s should NOT exist" % (wd))
 
     def test_default_directory_created(self):
         self._basic_directory_created()
@@ -82,3 +78,65 @@ class CloudInitDLocalhostTests(unittest.TestCase):
             self._basic_directory_created()
         finally:
             del os.environ['REMOTE_WORKING_DIR_ENV_STR']
+
+    def test_boot_timeout(self):
+
+        self._tst_local_host()
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/localhost_to/boot_to_top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+
+        try:
+            n = "Starting up run"
+            line = self._find_str(outfile, n)
+            self.assertNotEqual(line, None)
+            runname = line[len(n):].strip()
+            print "run name is %s" % (runname)
+            self.assertNotEqual(rc, 0)
+        finally:
+            cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+
+    def test_terminate_timeout(self):
+
+        self._tst_local_host()
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/localhost_to/terminate_to_top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+
+        wd = get_remote_working_dir()
+        rc = os.path.exists(wd)
+        self.assertTrue(rc, "The directory %s should exist" % (wd))
+
+        print "cleanup"
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertNotEqual(rc, 0, "The terminate should have timed out")
+
+    def test_ready_timeout(self):
+
+        self._tst_local_host()
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/localhost_to/ready_to_top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+
+        try:
+            n = "Starting up run"
+            line = self._find_str(outfile, n)
+            self.assertNotEqual(line, None)
+            runname = line[len(n):].strip()
+            print "run name is %s" % (runname)
+            self.assertNotEqual(rc, 0)
+        finally:
+            cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])

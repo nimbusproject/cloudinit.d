@@ -72,6 +72,7 @@ service_table = Table('service', metadata,
     Column('terminatepgm', String(1024)),
     Column('terminatepgm_args', String(1024), default=""),
     Column('iaas_launch', Boolean),
+    Column('pgm_timeout', Integer, default=1200),
     )
 
 attrbag_table = Table('attrbag', metadata,
@@ -155,6 +156,7 @@ class ServiceObject(object):
         self.bootpgm_args = ""
         self.terminatepgm = None
         self.terminatepgm_args = ""
+        self.pgm_timeout = None
         self.instance_id = None
         self.iaas_url = None
         self.iaas_key = None
@@ -186,6 +188,7 @@ class ServiceObject(object):
         terminatepgm = config_get_or_none(parser, section, "terminatepgm", self.terminatepgm)
         terminatepgm_args = config_get_or_none(parser, section, "terminatepgm_args", self.terminatepgm_args)
 
+        pgm_timeout = config_get_or_none(parser, section, "pgm_timeout", self.pgm_timeout)
 
         allo = config_get_or_none(parser, section, "allocation", self.allocation)
         image = config_get_or_none(parser, section, "image", self.image)
@@ -251,7 +254,9 @@ class ServiceObject(object):
             terminatepgm = db.default_terminatepgm
         if not terminatepgm_args:
             terminatepgm_args = db.default_terminatepgm_args
-
+        if not pgm_timeout:
+            pgm_timeout = db.default_pgm_timeout
+            
 
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
@@ -259,6 +264,7 @@ class ServiceObject(object):
         self.bootpgm_args = bootpgm_args
         self.terminatepgm = _resolve_file_or_none(conf_dir, terminatepgm, conf_file, has_args=True)
         self.terminatepgm_args = terminatepgm_args
+        self.pgm_timeout = pgm_timeout
 
         self.hostname = hostname
         self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file, has_args=True)
@@ -408,6 +414,7 @@ class CloudInitDDB(object):
         self.default_image = config_get_or_none(parser, s, "image")
         self.default_terminatepgm = config_get_or_none(parser, s, "terminatepgm")
         self.default_terminatepgm_args = config_get_or_none(parser, s, "terminatepgm_args")
+        self.default_pgm_timeout = config_get_or_none(parser, s, "pgm_timeout")
 
         all_sections = parser.sections()
         for s in all_sections:

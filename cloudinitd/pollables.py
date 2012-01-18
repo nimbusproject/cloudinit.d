@@ -54,8 +54,8 @@ class Pollable(object):
         if self._timeout == 0:
             return False
         now = datetime.datetime.now()
-        diff = now - datetime.timedelta(seconds=self._timeout)
-        if diff.second > self._timeout:
+        diff = now - self._start_time
+        if diff.seconds > self._timeout:
             self._exception = TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
             raise self._exception
         return False
