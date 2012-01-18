@@ -1,3 +1,4 @@
+from datetime import datetime
 import tempfile
 import unittest
 from unittest.case import SkipTest
@@ -119,8 +120,13 @@ class CloudInitDLocalhostTests(unittest.TestCase):
         self.assertTrue(rc, "The directory %s should exist" % (wd))
 
         print "cleanup"
+        start = datetime.now()
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-        self.assertNotEqual(rc, 0, "The terminate should have timed out")
+        end = datetime.now()
+        self.assertEqual(rc, 0, "terminate will return 0 unless something crazy bad happens")
+
+        diff = end - start
+        self.assertLess(diff.seconds, 50)
 
     def test_ready_timeout(self):
 
