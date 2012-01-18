@@ -1,3 +1,4 @@
+import shutil
 import urllib
 import os
 from fabric.api import env, run, put, cd, get, local
@@ -84,6 +85,9 @@ def readypgm(pgm=None, args=None, stagedir=None):
     destpgm = destpgm + " " + args
     with cd(stagedir):
         run(destpgm)
+
+def cleanup_dirs(stagedir=None):
+    shutil.rmtree(stagedir, ignore_errors=True)
 
 def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None, remotedir=None):
     args = urllib.unquote(args)

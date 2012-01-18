@@ -163,6 +163,7 @@ class SVCContainer(object):
         self._ready_poller = None
         self._boot_poller = None
         self._terminate_poller = None
+        self._rmdir_poller = None
         self._shutdown_poller = None
         self.last_exception = None
         self._port_poller = None
@@ -192,6 +193,7 @@ class SVCContainer(object):
         self._boot_poller = None
         self._terminate_poller = None
         self._shutdown_poller = None
+        self._rmdir_poller = None
         self.last_exception = None
         self._boot_output_file = None
         self._port_poller = None
@@ -232,6 +234,10 @@ class SVCContainer(object):
                     pass
                 else:
                     cloudinitd.log(self._log, logging.DEBUG, "%s no terminate program specified, right to terminate" % (self.name))
+
+                cmd = self._get_directory_cleanup_cmd()
+                self._rmdir_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, timeout=1200)
+                self._term_host_pollers.add_level([self._rmdir_poller])
                 if self._s.instance_id:
                     iaas_con = iaas_get_con(self)
                     try:
@@ -281,6 +287,7 @@ class SVCContainer(object):
         self._ready_poller = None
         self._boot_poller = None
         self._terminate_poller = None
+        self._rmdir_poller = None
 
         self._pollables = MultiLevelPollable(log=self._log)
 
@@ -563,10 +570,15 @@ class SVCContainer(object):
                 msg = "Service %s error running shutdown on iaas: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = ""
                 stderr = ""
+            if self._rmdir_poller in multiex.pollable_list:
+                msg = "Service %s error running rmdir program on: %s\n%s" % (self._myname, self._s.hostname, msg)
+                stdout = self._rmdir_poller.get_stdout()
+                stderr = self._rmdir_poller.get_stderr()
             if self._terminate_poller in multiex.pollable_list:
                 msg = "Service %s error running terminate program on: %s\n%s" % (self._myname, self._s.hostname, msg)
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
+
             if self._port_poller  in multiex.pollable_list:
                 msg = "the poller that attempted to connect to the ssh port on %s failed for %s\n%s" % (self._s.hostname, self._myname, msg)
                 stdout = ""
@@ -654,9 +666,15 @@ class SVCContainer(object):
         self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
         cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
 
-
     def get_ssh_command(self):
         return self._get_ssh_command(self._s.hostname)
+
+    def _get_directory_cleanup_cmd(self):
+        host = self._expand_attr(self._s.hostname)
+        cmd = self._get_fab_command() + " cleanup_dirs:hosts=%s,stagedir=%s" % (host, self._stagedir)
+        cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
+        return cmd
+
 
     def _get_ssh_ready_cmd(self):
         cmd = self._get_ssh_command(self._s.hostname) + " /bin/true"
