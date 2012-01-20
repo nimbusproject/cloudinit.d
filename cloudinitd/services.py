@@ -677,7 +677,7 @@ class SVCContainer(object):
 
 
     def _get_ssh_ready_cmd(self):
-        cmd = self._get_ssh_command(self._s.hostname) + " /bin/true"
+        cmd = self._get_ssh_command(self._s.hostname) + " true"
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
 
