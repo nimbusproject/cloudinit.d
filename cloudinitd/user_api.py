@@ -1,18 +1,18 @@
 # This API allows user to manage services in multiple clouds.  It can
 # launch/terminate/and report status on an entire boot plan.
 #
-# a boot plan is a series of levels that are run in serial.  each subsequent
+# A boot plan is a series of levels that are run in serial.  Each subsequent
 # level depends on attributes of the previous and can thus not be started
 # until the previous completes.
 #
-# each level contains a set of services to run.  All serices in a level
+# Each level contains a set of services to run.  All services in a level
 # can be started at the same time and have no dependency on each other.
-# as a loose description, a service is a process running on a remote
+# As a loose description, a service is a process running on a remote
 # machine.  Often times part of starting the service includes launching
 # a IaaS VM and configuring it, but this is not strictly needed.  Services
 # can be started on existing machines as well.
 #
-# when a user creates a boot plan they describe each service with three
+# When a user creates a boot plan they describe each service with three
 # major parts:
 #  1) a VM image to launch OR an IP address where the service will be run
 #  2) a contextualization document.  This is enough information to configure
