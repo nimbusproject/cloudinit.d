@@ -573,7 +573,6 @@ def main(argv=sys.argv[1:]):
     try:
         try:
             rc = func(options, args)
-            print ""
         except SystemExit:
             raise
         except APIUsageException, apiex:
