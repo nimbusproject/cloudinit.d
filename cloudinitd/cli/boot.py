@@ -428,7 +428,7 @@ def reboot(options, args):
 
 def list_commands(options, args):
     """
-    List all of the possible plans accepted by this program.
+    List all of the possible commands accepted by this program.
     """
     line_len = 60
     global g_commands
