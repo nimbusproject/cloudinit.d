@@ -30,7 +30,7 @@ def find_true():
 
 def log(logger, level, msg, tb=None):
 
-    msg = msg.decode("utf8")
+    msg = msg.decode("utf8", "replace")
     if logger is None:
         print msg
         return
