@@ -1,3 +1,4 @@
+
 import pipes
 import shlex
 import traceback
@@ -227,6 +228,7 @@ class SVCContainer(object):
                 cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
                 if self._s.terminatepgm:
+                    self._do_attr_bag()
                     cmd = self._get_termpgm_cmd()
                     cloudinitd.log(self._log, logging.INFO, "%s adding the terminate program to the poller %s" % (self.name, cmd))
                     self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=self._s.pgm_timeout)
@@ -282,7 +284,8 @@ class SVCContainer(object):
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
 
     def _make_pollers(self):
-        self._do_attr_bag()
+        if not (self._do_terminate and not self._do_ready and not self._do_boot):
+            self._do_attr_bag()
         
         self._ready_poller = None
         self._boot_poller = None
@@ -472,9 +475,6 @@ class SVCContainer(object):
 
     def _do_attr_bag(self):
 
-        if self._do_terminate and not self._do_ready and not self._do_boot:
-            return
-
         for bao in self._s.attrs:
             val = bao.value
             self._attr_bag[bao.key] = self._expand_attr(val)
@@ -512,7 +512,6 @@ class SVCContainer(object):
         self._running = True
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
         # values
-        # >>>>> self._do_attr_bag()
         try:
 
             if self._term_host_pollers and not self._iass_started:

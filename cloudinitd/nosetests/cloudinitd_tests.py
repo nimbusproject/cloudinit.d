@@ -66,6 +66,21 @@ class CloudInitDTests(unittest.TestCase):
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
 
+    def test_terminate_variable(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate_variable/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
     def test_list_commands(self):
         (osf, outfile) = tempfile.mkstemp()
         os.close(osf)

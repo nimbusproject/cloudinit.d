@@ -2,10 +2,6 @@ import cloudinitd
 import cloudinitd.nosetests
 from cloudinitd.user_api import CloudInitD
 import tempfile
-import logging
-
-
-
 import unittest
 import os
 
