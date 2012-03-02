@@ -222,9 +222,9 @@ class SVCContainer(object):
 
     def _make_first_pollers(self):
 
-        self._do_attr_bag()
         self._term_host_pollers = MultiLevelPollable(log=self._log)
         if self._do_terminate:
+            self._do_attr_bag()
             if self._s.state == cloudinitd.service_state_terminated:
                 cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
@@ -284,7 +284,7 @@ class SVCContainer(object):
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
 
     def _make_pollers(self):
-        if self._do_terminate:
+        if self._do_boot or self._do_ready:
             self._do_attr_bag()
         
         self._ready_poller = None
