@@ -135,6 +135,10 @@ class CloudInitD(object):
                     (s_log, logfile) = cloudinitd.make_logger(log_level, self.run_name, logdir=logdir, servicename=s.name)
 
                     svc = self._boot_top.new_service(s, self._db, log=s_log, logfile=logfile)
+
+                    # if boot is not set we assume it was already booted and we expand
+                    if not boot:
+                        svc._do_attr_bag()
                     level_list.append(svc)
                 except Exception, svcex:
                     if not continue_on_error:

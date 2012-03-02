@@ -224,7 +224,6 @@ class SVCContainer(object):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)
         if self._do_terminate:
-            self._do_attr_bag()
             if self._s.state == cloudinitd.service_state_terminated:
                 cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
@@ -471,7 +470,6 @@ class SVCContainer(object):
                 val = val.replace(match.group(0), subs)
             match = pattern.search(val[ndx:])
         return val
-
 
     def _do_attr_bag(self):
 
