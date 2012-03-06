@@ -228,6 +228,7 @@ class SVCContainer(object):
                 cloudinitd.log(self._log, logging.WARN, "%s has already been terminated." % (self.name))
             else:
                 if self._s.terminatepgm:
+                    self._do_attr_bag()
                     cmd = self._get_termpgm_cmd()
                     cloudinitd.log(self._log, logging.INFO, "%s adding the terminate program to the poller %s" % (self.name, cmd))
                     self._terminate_poller = PopenExecutablePollable(cmd, log=self._log, allowed_errors=1, callback=self._context_cb, timeout=self._s.pgm_timeout)
