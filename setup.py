@@ -56,7 +56,7 @@ means launching and configuring all of the VMs needed for each service in the le
 booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
-      install_requires = ["boto == 2.0", "sqlalchemy == 0.7.5", "fabric == 1.3", "simplejson >= 2.3", "apache-libcloud == 0.8.0", "uuid", "PyCrypto >=2.1, <2.4"],
+      install_requires = ["boto == 2.0", "sqlalchemy == 0.7.6", "fabric == 1.3", "simplejson >= 2.3", "apache-libcloud == 0.8.0", "uuid", "PyCrypto >=2.1, <2.4"],
 
       classifiers=[
           'Development Status :: 4 - Beta',
