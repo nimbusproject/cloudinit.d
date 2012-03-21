@@ -408,7 +408,7 @@ class PopenExecutablePollable(Pollable):
 
     def _run(self):
         cloudinitd.log(self._log, logging.DEBUG, "running the command %s" % (str(self._cmd)))
-        self._p = subprocess.Popen(self._cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
+        self._p = subprocess.Popen(self._cmd, shell=True, stdin=open(os.devnull), stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
 
     def get_command(self):
         return self._cmd
