@@ -68,7 +68,7 @@ class BootTopLevel(object):
     def poll(self):
         return self._multi_top.poll()
 
-    def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None, logfile=None):
+    def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None, logfile=None, run_name=None):
 
         if s.name in self.services.keys():
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
@@ -87,7 +87,7 @@ class BootTopLevel(object):
         self._logfile = logfile
 
         # logname = <log dir>/<runname>/s.name
-        svc = SVCContainer(db, s, self, log=log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate, logfile=self._logfile)
+        svc = SVCContainer(db, s, self, log=log, callback=self._service_callback, boot=boot, ready=ready, terminate=terminate, logfile=self._logfile, run_name=run_name)
         self.services[s.name] = svc
         return svc
 
@@ -125,7 +125,7 @@ class SVCContainer(object):
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
-    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False, logfile=None):
+    def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False, logfile=None, run_name=None):
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -136,6 +136,7 @@ class SVCContainer(object):
         self._readypgm = s.readypgm
         self._s = s
         self.name = s.name
+        self.run_name = run_name
         self._db = db
         self._top_level = top_level
         self._logfile = logfile
@@ -418,11 +419,13 @@ class SVCContainer(object):
             rc = self._s.hostname
         elif key == "instance_id":
             rc = self._s.instance_id
+        elif key == "run_name":
+            rc = self.run_name
         else:
             try:
                 rc = self._attr_bag[key]
             except Exception, ex:
-                # if it isn't in the attr bad pull it from the services db defs.  This should allow the user the ability
+                # if it isn't in the attr bag pull it from the services db defs.  This should allow the user the ability
                 # to query everything about the service
                 try:
                     rc = self._s.__getattribute__(key)

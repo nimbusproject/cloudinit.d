@@ -134,7 +134,7 @@ class CloudInitD(object):
                 try:
                     (s_log, logfile) = cloudinitd.make_logger(log_level, self.run_name, logdir=logdir, servicename=s.name)
 
-                    svc = self._boot_top.new_service(s, self._db, log=s_log, logfile=logfile)
+                    svc = self._boot_top.new_service(s, self._db, log=s_log, logfile=logfile, run_name=self.run_name)
 
                     # if boot is not set we assume it was already booted and we expand
                     if not boot:
