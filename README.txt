@@ -1,10 +1,10 @@
-cloud-boot
-==========
+cloudinit.d
+===========
 
-cloud-boot is a tool for launching and configuring a set of 
+cloudinit.d is a tool for launching and configuring a set of 
 interdependent VMs in a cloud (or set of clouds).
 
-The most primitive feature of cloud-boot is the ability to launch and 
+The most primitive feature of cloudinit.d is the ability to launch and 
 configure Virtual Machines.  That building block is used to arrange 
 'boot levels'.  Any one boot-level is a collection of VMs that can be 
 launched at the same time and have no dependencies on each other. 
@@ -29,7 +29,7 @@ The web server VMs mount the NFS file system and connect to the postgres
 database, thus they cannot be started until the NFS VM and the postgres 
 VM are started.
 
-To launch this application with cloud-boot the NFS VM and the Postgres 
+To launch this application with cloudinit.d the NFS VM and the Postgres 
 VM would be put into boot level 1, and the 3 Apache VMs would be put 
 into boot-level 2.
 
@@ -43,8 +43,8 @@ Booting and configuring a single instance
 -----------------------------------------
 
 Before diving into the details of boot level creation we must first 
-explain how to launch and configure a single VM with cloud-boot.  As 
-input cloud-boot takes a set of configuration files (these will be 
+explain how to launch and configure a single VM with cloudinit.d.  As 
+input cloudinit.d takes a set of configuration files (these will be 
 discussed in detail later).  Here we will just introduce the 'service' 
 section of the configuration file.  This is the part of the 
 configuration that describes a single VM instance and how it should be 
@@ -65,7 +65,7 @@ launched, configured, and tested.  Below is a sample service section:
     deps2: <other dep files>
 
 
-Here cloud-boot it instructed to launch the image 'ami-blahblah' in the 
+Here cloudinit.d it instructed to launch the image 'ami-blahblah' in the 
 cloud 'us-east-1'.  The sshkeyname is the security handle known by the 
 cloud and localsshkeypath is the path a key on the local file system.  
 Allocation is the type (or size) of the instance required.  All of those 
@@ -121,7 +121,7 @@ the svc-webserver would have the following:
     database_ip: ${database.ipaddress}
 
 
-This tells cloud-boot to look at all the previous boot levels and search 
+This tells cloudinit.d to look at all the previous boot levels and search 
 for a service named [svc-database].  Once found it is told to ask that 
 service the value of its variable 'ipaddress'.  This information can 
 then be used by the bootpgm to properly launch the [svc-webserver].
