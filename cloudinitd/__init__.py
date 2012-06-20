@@ -1,5 +1,6 @@
+import logging
 from cloudinitd.exceptions import *
-from cloudinitd.user_api import *
+#from cloudinitd.user_api import *
 from cloudinitd.statics import *
 import urlparse
 
@@ -45,6 +46,42 @@ def log(logger, level, msg, tb=None):
         logger.log(level, stack)
         logger.log(level, "===========")
         logger.log(level, sys.exc_info()[0])
+
+def LogEntryDecorator(func):
+    def wrapped(*args, **kw):
+        log = logging.getLogger("stacktracelog")
+        if (len(log.handlers) == 0):
+            return func(*args, **kw)
+        # see if it is a class
+        try:
+            cls_i = args[0]
+            cls_type = cls_i.__class__
+            is_a_class = True
+        except:
+            is_a_class = False
+            cls_name = ""
+
+        if is_a_class:
+            cls_name = cls_type.__name__ + ":"
+            # see if the class has a logger
+
+            if "name" in cls_i.__dict__:
+                name = cls_i.name + " "
+            else:
+                name = ""
+        # build the log header
+        header = "%s%s%s" % (name, cls_name, func.func_name)
+
+        try:
+            log.log(logging.DEBUG, "Entering %s." % (header))
+            return func(*args, **kw)
+        except Exception, ex:
+            logging.log(logging.DEBUG, "Exiting %s with error: %s." % (header, str(ex)))
+            raise
+        finally:
+            logging.log(logging.DEBUG, "Exiting %s." % (header))
+    return wrapped
+
 
 def get_env_val(key):
     if key.find("env.") == 0:

@@ -5,6 +5,7 @@ import sys
 from optparse import OptionParser
 import uuid
 import stat
+import logging
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.user_api import CloudInitD, CloudServiceException
 from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException
@@ -65,6 +66,9 @@ Run with the command 'commands' to see a list of all possible commands
     opt = bootOpts("loglevel", "l", "Controls the level of detail in the log file", "info", vals=["debug", "info", "warn", "error"])
     opt.add_opt(parser)
     all_opts.append(opt)
+    opt = bootOpts("logstack", "s", "Log stack trace information (extreme debug level)", False, flag=True)
+    opt.add_opt(parser)
+    all_opts.append(opt)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
     all_opts.append(opt)
@@ -104,6 +108,24 @@ Run with the command 'commands' to see a list of all possible commands
     if not options.database:
         dbdir = os.path.expanduser("~/.cloudinitd")
         options.database = dbdir
+
+    if options.logstack:
+        logger = logging.getLogger("stacktracelog")
+        logger.propagate = False
+        logger.setLevel(logging.DEBUG)
+        logdir = os.path.join(options.logdir, options.name)
+        if not os.path.exists(logdir):
+            try:
+                os.mkdir(logdir)
+            except OSError:
+                pass
+        stacklogfile = os.path.join(logdir, "stacktrace.log")
+        handler = logging.handlers.RotatingFileHandler(stacklogfile, maxBytes=100*1024*1024, backupCount=5)
+        logger.addHandler(handler)
+        fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        formatter = logging.Formatter(fmt)
+        handler.setFormatter(formatter)
+
 
     if options.quiet:
         options.verbose = 0

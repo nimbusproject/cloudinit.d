@@ -186,6 +186,7 @@ class InstanceHostnamePollable(Pollable):
                 # this is for historical records in the database
                 self._svc.new_iaas_instance(self._instance)
 
+
     def start(self):
         self.pre_start()
         Pollable.start(self)

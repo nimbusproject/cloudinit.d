@@ -10,6 +10,7 @@ from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, P
 import bootfabtasks
 import tempfile
 import string
+import cloudinitd
 from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
@@ -34,18 +35,23 @@ class BootTopLevel(object):
         self._ready = ready
         self._terminate = terminate
 
+    @cloudinitd.LogEntryDecorator
     def reverse_order(self):
         self._multi_top.reverse_order()
 
+    @cloudinitd.LogEntryDecorator
     def add_level(self, lvl_list):
         self._multi_top.add_level(lvl_list)
 
+    @cloudinitd.LogEntryDecorator
     def get_current_level(self):
         return self._multi_top.get_level()
 
+    @cloudinitd.LogEntryDecorator
     def start(self):
         self._multi_top.start()
 
+    @cloudinitd.LogEntryDecorator
     def get_services(self, basename=None):
         if not basename:
             return self.services.items()
@@ -58,16 +64,19 @@ class BootTopLevel(object):
 
         return svcs
         
-
+    @cloudinitd.LogEntryDecorator
     def get_service(self, name):
         return self.services[name]
 
+    @cloudinitd.LogEntryDecorator
     def cancel(self):
         self._multi_top.cancel()
 
+    @cloudinitd.LogEntryDecorator
     def poll(self):
         return self._multi_top.poll()
 
+    @cloudinitd.LogEntryDecorator
     def new_service(self, s, db, boot=None, ready=None, terminate=None, log=None, logfile=None, run_name=None):
 
         if s.name in self.services.keys():
@@ -91,6 +100,7 @@ class BootTopLevel(object):
         self.services[s.name] = svc
         return svc
 
+    @cloudinitd.LogEntryDecorator
     def find_dep(self, svc_name, attr):
         try:
             svc = self.services[svc_name]
@@ -98,9 +108,11 @@ class BootTopLevel(object):
             raise APIUsageException("service %s not found" % (svc_name))
         return svc.get_dep(attr)
 
+    @cloudinitd.LogEntryDecorator
     def get_exception(self):
         return self._multi_top._exception
 
+    @cloudinitd.LogEntryDecorator
     def get_json_doc(self):
         doc = {}
         count = 0
@@ -156,6 +168,7 @@ class SVCContainer(object):
         self._restart_limit = 2
         self._restart_count = 0
 
+    @cloudinitd.LogEntryDecorator
     def _clean_up(self):
         cloudinitd.log(self._log, logging.DEBUG, "Cleanup")
         self._term_host_pollers = None
@@ -171,6 +184,7 @@ class SVCContainer(object):
         self._port_poller = None
 
 
+    @cloudinitd.LogEntryDecorator
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
         if boot and self._s.state == cloudinitd.service_state_contextualized and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.state), str(terminate)))
@@ -205,6 +219,7 @@ class SVCContainer(object):
         self._iass_started = False
         self._make_first_pollers()
 
+    @cloudinitd.LogEntryDecorator
     def _teminate_done(self, poller):
         cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
 
@@ -215,12 +230,14 @@ class SVCContainer(object):
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s terminate done callback completed" % (self.name))
 
+    @cloudinitd.LogEntryDecorator
     def get_iaas_status(self):
         if not self._hostname_poller:
             return None
         return self._hostname_poller.get_status()
 
 
+    @cloudinitd.LogEntryDecorator
     def _make_first_pollers(self):
 
         self._term_host_pollers = MultiLevelPollable(log=self._log)
@@ -268,6 +285,7 @@ class SVCContainer(object):
         else:
             cloudinitd.log(self._log, logging.INFO, "%s no IaaS image to launch" % (self.name))
 
+    @cloudinitd.LogEntryDecorator
     def pre_start_iaas(self):
         (rc, emsg) = cb_iaas.iaas_validate(self, self._log)
         if rc != 0:
@@ -275,15 +293,18 @@ class SVCContainer(object):
             self._execute_callback(cloudinitd.callback_action_transition, msg)
 
         self._term_host_pollers.pre_start()
+
         if self._hostname_poller:
             self._s.instance_id = self._hostname_poller.get_instance_id()
             self._execute_callback(cloudinitd.callback_action_transition, "Have instance id %s for %s" % (self._s.instance_id, self.name))
             self._s.state = cloudinitd.service_state_launched
-            self._db.db_commit()            
+            self._db.db_commit()
+
         self._iass_started = True
         if self._do_boot:
             self._execute_callback(cloudinitd.callback_action_started, "Started IaaS work for %s" % (self.name))
 
+    @cloudinitd.LogEntryDecorator
     def _make_pollers(self):
         if self._do_boot or self._do_ready:
             self._do_attr_bag()
@@ -342,6 +363,7 @@ class SVCContainer(object):
             cloudinitd.log(self._log, logging.DEBUG, "%s skipping the readypgm" % (self.name))
         self._pollables.start()
 
+    @cloudinitd.LogEntryDecorator
     def _get_fab_command(self):
         fabexec = "fab"
         try:
@@ -361,6 +383,7 @@ class SVCContainer(object):
         cloudinitd.log(self._log, logging.DEBUG, "fab command is: %s" % (cmd))
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
         scpexec = "scp"
         if os.environ.has_key('CLOUDINITD_SCP'):
@@ -384,9 +407,11 @@ class SVCContainer(object):
             cmd += "%s%s:%s %s" % (user, hostname, src, dst)
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def get_scp_username(self):
         return self._s.scp_username
 
+    @cloudinitd.LogEntryDecorator
     def _get_ssh_command(self, host):
         if not host:
             raise ConfigException("Trying to create and ssh command to a null hostname, something is not right.")
@@ -407,12 +432,14 @@ class SVCContainer(object):
         cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s %s%s" % (key_str, user, host)
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def get_db_id(self):
         return self._s.id
 
     def __str__(self):
         return self.name
 
+    @cloudinitd.LogEntryDecorator
     def get_dep(self, key):
         # first parse through the known ones, then hit the attr bag
         if key == "hostname":
@@ -436,11 +463,13 @@ class SVCContainer(object):
             rc = self._expand_attr(rc)
         return rc
 
+    @cloudinitd.LogEntryDecorator
     def get_dep_keys(self):
         # first parse through the known ones, then hit the attr bag
         keys = ["hostname", "instance_id"] + self._attr_bag.keys()# + self._s.__dict__.keys()
         return keys
 
+    @cloudinitd.LogEntryDecorator
     def _expand_attr_list(self, val):
         if not val:
             return val
@@ -455,6 +484,7 @@ class SVCContainer(object):
 
         return " ".join(pipes.quote(s) for s in cmd_args)
 
+    @cloudinitd.LogEntryDecorator
     def _expand_attr(self, val):
         if not val:
             return val
@@ -475,6 +505,7 @@ class SVCContainer(object):
             match = pattern.search(val[ndx:])
         return val
 
+    @cloudinitd.LogEntryDecorator
     def _do_attr_bag(self):
 
         for bao in self._s.attrs:
@@ -485,6 +516,7 @@ class SVCContainer(object):
             self._bootconf = self._fill_template(self._s.bootconf)
             self._bootenv_file = self._json_file_to_env(self._bootconf)
 
+    @cloudinitd.LogEntryDecorator
     def restart(self, boot, ready, terminate, callback=None):
         # terminate should have to be true here
         if self._running:
@@ -500,6 +532,7 @@ class SVCContainer(object):
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=True)
         self._start()
 
+    @cloudinitd.LogEntryDecorator
     def start(self):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
@@ -510,6 +543,7 @@ class SVCContainer(object):
 
         self._start()
 
+    @cloudinitd.LogEntryDecorator
     def _start(self):
         self._running = True
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
@@ -526,6 +560,7 @@ class SVCContainer(object):
                 cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
                 raise
 
+    @cloudinitd.LogEntryDecorator
     def _execute_callback(self, state, msg, ex=None):
         if not self._callback:
             return False
@@ -541,6 +576,7 @@ class SVCContainer(object):
             return True
         return False
 
+    @cloudinitd.LogEntryDecorator
     def poll(self):
         try:
             rc = self._poll()
@@ -598,6 +634,7 @@ class SVCContainer(object):
                 raise ServiceException(ex, self)
             return False
 
+    @cloudinitd.LogEntryDecorator
     def _log_poller_output(self, poller):
         if not poller:
             return
@@ -610,10 +647,12 @@ class SVCContainer(object):
         except Exception, ex:
             cloudinitd.log(self._log, logging.ERROR, "Failed to log output info | %s" % (str(ex)))
 
+    @cloudinitd.LogEntryDecorator
     def _context_cb(self, popen_poller, action, msg):
         if action == cloudinitd.callback_action_transition:
             self._execute_callback(action, msg)
 
+    @cloudinitd.LogEntryDecorator
     def _poll(self):
         if not self._running:
             return True
@@ -638,6 +677,7 @@ class SVCContainer(object):
             self._term_host_pollers = None
         return False
 
+    @cloudinitd.LogEntryDecorator
     def _read_boot_output(self):
         """
         Read in the output of the bootpgm to the attr bag
@@ -655,33 +695,38 @@ class SVCContainer(object):
             bao = BagAttrsObject(k, j_doc[k])
             self._s.attrs.append(bao)
 
+    @cloudinitd.LogEntryDecorator
     def context_done_cb(self, poller):
         self._read_boot_output()
         self._s.state = cloudinitd.service_state_contextualized
         self._db.db_commit()
         cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
 
+    @cloudinitd.LogEntryDecorator
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()
         self._db.db_commit()
         self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
         cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
 
+    @cloudinitd.LogEntryDecorator
     def get_ssh_command(self):
         return self._get_ssh_command(self._s.hostname)
 
+    @cloudinitd.LogEntryDecorator
     def _get_directory_cleanup_cmd(self):
         host = self._expand_attr(self._s.hostname)
         cmd = self._get_fab_command() + " cleanup_dirs:hosts=%s,stagedir=%s" % (host, self._stagedir)
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
         return cmd
 
-
+    @cloudinitd.LogEntryDecorator
     def _get_ssh_ready_cmd(self):
         cmd = self._get_ssh_command(self._s.hostname) + " true"
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def _get_readypgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
         readypgm = self._expand_attr(self._s.readypgm)
@@ -692,6 +737,7 @@ class SVCContainer(object):
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def _get_boot_cmd(self):
         host = self._expand_attr(self._s.hostname)
 
@@ -705,6 +751,7 @@ class SVCContainer(object):
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def _get_termpgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
         terminatepgm = self._expand_attr(self._s.terminatepgm)
@@ -715,6 +762,7 @@ class SVCContainer(object):
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
         return cmd
 
+    @cloudinitd.LogEntryDecorator
     def _fill_template(self, path):
 
         if not os.path.exists(path):
@@ -748,6 +796,7 @@ class SVCContainer(object):
 
         return newpath
 
+    @cloudinitd.LogEntryDecorator
     def _json_file_to_env(self, jsonfile):
         f = open(jsonfile, "r")
         vals_dict = json.load(f)
@@ -770,18 +819,21 @@ class SVCContainer(object):
 
         return newpath
 
+    @cloudinitd.LogEntryDecorator
     def cancel(self):
         if self._pollables:
             self._pollables.cancel()
         if self._term_host_pollers:
             self._term_host_pollers.cancel()
 
+    @cloudinitd.LogEntryDecorator
     def new_iaas_instance(self, instance):
         h = IaaSHistoryObject(instance.get_id())
         self._db.db_obj_add(h)
         self._db.db_commit()
         self._s.history.append(h)
 
+    @cloudinitd.LogEntryDecorator
     def generate_attr_doc(self):
         json_doc = {}
         keys = self.get_dep_keys()
