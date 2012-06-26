@@ -66,7 +66,7 @@ service_table = Table('service', metadata,
     Column('instance_id', String(64)),
     Column('iaas_url', String(64)),
     Column('iaas_key', String(64)),
-    Column('iaas_secret', String(64)),    
+    Column('iaas_secret', String(64)),
     Column('state', Integer, default=0),
     Column('last_error', sqlalchemy.types.Text()),
     Column('terminatepgm', String(1024)),
@@ -256,7 +256,7 @@ class ServiceObject(object):
             terminatepgm_args = db.default_terminatepgm_args
         if not pgm_timeout:
             pgm_timeout = db.default_pgm_timeout
-            
+
 
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
@@ -313,12 +313,12 @@ class ServiceObject(object):
                 keys_val = parser2.items("deps")
                 for (ka,val) in keys_val:
                     val2 = config_get_or_none(parser2, "deps", ka)
-                    if val2:
+                    if val2 is not None:
                         bao = BagAttrsObject(ka, val2)
                         self.attrs.append(bao)
-            
 
-                
+
+
 class BagAttrsObject(object):
     def __init__(self, key, value):
         self.key = key
@@ -422,7 +422,7 @@ class CloudInitDDB(object):
             if ndx == 0:
                 cloudconf = CloudConfSection(parser, s)
                 self._cloudconf_sections[s] = cloudconf
-        
+
 
         lvl_dict = {}
         levels = parser.items("runlevels")
@@ -455,7 +455,7 @@ class CloudInitDDB(object):
         self.bo = bo
         return bo
 
-    
+
     def build_level(self, level_name, level_file):
         parser = ConfigParser.ConfigParser()
         parser.read(level_file)
