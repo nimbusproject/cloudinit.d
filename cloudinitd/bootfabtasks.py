@@ -116,7 +116,6 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
     if local_exe:
         pgm_to_use = local
         put_pgm = shutil.copy
-        os.chdir(stagedir)
 
     args = urllib.unquote(args)
     pgm_to_use('mkdir %s;chmod 777 %s' % (remotedir, remotedir))
@@ -124,6 +123,7 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)
     if local_exe:
+        os.chdir(stagedir)
         put_pgm(pgm, destpgm)
         os.chmod(destpgm, 0755)
     else:
