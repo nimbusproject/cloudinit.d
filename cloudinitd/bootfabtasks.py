@@ -70,7 +70,7 @@ def _make_ssh(pgm, args="", local_exe=None):
     if env.key_filename and env.key_filename[0]:
         key = "-i " + env.key_filename[0]
 
-    cmd = "%s %s %s %s %s%s %s %s" % (sshexec, port, ssh_opts, key, user, env.host, pgm, args)
+    cmd = "%s %s %s %s %s%s '%s %s'" % (sshexec, port, ssh_opts, key, user, env.host, pgm, args)
 
     return cmd
 
@@ -88,7 +88,13 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     pgm_to_use('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)
-    put_pgm(pgm, destpgm, mode=0755)
+
+    if local_exe:
+        put_pgm(pgm, destpgm)
+        os.chmod(destpgm, 0755)
+    else:
+        put_pgm(pgm, destpgm, mode=0755)
+
     tarname = _iftar(relpgm)
     if tarname:
          destpgm = _tartask(stagedir, tarname, destpgm)
@@ -98,9 +104,9 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
         pgm_to_use(destpgm)
 
 def cleanup_dirs(stagedir=None, local_exe=None):
-    local_exe = str(local_exe).lower() == 'true'
-    if local_exe:
-        shutil.rmtree(stagedir, ignore_errors=True)
+    cmd = _make_ssh("rm -rf %s" %(stagedir), local_exe=local_exe)
+    local(cmd)
+
 
 def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None, remotedir=None, local_exe=None):
     local_exe = str(local_exe).lower() == 'true'
@@ -131,7 +137,7 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
         put_pgm(env_conf, destenv)
     destpgm = destpgm + " " + args
 
-    local_cmd = _make_ssh("'cd %s;%s'" %(stagedir, destpgm), local_exe=local_exe)
+    local_cmd = _make_ssh("cd %s;%s" %(stagedir, destpgm), local_exe=local_exe)
     if local_cmd:
         local(local_cmd)
 
