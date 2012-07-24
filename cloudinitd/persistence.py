@@ -73,6 +73,7 @@ service_table = Table('service', metadata,
     Column('terminatepgm_args', String(1024), default=""),
     Column('iaas_launch', Boolean),
     Column('pgm_timeout', Integer, default=1200),
+    Column('local_exe', Boolean, default=False),
     )
 
 attrbag_table = Table('attrbag', metadata,
@@ -157,6 +158,7 @@ class ServiceObject(object):
         self.terminatepgm = None
         self.terminatepgm_args = ""
         self.pgm_timeout = None
+        self.local_exe = None
         self.instance_id = None
         self.iaas_url = None
         self.iaas_key = None
@@ -189,6 +191,9 @@ class ServiceObject(object):
         terminatepgm_args = config_get_or_none(parser, section, "terminatepgm_args", self.terminatepgm_args)
 
         pgm_timeout = config_get_or_none(parser, section, "pgm_timeout", self.pgm_timeout)
+
+        local_exe = config_get_or_none(parser, section, "local_exe", self.local_exe)
+
 
         allo = config_get_or_none(parser, section, "allocation", self.allocation)
         image = config_get_or_none(parser, section, "image", self.image)
@@ -257,6 +262,9 @@ class ServiceObject(object):
         if not pgm_timeout:
             pgm_timeout = db.default_pgm_timeout
 
+        if not local_exe:
+            local_exe = db.default_local_exe
+
 
         self.image = image
         self.bootconf = _resolve_file_or_none(conf_dir, bootconf, conf_file)
@@ -265,6 +273,7 @@ class ServiceObject(object):
         self.terminatepgm = _resolve_file_or_none(conf_dir, terminatepgm, conf_file, has_args=True)
         self.terminatepgm_args = terminatepgm_args
         self.pgm_timeout = pgm_timeout
+        self.local_exe = local_exe
 
         self.hostname = hostname
         self.readypgm = _resolve_file_or_none(conf_dir, readypgm, conf_file, has_args=True)
@@ -415,6 +424,7 @@ class CloudInitDDB(object):
         self.default_terminatepgm = config_get_or_none(parser, s, "terminatepgm")
         self.default_terminatepgm_args = config_get_or_none(parser, s, "terminatepgm_args")
         self.default_pgm_timeout = config_get_or_none(parser, s, "pgm_timeout")
+        self.default_local_exe = config_get_or_none(parser, s, "local_exe")
 
         all_sections = parser.sections()
         for s in all_sections:

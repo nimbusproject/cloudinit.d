@@ -1,6 +1,7 @@
 
 import pipes
 import shlex
+import shutil
 import traceback
 import urllib
 import re
@@ -318,10 +319,12 @@ class SVCContainer(object):
 
         if self._s.state == cloudinitd.service_state_contextualized:
             allowed_es_ssh = 1
+        elif self._s.local_exe:
+            allowed_es_ssh = 1
         else:
             allowed_es_ssh = 128
 
-        if self._do_boot or self._do_ready:
+        if (self._do_boot or self._do_ready) and not self._s.local_exe:
             cloudinitd.log(self._log, logging.DEBUG, "Adding the port poller to %s " % (self._s.hostname))
             self._port_poller = PortPollable(self._expand_attr(self._s.hostname), self._ssh_port, retry_count=allowed_es_ssh, log=self._log, timeout=self._s.pgm_timeout)
             self._pollables.add_level([self._port_poller])
@@ -716,24 +719,47 @@ class SVCContainer(object):
     @cloudinitd.LogEntryDecorator
     def _get_directory_cleanup_cmd(self):
         host = self._expand_attr(self._s.hostname)
-        cmd = self._get_fab_command() + " cleanup_dirs:hosts=%s,stagedir=%s" % (host, self._stagedir)
+        cmd = self._get_fab_command() + " cleanup_dirs:hosts=%s,stagedir=%s,local_exe=%s" % (host, self._stagedir, (self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
         return cmd
 
     @cloudinitd.LogEntryDecorator
     def _get_ssh_ready_cmd(self):
-        cmd = self._get_ssh_command(self._s.hostname) + " true"
+        true_pgm = "true"
+        if self._s.local_exe:
+            return true_pgm
+
+        cmd = self._get_ssh_command(self._s.hostname) + " " + true_pgm
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
+
+    def _make_local_stage_dir(self, pgm):
+
+        try:
+            os.mkdir(self._stagedir)
+        except OSError, ex:
+            if ex.errno != 17:
+                raise
+
+
+    def _copy_local_file(self):
+        rel_pgm = os.path.basename(pgm)
+        dst = os.path.join(self._stagedir, rel_pgm)
+        shutil.copyfile(pgm, dst)
+
+        idx = rel_pgm.rfind('.tar.gz')
+        if idx > 0:
+            pass
 
     @cloudinitd.LogEntryDecorator
     def _get_readypgm_cmd(self):
         host = self._expand_attr(self._s.hostname)
         readypgm = self._expand_attr(self._s.readypgm)
         readypgm_args = self._expand_attr_list(self._s.readypgm_args)
+
         readypgm_args = urllib.quote(readypgm_args)
         
-        cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s'" % (host, readypgm, readypgm_args, self._stagedir)
+        cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s,local_exe=%s'" % (host, readypgm, readypgm_args, self._stagedir, str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd
 
@@ -743,11 +769,18 @@ class SVCContainer(object):
 
         bootpgm = self._expand_attr(self._s.bootpgm)
         bootpgm_args = self._expand_attr_list(self._s.bootpgm_args)
+
+        if self._s.local_exe:
+            self._make_local_stage_dir()
+            cmd = "%s %s" % (bootpgm, bootpgm_args)
+            cloudinitd.log(self._log, logging.DEBUG, "Using the local boot command %s" % (cmd))
+            return cmd
+
         bootpgm_args = urllib.quote(bootpgm_args)
 
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s'" % (host, bootpgm, bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir())
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s,local_exe=%s'" % (host, bootpgm, bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir(), str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
@@ -756,9 +789,10 @@ class SVCContainer(object):
         host = self._expand_attr(self._s.hostname)
         terminatepgm = self._expand_attr(self._s.terminatepgm)
         terminatepgm_args = self._expand_attr_list(self._s.terminatepgm_args)
+
         terminatepgm_args = urllib.quote(terminatepgm_args)
 
-        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s" % (host, terminatepgm, terminatepgm_args, self._stagedir)
+        cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s,local_exe=%s" % (host, terminatepgm, terminatepgm_args, self._stagedir, str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
         return cmd
 
