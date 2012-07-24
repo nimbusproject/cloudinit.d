@@ -115,7 +115,11 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
     pgm_to_use('mkdir -p %s' % stagedir)
     relpgm = os.path.basename(pgm)
     destpgm = "%s/%s" % (stagedir, relpgm)
-    put_pgm(pgm, destpgm, mode=0755)
+    if local_exe:
+        put_pgm(pgm, destpgm, mode=0755)
+    else:
+        put_pgm(pgm, destpgm)
+        os.chmod(destpgm, 0755)
     tarname = _iftar(relpgm)
     if tarname:
         destpgm = _tartask(stagedir, tarname, destpgm, run_pgm=pgm_to_use)
