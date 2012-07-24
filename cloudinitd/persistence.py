@@ -19,6 +19,19 @@ from cloudinitd.exceptions import APIUsageException
 metadata = MetaData()
 
 
+def config_get_or_none_bool(parser, s, v, default=None):
+    try:
+        x = parser.get(s, v)
+        if not x:
+            return x
+        x = cloudinitd.get_env_val(x)
+
+        x = x.lower() == "true"
+        return x
+    except:
+        return default
+
+
 def config_get_or_none(parser, s, v, default=None):
     try:
         x = parser.get(s, v)
@@ -192,7 +205,7 @@ class ServiceObject(object):
 
         pgm_timeout = config_get_or_none(parser, section, "pgm_timeout", self.pgm_timeout)
 
-        local_exe = config_get_or_none(parser, section, "local_exe", self.local_exe)
+        local_exe = config_get_or_none_bool(parser, section, "local_exe", self.local_exe)
 
 
         allo = config_get_or_none(parser, section, "allocation", self.allocation)
@@ -424,7 +437,7 @@ class CloudInitDDB(object):
         self.default_terminatepgm = config_get_or_none(parser, s, "terminatepgm")
         self.default_terminatepgm_args = config_get_or_none(parser, s, "terminatepgm_args")
         self.default_pgm_timeout = config_get_or_none(parser, s, "pgm_timeout")
-        self.default_local_exe = config_get_or_none(parser, s, "local_exe")
+        self.default_local_exe = config_get_or_none_bool(parser, s, "local_exe")
 
         all_sections = parser.sections()
         for s in all_sections:

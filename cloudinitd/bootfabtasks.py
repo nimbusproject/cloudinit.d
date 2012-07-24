@@ -101,8 +101,6 @@ def cleanup_dirs(stagedir=None, local_exe=None):
     local_exe = str(local_exe).lower() == 'true'
     if local_exe:
         shutil.rmtree(stagedir, ignore_errors=True)
-    else:
-        run("rm -rf %s" % (stagedir))
 
 def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir=None, remotedir=None, local_exe=None):
     local_exe = str(local_exe).lower() == 'true'

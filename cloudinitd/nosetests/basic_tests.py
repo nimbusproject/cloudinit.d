@@ -55,5 +55,9 @@ class BasicUserAPITests(unittest.TestCase):
         tst_name = "cloudconf"
         self._start_one(tst_name)
 
+    def test_localexe(self):
+        tst_name = "localhostexe"
+        self._start_one(tst_name)
+
 if __name__ == '__main__':
     unittest.main()

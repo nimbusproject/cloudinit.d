@@ -720,7 +720,7 @@ class SVCContainer(object):
     def _get_directory_cleanup_cmd(self):
         host = self._expand_attr(self._s.hostname)
         cmd = self._get_fab_command() + " cleanup_dirs:hosts=%s,stagedir=%s,local_exe=%s" % (host, self._stagedir, (self._s.local_exe))
-        cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))
+        cloudinitd.log(self._log, logging.DEBUG, "Using cleanup pgm command %s" % (cmd))
         return cmd
 
     @cloudinitd.LogEntryDecorator
@@ -732,15 +732,6 @@ class SVCContainer(object):
         cmd = self._get_ssh_command(self._s.hostname) + " " + true_pgm
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
-
-    def _make_local_stage_dir(self, pgm):
-
-        try:
-            os.mkdir(self._stagedir)
-        except OSError, ex:
-            if ex.errno != 17:
-                raise
-
 
     def _copy_local_file(self):
         rel_pgm = os.path.basename(pgm)
@@ -769,12 +760,6 @@ class SVCContainer(object):
 
         bootpgm = self._expand_attr(self._s.bootpgm)
         bootpgm_args = self._expand_attr_list(self._s.bootpgm_args)
-
-        if self._s.local_exe:
-            self._make_local_stage_dir()
-            cmd = "%s %s" % (bootpgm, bootpgm_args)
-            cloudinitd.log(self._log, logging.DEBUG, "Using the local boot command %s" % (cmd))
-            return cmd
 
         bootpgm_args = urllib.quote(bootpgm_args)
 
