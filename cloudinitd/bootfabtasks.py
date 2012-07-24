@@ -92,6 +92,7 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     if local_exe:
         put_pgm(pgm, destpgm)
         os.chmod(destpgm, 0755)
+        os.chdir(stagedir)
     else:
         put_pgm(pgm, destpgm, mode=0755)
 
