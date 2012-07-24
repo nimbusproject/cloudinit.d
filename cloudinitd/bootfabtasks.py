@@ -80,6 +80,7 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     pgm_to_use = run
     put_pgm = put
     if local_exe:
+        os.chdir(stagedir)
         pgm_to_use = local
         put_pgm = shutil.copy
 
@@ -92,7 +93,6 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     if local_exe:
         put_pgm(pgm, destpgm)
         os.chmod(destpgm, 0755)
-        os.chdir(stagedir)
     else:
         put_pgm(pgm, destpgm, mode=0755)
 
@@ -116,6 +116,7 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
     if local_exe:
         pgm_to_use = local
         put_pgm = shutil.copy
+        os.chdir(stagedir)
 
     args = urllib.unquote(args)
     pgm_to_use('mkdir %s;chmod 777 %s' % (remotedir, remotedir))
