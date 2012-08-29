@@ -22,7 +22,8 @@ You will need to set the following environment variables:
     CLOUDINITD_IAAS_SSHKEY
     CLOUDINITD_SSH_USERNAME
 
-ami-3202f25b is a suitable public image to run the tests on ec2 us east
+ami-3202f25b is a suitable public image to run the tests on ec2 us east. Use
+ssh username "ubuntu"
 
 
 Testing Against Futuregrid
