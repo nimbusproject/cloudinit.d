@@ -1,7 +1,7 @@
 import warnings
 warnings.simplefilter('ignore')
 
-from datetime import timedelta
+import os
 import datetime
 import threading
 import uuid
@@ -17,6 +17,13 @@ except ImportError:
     from libcloud.compute.providers import get_driver
     from libcloud.compute.base import NodeImage, NodeAuthSSHKey
 
+if os.environ.get('CLOUDINITD_NO_LIBCLOUD_VERIFY_SSL_CERT'):
+    import libcloud.security
+    libcloud.security.VERIFY_SSL_CERT = False
+
+from urlparse import urlparse
+from datetime import timedelta
+
 import boto.ec2
 #warnings.simplefilter('default')
 
@@ -24,7 +31,6 @@ try:
     from boto.regioninfo import RegionInfo
 except:
     from boto.ec2.regioninfo import RegionInfo
-import os
 import cloudinitd
 from cloudinitd.exceptions import ConfigException, IaaSException, APIUsageException
 
@@ -182,6 +188,7 @@ class IaaSLibCloudConn(object):
             "rackspace_uk": Provider.RACKSPACE_UK,
             "brightbox": Provider.BRIGHTBOX,
             "cloudsigma": Provider.CLOUDSIGMA,
+            "nimbus": Provider.NIMBUS,
             }
 
 
@@ -197,8 +204,17 @@ class IaaSLibCloudConn(object):
                 provider = self._provider_lookup[self._iaas]
             else:
                 raise ConfigException("%s is not a known libcloud driver" % (self._iaas))
+
+        if provider == Provider.NIMBUS and not iaasurl:
+            raise ConfigException("You must provide an IAAS URL to the Nimbus libcloud driver")
+
+        url = urlparse(iaasurl)
+        host = url.hostname
+        port = url.port
+
+
         self._Driver = get_driver(provider)
-        self._con = self._Driver(key, secret)
+        self._con = self._Driver(key, secret, host=host, port=port)
 
     def find_instance(self, instance_id):
         i_a = self.get_all_instances([instance_id,])
