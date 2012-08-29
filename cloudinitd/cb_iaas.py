@@ -208,13 +208,16 @@ class IaaSLibCloudConn(object):
         if provider == Provider.NIMBUS and not iaasurl:
             raise ConfigException("You must provide an IAAS URL to the Nimbus libcloud driver")
 
-        url = urlparse(iaasurl)
-        host = url.hostname
-        port = url.port
-
-
         self._Driver = get_driver(provider)
-        self._con = self._Driver(key, secret, host=host, port=port)
+
+        if iaasurl is not None:
+            url = urlparse(iaasurl)
+            host = url.hostname
+            port = url.port
+
+            self._con = self._Driver(key, secret, host=host, port=port)
+        else:
+            self._con = self._Driver(key, secret)
 
     def find_instance(self, instance_id):
         i_a = self.get_all_instances([instance_id,])
