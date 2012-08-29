@@ -1,0 +1,44 @@
+Testing cloudinit.d
+===================
+
+Simple Testing on Local System
+------------------------------
+
+Setup cloudinit.d with "python setup.py install" then run:
+
+    nosetests cloudinitd
+
+
+Testing Against EC2
+-------------------
+
+You will need to set the following environment variables:
+
+    CLOUDINITD_IAAS_ACCESS_KEY
+    CLOUDINITD_IAAS_SECRET_KEY
+    CLOUDINITD_IAAS_IMAGE
+    CLOUDINITD_IAAS_ALLOCATION
+    CLOUDINITD_IAAS_SSHKEYNAME
+    CLOUDINITD_IAAS_SSHKEY
+    CLOUDINITD_SSH_USERNAME
+
+ami-3202f25b is a suitable public image to run the tests on ec2 us east
+
+
+Testing Against Futuregrid
+--------------------------
+
+You will need to set the following environment variables:
+
+    CLOUDINITD_IAAS_ACCESS_KEY
+    CLOUDINITD_IAAS_SECRET_KEY
+    CLOUDINITD_IAAS_IMAGE
+    CLOUDINITD_IAAS_ALLOCATION
+    CLOUDINITD_IAAS_SSHKEYNAME
+    CLOUDINITD_IAAS_SSHKEY
+    CLOUDINITD_SSH_USERNAME
+    CLOUDINITD_IAAS_URL
+    CLOUDINITD_IAAS_TYPE
+
+CLOUDINITD_IAAS_TYPE should be set to "nimbus", or "libcloud-nimbus" if you want
+to test the libcloud drivers.
