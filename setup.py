@@ -57,7 +57,7 @@ booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
       install_requires = [
-          "boto >= 2.0, < 2.6.0",
+          "boto >= 2.6",
           "sqlalchemy >= 0.7.6",
           "fabric == 1.3",
           "simplejson >= 2.1",
