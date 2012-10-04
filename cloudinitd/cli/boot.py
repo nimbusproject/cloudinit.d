@@ -165,7 +165,10 @@ def level_callback(cb, action, current_level):
         pass
     elif action == cloudinitd.callback_action_complete:
         print_chars(1, "SUCCESS", color="green", bold=True)
-        print_chars(1, " level %d\n" % (current_level))
+        print_chars(1, " level %d" % (current_level))
+        print_chars(4, " | run time: %s" % (str(cb.get_level_runtime(current_level))))
+        print_chars(1, "\n")
+
     elif action == cloudinitd.callback_action_error:
         print_chars(1, "Level %d ERROR.\n" % (current_level), color="red", bold=True)
 
@@ -181,10 +184,13 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudinitd.callback_action_transition:
         print_chars(5, "\t%s\n" % (msg))
     elif action == cloudinitd.callback_action_complete:
+        time = cloudservice.get_runtime()
+
         print_chars(2, "\tSUCCESS", color="green")
         print_chars(2, " service %s %s\n" % (cloudservice.name, g_action))
         print_chars(4, "\t\thostname: %s\n" % (cloudservice.get_attr_from_bag("hostname")))
         print_chars(4, "\t\tinstance: %s\n" % (cloudservice.get_attr_from_bag("instance_id")))
+        print_chars(4, "\t\trun time: %s\n" % (str(time)))
 
     elif action == cloudinitd.callback_action_error:
         print_chars(1, "\tService %s ERROR\n" % (cloudservice.name), color="red", bold=True)

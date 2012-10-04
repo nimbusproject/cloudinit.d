@@ -371,6 +371,10 @@ class CloudInitD(object):
     def get_json_doc(self):
         return self._boot_top.get_json_doc()
 
+    @cloudinitd.LogEntryDecorator
+    def get_level_runtime(self, level_ndx):
+        return self._boot_top.get_level_runtime(level_ndx-1)
+
 
 class IaaSHistory(object):
 
@@ -431,6 +435,9 @@ class CloudService(object):
             raise APIUsageException("This Cloud service has no real backing service")
         return self._svc.get_dep_keys()
 
+    @cloudinitd.LogEntryDecorator
+    def get_runtime(self):
+        return self._svc.get_runtime()
 
     @cloudinitd.LogEntryDecorator
     def get_attr_from_bag(self, name):

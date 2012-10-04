@@ -35,6 +35,8 @@ class Pollable(object):
         self._timeout = timeout
         self._exception = None
         self._done_cb = done_cb
+        self._end_time = None
+        self._start_time = None
 
     def get_exception(self):
         return self._exception
@@ -43,6 +45,7 @@ class Pollable(object):
         self._start_time = datetime.datetime.now()
 
     def _execute_done_cb(self):
+        self._end_time = datetime.datetime.now()
         if not self._done_cb:
             return
         self._done_cb(self)
@@ -59,6 +62,11 @@ class Pollable(object):
             self._exception = TimeoutException("pollable %s timedout at %d seconds" % (str(self), self._timeout))
             raise self._exception
         return False
+
+    def get_runtime(self):
+        if not self._end_time:
+            return None
+        return self._end_time - self._start_time
 
 class NullPollable(Pollable):
 
@@ -131,6 +139,9 @@ class PortPollable(Pollable):
 
         if 'CLOUDINITD_TESTENV' in os.environ:
             return True
+
+        Pollable.poll(self)
+
         now = datetime.datetime.now()
         if self._last_run:
             if now - self._last_run < self._time_delay:
@@ -424,6 +435,7 @@ class MultiLevelPollable(Pollable):
     def __init__(self, log=logging, timeout=0, callback=None, continue_on_error=False):
         Pollable.__init__(self, timeout)
         self.levels = []
+        self.level_times = []
         self.level_ndx = -1
         self._log = log
         self._timeout = timeout
@@ -438,6 +450,7 @@ class MultiLevelPollable(Pollable):
         self._reversed = False
         self.last_exception = None
         self._canceled = False
+        self._current_level_start = None
 
     def get_level(self):
         return self.level_ndx + 1
@@ -458,6 +471,8 @@ class MultiLevelPollable(Pollable):
         Pollable.start(self)        
         if self.level_ndx >= 0:
             return
+
+        self._current_level_start_time = datetime.datetime.now()
         self.level_ndx = 0
         if len(self.levels) == 0:
             return
@@ -522,6 +537,11 @@ class MultiLevelPollable(Pollable):
                 self._level_error_polls = []
                 self._level_error_ex = []
 
+            _current_level_end_time = datetime.datetime.now()
+            self.level_times.append(_current_level_end_time - self._current_level_start_time)
+            self._current_level_start_time = datetime.datetime.now()
+
+
             self._execute_cb(cb_action, self._get_callback_level())
             self.level_ndx = self.level_ndx + 1
 
@@ -537,7 +557,10 @@ class MultiLevelPollable(Pollable):
         if not self._callback:
             return
         self._callback(self, action, lvl+1)
-            
+
+    def get_level_times(self):
+        return self.level_times
+    
     #def cancel(self):
     # table this for now
     #    """

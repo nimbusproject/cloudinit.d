@@ -7,11 +7,10 @@ import urllib
 import re
 import cb_iaas
 from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
-from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable, PortPollable
+from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable, PortPollable, Pollable
 import bootfabtasks
 import tempfile
 import string
-import cloudinitd
 from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
@@ -131,14 +130,25 @@ class BootTopLevel(object):
         doc['levels'] = levels
         return doc
 
+    def get_level_runtime(self, level_ndx):
+        times = self._multi_top.get_level_times()
+        if level_ndx >= len(times):
+            return None
+        return times[level_ndx]
 
-class SVCContainer(object):
+    def get_runtime(self):
+        return self._multi_top.get_runtime()
+
+
+class SVCContainer(Pollable):
     """
     This object represents a service which is the leaf object in the boot tree.  This service is a special case pollable type
     that consists of up to 3 other pollable types  a level pollable is used to keep the other MultiLevelPollable moving in order
     """
 
     def __init__(self, db, s, top_level, boot=True, ready=True, terminate=False, log=logging, callback=None, reload=False, logfile=None, run_name=None):
+        Pollable.__init__(self)
+
         self._log = log
         self._attr_bag = {}
         self._myname = s.name
@@ -539,15 +549,18 @@ class SVCContainer(object):
     def start(self):
         if self._running:
             raise APIUsageException("This SVC object was already started.  wait for it to complete and try restart")
+
         if self._s.state == cloudinitd.service_state_terminated and not self._do_boot and not self._do_terminate:
             ex = APIUsageException("the service %s has been terminated.  The only action that can be performed on it is a boot" % (self.name))
             if not self._execute_callback(cloudinitd.callback_action_error, str(ex), ex):
                 raise ex
-
+        Pollable.start(self)
         self._start()
 
     @cloudinitd.LogEntryDecorator
     def _start(self):
+        Pollable.start(self)
+
         self._running = True
         # load up deps.  This must be delayed until start is called to ensure that previous levels have the populated
         # values
@@ -581,6 +594,8 @@ class SVCContainer(object):
 
     @cloudinitd.LogEntryDecorator
     def poll(self):
+        Pollable.poll(self)
+
         try:
             rc = self._poll()
             if rc:
@@ -667,6 +682,7 @@ class SVCContainer(object):
             rc = self._pollables.poll()
             if rc:
                 self._running = False
+                self._execute_done_cb() # on parent object for timings mostly
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
                 poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
                 for p in poller_list:
