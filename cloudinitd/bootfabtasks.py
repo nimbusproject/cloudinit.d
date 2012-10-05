@@ -80,7 +80,6 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     pgm_to_use = run
     put_pgm = put
     if local_exe:
-        os.chdir(stagedir)
         pgm_to_use = local
         put_pgm = shutil.copy
 
@@ -91,6 +90,7 @@ def readypgm(pgm=None, args=None, stagedir=None, local_exe=None):
     destpgm = "%s/%s" % (stagedir, relpgm)
 
     if local_exe:
+        os.chdir(stagedir)
         put_pgm(pgm, destpgm)
         os.chmod(destpgm, 0755)
     else:
