@@ -155,6 +155,15 @@ Run with the command 'commands' to see a list of all possible commands
     g_options = options
     return (args, options)
 
+def friendly_timedelta(td):
+    if td is None:
+        s = None
+    else:
+        s = (td.microseconds + (td.seconds + td.days * 24 * 3600) * float(10**6)) / float(10**6)
+    if s < 0:
+        s = 0
+    return "%.1fs" % s
+
 def level_callback(cb, action, current_level):
     global g_action
 
@@ -164,9 +173,10 @@ def level_callback(cb, action, current_level):
         #print_chars(1, ".")
         pass
     elif action == cloudinitd.callback_action_complete:
+        runtime_str = friendly_timedelta(cb.get_level_runtime(current_level))
         print_chars(1, "SUCCESS", color="green", bold=True)
         print_chars(1, " level %d" % (current_level))
-        print_chars(4, " | run time: %s" % (str(cb.get_level_runtime(current_level))))
+        print_chars(4, " (%s)" % runtime_str)
         print_chars(1, "\n")
 
     elif action == cloudinitd.callback_action_error:
@@ -184,13 +194,13 @@ def service_callback(cb, cloudservice, action, msg):
     elif action == cloudinitd.callback_action_transition:
         print_chars(5, "\t%s\n" % (msg))
     elif action == cloudinitd.callback_action_complete:
-        time = cloudservice.get_runtime()
 
+        runtime_str = friendly_timedelta(cloudservice.get_runtime())
         print_chars(2, "\tSUCCESS", color="green")
-        print_chars(2, " service %s %s\n" % (cloudservice.name, g_action))
+        print_chars(2, " service %s %s" % (cloudservice.name, g_action))
+        print_chars(2, " (%s)\n" % runtime_str)
         print_chars(4, "\t\thostname: %s\n" % (cloudservice.get_attr_from_bag("hostname")))
         print_chars(4, "\t\tinstance: %s\n" % (cloudservice.get_attr_from_bag("instance_id")))
-        print_chars(4, "\t\trun time: %s\n" % (str(time)))
 
     elif action == cloudinitd.callback_action_error:
         print_chars(1, "\tService %s ERROR\n" % (cloudservice.name), color="red", bold=True)
