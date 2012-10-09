@@ -134,9 +134,11 @@ def bootpgm(pgm=None, args=None, conf=None, env_conf=None, output=None, stagedir
     if conf and conf != "None":
         destconf = "%s/bootconf.json" % stagedir
         put_pgm(conf, destconf)
+        os.remove(conf)
     if env_conf and env_conf != "None":
         destenv = "%s/bootenv.sh" % stagedir
         put_pgm(env_conf, destenv)
+        os.remove(env_conf)
     destpgm = destpgm + " " + args
 
     local_cmd = _make_ssh("cd %s;%s" %(stagedir, destpgm), local_exe=local_exe)

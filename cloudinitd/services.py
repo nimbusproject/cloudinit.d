@@ -174,8 +174,6 @@ class SVCContainer(Pollable):
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
         
         self._db.db_commit()
-        self._bootconf = None
-        self._bootenv_file = None
         self._restart_limit = 2
         self._restart_count = 0
 
@@ -525,10 +523,6 @@ class SVCContainer(Pollable):
             val = bao.value
             self._attr_bag[bao.key] = self._expand_attr(val)
 
-        if self._s.bootconf:
-            self._bootconf = self._fill_template(self._s.bootconf)
-            self._bootenv_file = self._json_file_to_env(self._bootconf)
-
     @cloudinitd.LogEntryDecorator
     def restart(self, boot, ready, terminate, callback=None):
         # terminate should have to be true here
@@ -781,7 +775,14 @@ class SVCContainer(Pollable):
 
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
-        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s,local_exe=%s'" % (host, bootpgm, bootpgm_args,  self._bootconf, self._bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir(), str(self._s.local_exe))
+
+        bootconf = None
+        bootenv_file = None
+        if self._s.bootconf:
+            bootconf = self._fill_template(self._s.bootconf)
+            bootenv_file = self._json_file_to_env(bootconf)
+
+        cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s,local_exe=%s'" % (host, bootpgm, bootpgm_args,  bootconf, bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir(), str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
         return cmd
 
