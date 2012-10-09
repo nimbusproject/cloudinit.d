@@ -176,6 +176,8 @@ class CloudInitD(object):
         rc = cloudinitd.callback_return_default
         if action == cloudinitd.callback_action_error:
             self._exception = svc.last_exception
+            if self._exception is None and svc.exception_list:
+                self._exception = svc.exception_list[-1]
         if self._service_callback:
             rc = self._service_callback(self, CloudService(self, svc), action, msg)
         return rc

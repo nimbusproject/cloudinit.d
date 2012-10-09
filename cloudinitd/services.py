@@ -173,7 +173,7 @@ class SVCContainer(Pollable):
         self._stagedir = "%s/%s" % (get_remote_working_dir(), self.name)
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
         
-        self._db.db_commit()
+        self._db.db_commit()    
         self._restart_limit = 2
         self._restart_count = 0
 
@@ -190,6 +190,7 @@ class SVCContainer(Pollable):
         self._rmdir_poller = None
         self._shutdown_poller = None
         self.last_exception = None
+        self.exception_list = []
         self._port_poller = None
 
 
@@ -220,6 +221,8 @@ class SVCContainer(Pollable):
         self._shutdown_poller = None
         self._rmdir_poller = None
         self.last_exception = None
+        self.exception_list = []
+
         self._boot_output_file = None
         self._port_poller = None
 
@@ -572,12 +575,13 @@ class SVCContainer(Pollable):
 
     @cloudinitd.LogEntryDecorator
     def _execute_callback(self, state, msg, ex=None):
+        self.last_exception = ex
+        self.exception_list.append(ex)
         if not self._callback:
             return False
         rc = self._callback(self, state, msg)
         if state != cloudinitd.callback_action_error:
             return False
-        self.last_exception = ex
         if rc == cloudinitd.callback_return_restart:
             if self._restart_count > self._restart_limit:
                 return False

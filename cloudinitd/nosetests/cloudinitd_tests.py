@@ -371,156 +371,156 @@ class CloudInitDTests(unittest.TestCase):
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         self.assertEqual(rc, 0)
-#
-#    def check_status_error_test(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        dir = os.path.expanduser("~/.cloudinitd/")
-#        conf_file = self.plan_basedir + "/terminate/top.conf"
-#        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
-#        cb.start()
-#        cb.block_until_complete(poll_period=1.0)
-#        runname = cb.run_name
-#        svc = cb.get_service("sampleservice")
-#
-#        secret = svc.get_attr_from_bag('iaas_secret')
-#        key = svc.get_attr_from_bag('iaas_key')
-#        iaas_url = svc.get_attr_from_bag('iaas_url')
-#        instance_id = svc.get_attr_from_bag('instance_id')
-#        con = iaas_get_con(None, key=key, secret=secret, iaasurl=iaas_url)
-#        instance = con.find_instance(instance_id)
-#        instance.terminate()
-#
-#        if 'CLOUDINITD_TESTENV' in os.environ:
-#            bkfab = os.environ['CLOUDINITD_FAB']
-#            bkssh = os.environ['CLOUDINITD_SSH']
-#            os.environ['CLOUDINITD_FAB'] = "/bin/false"
-#            os.environ['CLOUDINITD_SSH'] = "/bin/false"
-#
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
-#        if 'CLOUDINITD_TESTENV' in os.environ:
-#            os.environ['CLOUDINITD_FAB'] = bkfab
-#            os.environ['CLOUDINITD_SSH'] = bkssh
-#        self._dump_output(outfile)
-#        n = "ERROR"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def check_repair_error_test(self):
-#        if 'CLOUDINITD_TESTENV' in os.environ:
-#            # we cannot run this one in fake mode yet
-#            return
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        dir = os.path.expanduser("~/.cloudinitd/")
-#        conf_file = self.plan_basedir + "/multileveldeps/top.conf"
-#        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
-#        cb.start()
-#        cb.block_until_complete(poll_period=1.0)
-#        runname = cb.run_name
-#        svc = cb.get_service("l2service")
-#
-#        secret = svc.get_attr_from_bag('iaas_secret')
-#        key = svc.get_attr_from_bag('iaas_key')
-#        url = svc.get_attr_from_bag('iaas_url')
-#        instance_id = svc.get_attr_from_bag('instance_id')
-#        con = iaas_get_con(svc._svc, key=key, secret=secret, iaasurl=url)
-#        instance = con.find_instance(instance_id)
-#        instance.terminate()
-#
-#        print "start repair"
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
-#        self._dump_output(outfile)
-#        n = "ERROR"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#
-#        print "start terminate"
-#        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def test_multiterminate(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname1 = line[len(n):].strip()
-#
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname2 = line[len(n):].strip()
-#
-#        print "run name is %s and %s" % (runname1, runname2)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  runname1, runname2])
-#        self.assertEqual(rc, 0)
-#
-#    def check_service_log_test(self):
-#
-#        dir = os.path.expanduser("~/.cloudinitd/")
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-l", "info", "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#
-#        logfilename = dir + "/" + runname + "/sampleservice.log"
-#        self.assertTrue(os.path.exists(logfilename), "%s should exist" % (logfilename))
-#        os.path.getsize(logfilename)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#
-#    def test_outputwriter(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#        print "run name is %s" % (runname)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "status",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def termfails_test(self):
-#
-#        if 'CLOUDINITD_TESTENV' in os.environ:
-#            return
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/termfail/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#        print "run name is %s" % (runname)
-#
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self._dump_output(outfile)
-#        line = self._find_str(outfile, "ERROR")
-#        self.assertNotEqual(line, None)
+
+    def check_status_error_test(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        dir = os.path.expanduser("~/.cloudinitd/")
+        conf_file = self.plan_basedir + "/terminate/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        runname = cb.run_name
+        svc = cb.get_service("sampleservice")
+
+        secret = svc.get_attr_from_bag('iaas_secret')
+        key = svc.get_attr_from_bag('iaas_key')
+        iaas_url = svc.get_attr_from_bag('iaas_url')
+        instance_id = svc.get_attr_from_bag('instance_id')
+        con = iaas_get_con(None, key=key, secret=secret, iaasurl=iaas_url)
+        instance = con.find_instance(instance_id)
+        instance.terminate()
+
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            bkfab = os.environ['CLOUDINITD_FAB']
+            bkssh = os.environ['CLOUDINITD_SSH']
+            os.environ['CLOUDINITD_FAB'] = "/bin/false"
+            os.environ['CLOUDINITD_SSH'] = "/bin/false"
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","-v", "status", runname])
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            os.environ['CLOUDINITD_FAB'] = bkfab
+            os.environ['CLOUDINITD_SSH'] = bkssh
+        self._dump_output(outfile)
+        n = "ERROR"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def check_repair_error_test(self):
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            # we cannot run this one in fake mode yet
+            return
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        dir = os.path.expanduser("~/.cloudinitd/")
+        conf_file = self.plan_basedir + "/multileveldeps/top.conf"
+        cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
+        cb.start()
+        cb.block_until_complete(poll_period=1.0)
+        runname = cb.run_name
+        svc = cb.get_service("l2service")
+
+        secret = svc.get_attr_from_bag('iaas_secret')
+        key = svc.get_attr_from_bag('iaas_key')
+        url = svc.get_attr_from_bag('iaas_url')
+        instance_id = svc.get_attr_from_bag('instance_id')
+        con = iaas_get_con(svc._svc, key=key, secret=secret, iaasurl=url)
+        instance = con.find_instance(instance_id)
+        instance.terminate()
+
+        print "start repair"
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v","-v","-v","repair", runname])
+        self._dump_output(outfile)
+        n = "ERROR"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+
+        print "start terminate"
+        rc = cloudinitd.cli.boot.main(["terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def test_multiterminate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname1 = line[len(n):].strip()
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname2 = line[len(n):].strip()
+
+        print "run name is %s and %s" % (runname1, runname2)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  runname1, runname2])
+        self.assertEqual(rc, 0)
+
+    def check_service_log_test(self):
+
+        dir = os.path.expanduser("~/.cloudinitd/")
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-l", "info", "boot",  "%s/oneservice/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+
+        logfilename = dir + "/" + runname + "/sampleservice.log"
+        self.assertTrue(os.path.exists(logfilename), "%s should exist" % (logfilename))
+        os.path.getsize(logfilename)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+
+    def test_outputwriter(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "status",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def termfails_test(self):
+
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            return
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-o", "/dev/null", "boot",  "%s/termfail/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self._dump_output(outfile)
+        line = self._find_str(outfile, "ERROR")
+        self.assertNotEqual(line, None)
 

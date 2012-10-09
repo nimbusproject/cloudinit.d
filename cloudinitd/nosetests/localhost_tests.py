@@ -138,7 +138,7 @@ class CloudInitDLocalhostTests(unittest.TestCase):
         start = datetime.now()
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
         end = datetime.now()
-        self.assertEqual(rc, 0, "terminate will return 0 unless something crazy bad happens")
+        self.assertNotEqual(rc, 0, "terminate now will return non 0 values")
 
         diff = end - start
         self.assertLess(diff.seconds, 50)

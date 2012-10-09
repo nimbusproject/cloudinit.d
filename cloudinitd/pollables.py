@@ -371,7 +371,6 @@ class PopenExecutablePollable(Pollable):
                 raise ProcessException(ex, self._stdout_str, self._stderr_str, rc)
             self._last_run = datetime.datetime.now()     
             return False
-        self._final_rc = rc
         self._done = True
         self._execute_cb(cloudinitd.callback_action_complete, "Pollable complete")
         self._execute_done_cb()
