@@ -221,7 +221,7 @@ def reload_conf(options, args):
     config_file = args[1]
     print_chars(1, "Loading the launch plan for run ")
     print_chars(1, "%s\n" % (options.name), inverse=True, color="green", bold=True)
-    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False, terminate=False, boot=False, ready=False, repair=True)
+    cb = CloudInitD(options.database, log_level=options.loglevel, db_name=options.name, config_file=config_file, level_callback=level_callback, service_callback=service_callback, logdir=options.logdir, fail_if_db_present=False, terminate=False, boot=False, ready=False)
     if options.validate:
         print_chars(1, "Validating the launch plan.\n")
         errors = cb.boot_validate()
@@ -334,10 +334,13 @@ def _launch_new(options, args, cb):
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
         
+    rc = 0
     ex = cb.get_exception()
     if ex is None:
-        rc = 0
-    else:
+        ex_list = cb.get_all_exceptions()
+        if ex_list:
+            ex = ex_list[-1]
+    if ex:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1
 
@@ -381,10 +384,16 @@ def _status(options, args):
         fake_args = ["clean", dbname]
         clean_ice(options, fake_args)
 
-    ex = cb.get_exception()
-    if ex is None:
-        rc = 0
+    rc = 0
+    if g_repair:
+        ex = cb.get_last_exception()
     else:
+        ex = cb.get_exception()
+        if ex is None:
+            ex_list = cb.get_all_exceptions()
+            if ex_list:
+                ex = ex_list[-1]
+    if ex:
         print_chars(4, "An error occured %s" % (str(ex)))
         rc = 1
 
@@ -399,7 +408,7 @@ def terminate(options, args):
     if len(args) < 2:
         print "The terminate command requires a run name.  See --help"
         return 1
-    
+
     for dbname in args[1:]:
         options.name = dbname
         rc = 0
@@ -416,7 +425,12 @@ def terminate(options, args):
                     raise Exception("That DB does not seem to exist: %s" % (path))
                 os.remove(path)
             ex = cb.get_exception()
+            if ex is None:
+                ex_list = cb.get_all_exceptions()
+                if ex_list:
+                    ex = ex_list[-1]
             if ex is not None:
+                print_chars(4, "An error occured %s" % (str(ex)))
                 raise ex
         except CloudServiceException, svcex:
             print svcex

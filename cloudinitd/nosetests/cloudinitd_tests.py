@@ -407,7 +407,11 @@ class CloudInitDTests(unittest.TestCase):
         self.assertNotEqual(line, None)
 
         rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-        self.assertEqual(rc, 0)
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            # in fake mode we cannot detect that an instance was killed
+            self.assertEqual(rc, 0)
+        else:
+            self.assertNotEqual(rc, 0)
 
     def check_repair_error_test(self):
         if 'CLOUDINITD_TESTENV' in os.environ:

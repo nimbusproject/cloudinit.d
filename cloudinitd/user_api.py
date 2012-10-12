@@ -154,6 +154,8 @@ class CloudInitD(object):
             self._boot_top.add_level(level_list)
             self._levels.append(level_list)
         self._exception = None
+        self._last_exception = None
+        self._exception_list = []
 
     @cloudinitd.LogEntryDecorator
     def find_dep(self, service_name, key):
@@ -173,11 +175,10 @@ class CloudInitD(object):
 
     @cloudinitd.LogEntryDecorator
     def _svc_cb(self, svc, action, msg):
+        self._last_exception = svc.last_exception
         rc = cloudinitd.callback_return_default
         if action == cloudinitd.callback_action_error:
             self._exception = svc.last_exception
-            if self._exception is None and svc.exception_list:
-                self._exception = svc.exception_list[-1]
         if self._service_callback:
             rc = self._service_callback(self, CloudService(self, svc), action, msg)
         return rc
@@ -352,6 +353,14 @@ class CloudInitD(object):
     @cloudinitd.LogEntryDecorator
     def get_exception(self):
         return self._exception
+
+    @cloudinitd.LogEntryDecorator
+    def get_all_exceptions(self):
+        return self._exception_list
+
+    @cloudinitd.LogEntryDecorator
+    def get_last_exception(self):
+        return self._last_exception
 
     @cloudinitd.LogEntryDecorator
     def get_iaas_history(self):

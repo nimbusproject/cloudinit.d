@@ -23,6 +23,7 @@ class ValidateTests(unittest.TestCase):
         conf_file = self.plan_basedir + "/iaastypevalidate/top.conf"
         cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
         cb.start()
+            
         cb.block_until_complete(poll_period=1.0)
 
         # check the log for a warning

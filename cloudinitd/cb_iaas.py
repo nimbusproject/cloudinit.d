@@ -73,17 +73,17 @@ class IaaSBotoConn(object):
     def __init__(self, svc, key, secret, iaasurl, iaas):
         self._svc = svc
 
-        if not iaas:
-            iaas = "us-east-1"
-
         if not iaasurl:
+            all_regions = boto.ec2.regions()
+            if iaas not in all_regions:
+                iaas = "us-east-1"
             region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
             if not region:
                 raise ConfigException("The 'iaas' configuration '%s' does not specify a valid boto EC2 region." % iaas)
             self._con =  boto.connect_ec2(key, secret, region=region, validate_certs=False)
         else:
             (scheme, iaashost, iaasport, iaaspath) = cloudinitd.parse_url(iaasurl)
-            region = RegionInfo(iaashost)
+            region = RegionInfo(endpoint=iaashost, name=iaas)
 
             secure = scheme == "https"
 
@@ -124,9 +124,12 @@ class IaaSBotoConn(object):
 
         sec_group = None
         if security_groupname:
-             sec_group_a = self._con.get_all_security_groups(groupnames=[security_groupname,])
-             if sec_group_a:
-                 sec_group = sec_group_a
+            try:
+                sec_group_a  = self._con.get_all_security_groups(groupnames=[security_groupname,])
+                if sec_group_a:
+                    sec_group = sec_group_a
+            except Exception, boto_ex:
+                sec_group = None
 
         reservation = self._con.run_instances(image, instance_type=instance_type, key_name=key_name, security_groups=sec_group)
         instance = reservation.instances[0]
@@ -433,15 +436,13 @@ def iaas_get_con(svc, key=None, secret=None, iaasurl=None, iaas=None):
             iaasurl = svc.get_dep("iaas_url")
         if not iaas:
             iaas = svc.get_dep("iaas")
-    if not iaas:
-        iaas = "us-east-1"
 
     # pick the connection driver
     ConDriver = IaaSBotoConn
-    ndx = iaas.find("libcloud-")
-    if ndx == 0:
-        ConDriver = IaaSLibCloudConn
-        pass
+    if iaas:
+        ndx = iaas.find("libcloud-")
+        if ndx == 0:
+            ConDriver = IaaSLibCloudConn
 
     global g_lock
 

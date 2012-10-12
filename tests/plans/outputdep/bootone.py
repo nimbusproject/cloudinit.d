@@ -17,12 +17,21 @@ web_message = "%s :: %s" % (vals_dict['message'], uu)
 print web_message
 os.write(osf, web_message)
 os.close(osf)
+
 sudo = ""
 if getpass.getuser() != "root":
     sudo = "sudo"
-cmd = "%s cp %s /var/www/test.txt && %s chmod 644 /var/www/test.txt" % (sudo, fname, sudo)
-print cmd
-rc = os.system(cmd)
+
+commands = [
+    "%s apt-get update" % (sudo),
+    "%s apt-get -y install apache2" % (sudo),
+    "%s cp %s /var/www/test.txt && %s chmod 644 /var/www/test.txt" % (sudo, fname, sudo)
+  ]
+for cmd in commands:
+    print cmd
+    rc = os.system(cmd)
+    if rc != 0:
+        sys.exit(rc)
 
 out_vals = {}
 out_vals = {'testpgm' : 'hello' }

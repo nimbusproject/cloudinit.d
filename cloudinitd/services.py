@@ -428,7 +428,7 @@ class SVCContainer(Pollable):
     @cloudinitd.LogEntryDecorator
     def _get_ssh_command(self, host):
         if not host:
-            raise ConfigException("Trying to create and ssh command to a null hostname, something is not right.")
+            raise ConfigException("Trying to create an ssh command to a null hostname, something is not right.")
         sshexec = "ssh"
         try:
             if os.environ['CLOUDINITD_SSH']:
@@ -762,7 +762,8 @@ class SVCContainer(Pollable):
         readypgm = self._expand_attr(self._s.readypgm)
         readypgm_args = self._expand_attr_list(self._s.readypgm_args)
 
-        readypgm_args = urllib.quote(readypgm_args)
+        if readypgm_args:
+            readypgm_args = urllib.quote(readypgm_args)
         
         cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s,local_exe=%s'" % (host, readypgm, readypgm_args, self._stagedir, str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
@@ -774,8 +775,8 @@ class SVCContainer(Pollable):
 
         bootpgm = self._expand_attr(self._s.bootpgm)
         bootpgm_args = self._expand_attr_list(self._s.bootpgm_args)
-
-        bootpgm_args = urllib.quote(bootpgm_args)
+        if bootpgm_args:
+            bootpgm_args = urllib.quote(bootpgm_args)
 
         (osf, self._boot_output_file) = tempfile.mkstemp()
         os.close(osf)
@@ -796,7 +797,8 @@ class SVCContainer(Pollable):
         terminatepgm = self._expand_attr(self._s.terminatepgm)
         terminatepgm_args = self._expand_attr_list(self._s.terminatepgm_args)
 
-        terminatepgm_args = urllib.quote(terminatepgm_args)
+        if terminatepgm_args:
+            terminatepgm_args = urllib.quote(terminatepgm_args)
 
         cmd = self._get_fab_command() + " readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s,local_exe=%s" % (host, terminatepgm, terminatepgm_args, self._stagedir, str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using terminate pgm command %s" % (cmd))

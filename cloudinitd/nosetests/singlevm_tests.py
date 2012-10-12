@@ -3,9 +3,7 @@ import cloudinitd.nosetests
 from cloudinitd.user_api import CloudInitD
 import tempfile
 import logging
-
-
-
+from unittest.case import SkipTest
 import unittest
 import os
 
@@ -46,7 +44,11 @@ class SingleVMTests(unittest.TestCase):
         cb.block_until_complete(poll_period=1.0)
 
 
+    # this test should be taken with a grain of salt.  It will fail if you 
+    # are doin anything else with you account
     def test_only_one_launched(self):
+        if 'CLOUDINITD_CLEAN_ACCOUNT' not in os.environ:
+            raise SkipTest()
         ilist_1 = self._get_running_vms()
         count1 = len(ilist_1)
         self.plan_basedir = cloudinitd.nosetests.g_plans_dir

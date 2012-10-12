@@ -25,7 +25,9 @@ class ServiceUnitTests(unittest.TestCase):
         self.assertFalse(fail)
 
     def test_service_poll(self):
-        x = os.environ['CLOUDINITD_TESTENV']
+        x = None
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            x = os.environ['CLOUDINITD_TESTENV']
 
         os.environ['CLOUDINITD_TESTENV'] = "1"
         h1 = str(uuid.uuid1())
