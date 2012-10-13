@@ -49,139 +49,139 @@ class CloudInitDTests(unittest.TestCase):
         print file.readlines()
         file.close()
 
-#    def test_basic(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#        print "run name is %s" % (runname)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "status",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def test_terminate_variable(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate_variable/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#        print "run name is %s" % (runname)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def test_list_commands(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "commands"])
-#        self.assertEqual(rc, 0)
-#
-#    def test_help(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["--help"])
-#        self.assertEqual(rc, 0)
-#
-#    def test_basic_validate(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#
-#    def test_bad_files(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/badfiles/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#
-#    def test_bad_validate(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#
-#    def test_bad_dryrun(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--dryrun", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#
-#    def test_ssh_into_dep(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/intohostname/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertEqual(rc, 0)
-#        runname = self._get_runname(outfile)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
-#        self.assertEqual(rc, 0)
-#
-#    def test_reload(self):
-#
-#        if 'CLOUDINITD_TESTENV' in os.environ:
-#            #this wont work in fake mode
-#            return
-#
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-v", "-v", "boot",  "%s/reloadplan/badtop.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        n = "Starting up run"
-#        line = self._find_str(outfile, n)
-#        self.assertNotEqual(line, None)
-#        runname = line[len(n):].strip()
-#        print "run name is %s" % (runname)
-#        self.assertNotEqual(rc, 0)
-#
-#        rc = cloudinitd.cli.boot.main(["--name", runname, "reload",  "%s/reloadplan/goodtop.conf" % (self.plan_basedir)])
-#        self.assertEqual(rc, 0)
-#        rc = cloudinitd.cli.boot.main(["repair",  runname])
-#        self.assertEqual(rc, 0)
-#        rc = cloudinitd.cli.boot.main(["terminate",  runname])
-#        self.assertEqual(rc, 0)
-#
-#
-#
-#    def test_validate_nolaunch(self):
-#        (osf, outfile) = tempfile.mkstemp()
-#        os.close(osf)
-#
-#        key = None
-#        secret = None
-#        url = None
-#        try:
-#            key = os.environ['CLOUDINITD_IAAS_ACCESS_KEY']
-#            secret = os.environ['CLOUDINITD_IAAS_SECRET_KEY']
-#            url = os.environ['CLOUDINITD_IAAS_URL']
-#        except:
-#            pass
-#
-#        # XXX this test may fail for nimbus
-#        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaasurl=url)
-#        i_list = con.get_all_instances()
-#        rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
-#        self._dump_output(outfile)
-#        self.assertNotEqual(rc, 0)
-#        after_list = con.get_all_instances()
-#        self.assertEqual(len(i_list), len(after_list))
+    def test_basic(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "status",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def test_terminate_variable(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/terminate_variable/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def test_list_commands(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "commands"])
+        self.assertEqual(rc, 0)
+
+    def test_help(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["--help"])
+        self.assertEqual(rc, 0)
+
+    def test_basic_validate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/simplebadplan/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
+    def test_bad_files(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/badfiles/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
+    def test_bad_validate(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--validate", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
+    def test_bad_dryrun(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile,  "--dryrun", "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/baddeps/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+
+    def test_ssh_into_dep(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "boot",  "%s/intohostname/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertEqual(rc, 0)
+        runname = self._get_runname(outfile)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "terminate",  "%s" % (runname)])
+        self.assertEqual(rc, 0)
+
+    def test_reload(self):
+
+        if 'CLOUDINITD_TESTENV' in os.environ:
+            #this wont work in fake mode
+            return
+
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "-v", "-v", "-v", "boot",  "%s/reloadplan/badtop.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        n = "Starting up run"
+        line = self._find_str(outfile, n)
+        self.assertNotEqual(line, None)
+        runname = line[len(n):].strip()
+        print "run name is %s" % (runname)
+        self.assertNotEqual(rc, 0)
+
+        rc = cloudinitd.cli.boot.main(["--name", runname, "reload",  "%s/reloadplan/goodtop.conf" % (self.plan_basedir)])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["repair",  runname])
+        self.assertEqual(rc, 0)
+        rc = cloudinitd.cli.boot.main(["terminate",  runname])
+        self.assertEqual(rc, 0)
+
+
+
+    def test_validate_nolaunch(self):
+        (osf, outfile) = tempfile.mkstemp()
+        os.close(osf)
+
+        key = None
+        secret = None
+        url = None
+        try:
+            key = os.environ['CLOUDINITD_IAAS_ACCESS_KEY']
+            secret = os.environ['CLOUDINITD_IAAS_SECRET_KEY']
+            url = os.environ['CLOUDINITD_IAAS_URL']
+        except:
+            pass
+
+        # XXX this test may fail for nimbus
+        con = cloudinitd.cb_iaas.iaas_get_con(None, key=key, secret=secret, iaasurl=url)
+        i_list = con.get_all_instances()
+        rc = cloudinitd.cli.boot.main(["-O", outfile, "--validate", "boot",  "%s/badlevels/top.conf" % (self.plan_basedir)])
+        self._dump_output(outfile)
+        self.assertNotEqual(rc, 0)
+        after_list = con.get_all_instances()
+        self.assertEqual(len(i_list), len(after_list))
 
     def _get_runname(self, fname):
         n = "Starting up run"
