@@ -7,6 +7,7 @@ import uuid
 import stat
 import logging
 from cloudinitd.cli.cmd_opts import bootOpts
+from cloudinitd.global_deps import set_global_var, set_global_var_file, global_merge_down
 from cloudinitd.user_api import CloudInitD, CloudServiceException
 from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException
 import cloudinitd
@@ -23,6 +24,26 @@ g_repair = False
 g_outfile = None
 g_commands = {}
 g_options = None # just a lame way to thread info to callbacks.
+
+def _return_key_val(var_str):
+    l_a = var_str.split("=", 1)
+    if len(l_a) != 2:
+        raise Exception("Invalid global variable string.  It must be in the format <key>=<value>")
+    return l_a
+
+def _deal_with_cmd_line_globals(options):
+    if options.globalvar:
+        for var_str in options.globalvar:
+            (key, value) = _return_key_val(var_str)
+            set_global_var(key, value, 3)
+
+    if options.globalvarfile:
+        for filename in options.globalvarfile:
+            set_global_var_file(filename, 2)
+
+    # if we add this to the conf file that will go on rank 1
+    global_merge_down()
+
 
 def print_chars(lvl, msg, color="default", bg_color="default", bold=False, underline=False, inverse=False):
     global g_outfile
@@ -84,6 +105,13 @@ Run with the command 'commands' to see a list of all possible commands
     opt = bootOpts("output", "o", "Create an json document which describes the application and write it to the associated file.  Relevant for boot and status", None)
     opt.add_opt(parser)
     all_opts.append(opt)
+    opt = bootOpts("globalvar", "g", "Add a variable to global variable space", None, append_list=True)
+    opt.add_opt(parser)
+    all_opts.append(opt)
+    opt = bootOpts("globalvarfile", "G", "Add a file to global variable space", None, append_list=True)
+    opt.add_opt(parser)
+    all_opts.append(opt)
+
 
     homedir = os.path.expanduser("~/.cloudinitd")
     try:
@@ -94,6 +122,8 @@ Run with the command 'commands' to see a list of all possible commands
         print_chars(0, "Error creating cloudinit.d directort %s : %s" % (homedir, str(ex)))
         
     (options, args) = parser.parse_args(args=argv)
+
+    _deal_with_cmd_line_globals(options)
 
     for opt in all_opts:
         opt.validate(options)

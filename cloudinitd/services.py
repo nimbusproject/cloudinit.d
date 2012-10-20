@@ -6,6 +6,7 @@ import traceback
 import urllib
 import re
 import cb_iaas
+from cloudinitd.global_deps import get_global
 from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
 from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable, PortPollable, Pollable
 import bootfabtasks
@@ -509,7 +510,10 @@ class SVCContainer(Pollable):
             svc_name = match.group(1)
             attr_name = match.group(2)
             if svc_name:
-                subs = self._top_level.find_dep(svc_name, attr_name)
+                if svc_name == "global":
+                    subs = get_global(attr_name, raise_ex=True)
+                else:
+                    subs = self._top_level.find_dep(svc_name, attr_name)
             else:
                 subs = self.get_dep(attr_name)
 

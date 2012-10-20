@@ -4,7 +4,7 @@ from optparse import OptionParser
 
 class bootOpts(object):
 
-    def __init__(self, long, short, description, default, vals=None, range=None, flag=None, count=False, long_help=False):
+    def __init__(self, long, short, description, default, vals=None, range=None, flag=None, count=False, long_help=False, append_list=False):
         self.long = "--" + long.replace('_', '-')
         self.dest = long
         self.short = "-" + short
@@ -15,6 +15,7 @@ class bootOpts(object):
         self.description = description
         self.count = count
         self.long_help = long_help
+        self.append_list = append_list
 
     def validate(self, options):
 
@@ -85,7 +86,12 @@ class bootOpts(object):
                 help=self.get_description())
             return
 
-        parser.add_option(self.short, self.long, dest=self.dest,
-            default=self.default, type="string",
-            help=self.get_description())
+        if self.append_list:
+            parser.add_option(self.short, self.long, dest=self.dest,
+                default=self.default, type="string", action="append",
+                help=self.get_description())
+        else:
+            parser.add_option(self.short, self.long, dest=self.dest,
+                default=self.default, type="string",
+                help=self.get_description())
 
