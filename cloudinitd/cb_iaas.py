@@ -74,8 +74,7 @@ class IaaSBotoConn(object):
         self._svc = svc
 
         if not iaasurl:
-            all_regions = boto.ec2.regions()
-            if iaas not in all_regions:
+            if not iaas:
                 iaas = "us-east-1"
             region = boto.ec2.get_region(iaas, aws_access_key_id=key, aws_secret_access_key=secret)
             if not region:
