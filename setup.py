@@ -29,6 +29,21 @@ def plans_list_dirs(p):
 basepath = os.path.dirname(__file__)
 test_plans = plans_list_dirs(os.path.join(basepath, "tests/plans"))
 
+install_requires = [
+        "boto >= 2.6",
+        "sqlalchemy >= 0.7.6",
+        "fabric == 1.3",
+        "simplejson >= 2.1",
+        "apache-libcloud == 0.11.1",
+        "uuid",
+        "PyCrypto >=2.1, <2.4"
+        ]
+
+tests_require = install_requires + [
+        'mock',
+        'nose',
+        ]
+
 setup(name='cloudinitd',
       version=Version,
       description='An Open Source bootstrap tool for services in the cloud.',
@@ -56,16 +71,11 @@ means launching and configuring all of the VMs needed for each service in the le
 booted and ready to go, booting begins on level 2.
 """,
       license="Apache2",
-      install_requires = [
-          "boto >= 2.6",
-          "sqlalchemy >= 0.7.6",
-          "fabric == 1.3",
-          "simplejson >= 2.1",
-          "apache-libcloud == 0.11.1",
-          "uuid",
-          "PyCrypto >=2.1, <2.4"
-          ],
-
+      install_requires = install_requires,
+      tests_require=tests_require,
+      extras_require={
+          'test': tests_require,
+      },
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',

@@ -1,4 +1,6 @@
+dist/
+build/
+*.egg-info
 *.pyc
 *.pyo
-cloudboot.egg-info
 /docs/plans/common/cookbooks.tar.gz

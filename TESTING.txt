@@ -4,7 +4,15 @@ Testing cloudinit.d
 Simple Testing on Local System
 ------------------------------
 
-Setup cloudinit.d with "python setup.py install" then run:
+Setup cloudinit.d with:
+
+    python setup.py develop
+
+Then use pip to install additional testing dependencies:
+
+    pip install cloudinit[test]
+
+Finally, run basic tests with:
 
     nosetests cloudinitd
 
