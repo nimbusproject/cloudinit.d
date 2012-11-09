@@ -36,7 +36,7 @@ def _tartask(directory, basename, tarball, run_pgm=run):
 
     # In case they forgot:
     run_pgm("chmod +x %s" % destpgm)
-    
+
     return destpgm
 
 def _make_ssh(pgm, args="", local_exe=None):

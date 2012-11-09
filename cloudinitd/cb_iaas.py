@@ -156,7 +156,7 @@ class IaaSBotoConn(object):
         return i
 
 class IaaSLibCloudConn(object):
-    
+
     def __init__(self, svc, key, secret, iaasurl, iaas):
         #cloudinitd.log(log, logging.INFO, "loading up a lobcloud driver %s" % (iaas))
         self._svc = svc

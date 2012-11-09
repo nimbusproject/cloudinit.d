@@ -134,7 +134,7 @@ def make_logger(log_level, runname, logdir=None, servicename=None):
             logfile = logdir + "/" + servicename + ".log"
         else:
             logfile = logdir + "/" + runname + ".log"
-            
+
         handler = logging.handlers.RotatingFileHandler(logfile, maxBytes=100*1024*1024, backupCount=5)
 
     logger.addHandler(handler)

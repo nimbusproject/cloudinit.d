@@ -161,7 +161,7 @@ class PortPollable(Pollable):
                 cloudinitd.log(self._log, logging.ERROR, "safety error count exceeded" + str(ex), tb=traceback)
                 raise
             cloudinitd.log(self._log, logging.INFO, "Retry %d for %s:%d" % (self._poll_error_count, self._host, self._port))
-            
+
             return False
 
     def cancel(self):
@@ -265,7 +265,7 @@ class InstanceHostnamePollable(Pollable):
             try:
                 if self._instance.get_state() not in self._ok_states:
                     cloudinitd.log(self._log, logging.DEBUG, "%s polling thread done" % (self.get_instance_id()))
-                    done = True 
+                    done = True
                 # because update is called in start we will sleep first
                 else:
                     time.sleep(poll_period)
@@ -322,7 +322,7 @@ class PopenExecutablePollable(Pollable):
         if self._exception:
             raise self._exception
         if not self._started:
-            raise APIUsageException("You must call start before calling poll.")        
+            raise APIUsageException("You must call start before calling poll.")
         if self._done:
             return True
         # check timeout here
@@ -369,7 +369,7 @@ class PopenExecutablePollable(Pollable):
             if self._error_count >= self._allowed_errors:
                 ex = Exception("Process exceeded the allowed number of failures %d with %d: %s" % (self._allowed_errors, self._error_count, self._cmd))
                 raise ProcessException(ex, self._stdout_str, self._stderr_str, rc)
-            self._last_run = datetime.datetime.now()     
+            self._last_run = datetime.datetime.now()
             return False
         self._done = True
         self._execute_cb(cloudinitd.callback_action_complete, "Pollable complete")
@@ -403,7 +403,7 @@ class PopenExecutablePollable(Pollable):
 
             if f == p.stdout:
                 # we assume there will be a full line or eof
-                # not the fastest str concat, but this is small                
+                # not the fastest str concat, but this is small
                 self._stdout_str = self._stdout_str + line
                 if not line:
                     self._stdout_eof = True
@@ -467,7 +467,7 @@ class MultiLevelPollable(Pollable):
                 p.pre_start()
 
     def start(self):
-        Pollable.start(self)        
+        Pollable.start(self)
         if self.level_ndx >= 0:
             return
 
@@ -476,7 +476,7 @@ class MultiLevelPollable(Pollable):
         if len(self.levels) == 0:
             return
         self._start()
-        
+
     def _start(self):
         self._execute_cb(cloudinitd.callback_action_started, self._get_callback_level())
         for p in self.levels[self.level_ndx]:
@@ -559,7 +559,7 @@ class MultiLevelPollable(Pollable):
 
     def get_level_times(self):
         return self.level_times
-    
+
     #def cancel(self):
     # table this for now
     #    """
@@ -586,7 +586,7 @@ class MultiLevelPollable(Pollable):
             lvl = self.levels[i]
             for p in lvl:
                 p.cancel()
-                
+
         self._canceled = True
 
 
@@ -595,7 +595,7 @@ class ValidationPollable(Pollable):
     def __init__(self, svc, timeout=600, done_cb=None):
         Pollable.__init__(self, timeout, done_cb=done_cb)
         self._svc = svc
-        
+
 
     def start(self):
         Pollable.start(self)

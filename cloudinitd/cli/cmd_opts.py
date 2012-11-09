@@ -34,7 +34,7 @@ class bootOpts(object):
                 if float(val) == -1.0:
                     if float(self.range[0]) != -1.0 and float(self.range[1]) != -1.0:
                         raise Exception("you specified a value out of range")
- 
+
                     else:
                         return
 

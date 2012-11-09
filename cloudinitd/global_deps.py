@@ -12,7 +12,7 @@ class CidVarObject(object):
 
     def set_var(self, key, val):
         self.vars[key] = val
-        
+
 def set_global_var_file(path, rank):
     parser = ConfigParser.ConfigParser()
     parser.read(path)

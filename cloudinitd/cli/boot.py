@@ -120,7 +120,7 @@ Run with the command 'commands' to see a list of all possible commands
             os.chmod(homedir, stat.S_IWUSR | stat.S_IXUSR | stat.S_IRUSR)
     except Exception, ex:
         print_chars(0, "Error creating cloudinit.d directort %s : %s" % (homedir, str(ex)))
-        
+
     (options, args) = parser.parse_args(args=argv)
 
     _deal_with_cmd_line_globals(options)
@@ -214,7 +214,7 @@ def level_callback(cb, action, current_level):
 
 def service_callback(cb, cloudservice, action, msg):
     global g_action
-    
+
     if action == cloudinitd.callback_action_started:
         print_chars(3, "\t%s\n" % (msg))
 
@@ -336,7 +336,7 @@ def launch_new(options, args):
                 if not os.path.exists(path):
                     raise Exception("That DB does not seem to exist: %s" % (path))
                 os.remove(path)
-            
+
         return rc
 
     (rc, cb) = _launch_new(options, args, cb)
@@ -363,7 +363,7 @@ def _launch_new(options, args, cb):
     finally:
         fake_args = ["clean", options.name]
         clean_ice(options, fake_args)
-        
+
     rc = 0
     ex = cb.get_exception()
     if ex is None:
@@ -428,7 +428,7 @@ def _status(options, args):
         rc = 1
 
     _write_json_doc(options, cb)
-    
+
     return rc
 
 def terminate(options, args):

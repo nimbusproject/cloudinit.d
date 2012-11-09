@@ -64,7 +64,7 @@ class BootTopLevel(object):
                 svcs.append(v)
 
         return svcs
-        
+
     @cloudinitd.LogEntryDecorator
     def get_service(self, name):
         return self.services[name]
@@ -84,7 +84,7 @@ class BootTopLevel(object):
             raise APIUsageException("A service by the name of %s is already know to this boot configuration.  Please check your config files and try another name" % (s.name))
 
         if s.image is None and s.hostname is None:
-            raise APIUsageException("You must have an image or a hostname or there will be no VM")    
+            raise APIUsageException("You must have an image or a hostname or there will be no VM")
 
         if boot is None:
             boot = self._boot
@@ -173,8 +173,8 @@ class SVCContainer(Pollable):
 
         self._stagedir = "%s/%s" % (get_remote_working_dir(), self.name)
         self._validate_and_reinit(boot=boot, ready=ready, terminate=terminate, callback=callback, repair=reload)
-        
-        self._db.db_commit()    
+
+        self._db.db_commit()
         self._restart_limit = 2
         self._restart_count = 0
 
@@ -277,7 +277,7 @@ class SVCContainer(Pollable):
                         instance = iaas_con.find_instance(self._s.instance_id)
                         self._shutdown_poller = InstanceTerminatePollable(instance, log=self._log, done_cb=self._teminate_done)
                         self._term_host_pollers.add_level([self._shutdown_poller])
-                    except IaaSException, iaas_ex:                        
+                    except IaaSException, iaas_ex:
                         emsg = "Skipping terminate due to IaaS exception %s" % (str(iaas_ex))
                         self._execute_callback(cloudinitd.callback_action_transition, emsg)
                         cloudinitd.log(self._log, logging.INFO, emsg)
@@ -321,7 +321,7 @@ class SVCContainer(Pollable):
     def _make_pollers(self):
         if self._do_boot or self._do_ready:
             self._do_attr_bag()
-        
+
         self._ready_poller = None
         self._boot_poller = None
         self._terminate_poller = None
@@ -601,7 +601,7 @@ class SVCContainer(Pollable):
         try:
             rc = self._poll()
             if rc:
-                self._running = False                
+                self._running = False
             return rc
         except MultilevelException, multiex:
             msg = ""
@@ -662,7 +662,7 @@ class SVCContainer(Pollable):
             stdout = poller.get_stdout()
             stderr = poller.get_stderr()
             cmd = poller.get_command()
-            # this is reapeated info but at a convient location. 
+            # this is reapeated info but at a convient location.
             cloudinitd.log(self._log, logging.DEBUG, "Output for the command %s:\nstdout\n------\n%s\nstderr\n------\n%s" % (cmd, stdout, stderr))
         except Exception, ex:
             cloudinitd.log(self._log, logging.ERROR, "Failed to log output info | %s" % (str(ex)))
@@ -768,7 +768,7 @@ class SVCContainer(Pollable):
 
         if readypgm_args:
             readypgm_args = urllib.quote(readypgm_args)
-        
+
         cmd = self._get_fab_command() + " 'readypgm:hosts=%s,pgm=%s,args=%s,stagedir=%s,local_exe=%s'" % (host, readypgm, readypgm_args, self._stagedir, str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using ready pgm command %s" % (cmd))
         return cmd

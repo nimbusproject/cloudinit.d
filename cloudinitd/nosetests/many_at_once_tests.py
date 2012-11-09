@@ -66,7 +66,7 @@ class ManyAtOnceTests(unittest.TestCase):
         h = svc.get_attr_from_bag("hostname")
         print h
         self._terminate(dir, cb.run_name)
-        
+
     def test_getlevels(self):
         tst_name = "multilevelsimple"
         (dir, cb) = self._start_one(tst_name)

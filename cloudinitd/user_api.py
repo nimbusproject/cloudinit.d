@@ -43,7 +43,7 @@ class CloudInitD(object):
         A service cannot be created without this object.  This object holds a dictionary of all services which is
         used for querying dependencies
     """
-    
+
     def __init__(self, db_dir, config_file=None, db_name=None, log_level="warn", logdir=None, level_callback=None, service_callback=None, boot=True, ready=True, terminate=False, continue_on_error=False, fail_if_db_present=False):
         """
         db_dir:     a path to a directories where databases can be stored.
@@ -401,7 +401,7 @@ class IaaSHistory(object):
     @cloudinitd.LogEntryDecorator
     def get_context_state(self):
         return self._svc._s.state
-        
+
     @cloudinitd.LogEntryDecorator
     def get_service_iaas_handle(self):
         return self._svc._s.instance_id

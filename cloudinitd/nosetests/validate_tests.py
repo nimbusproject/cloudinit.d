@@ -23,7 +23,7 @@ class ValidateTests(unittest.TestCase):
         conf_file = self.plan_basedir + "/iaastypevalidate/top.conf"
         cb = CloudInitD(dir, conf_file, terminate=False, boot=True, ready=True)
         cb.start()
-            
+
         cb.block_until_complete(poll_period=1.0)
 
         # check the log for a warning
@@ -41,7 +41,7 @@ class ValidateTests(unittest.TestCase):
                     found = True
         self.assertTrue(found, "a warning with the key 2.7 should be in the logfile %s" %(fname))
         f.close()
-        
+
         cb = CloudInitD(dir, db_name=cb.run_name, terminate=True, boot=False, ready=False)
         cb.shutdown()
         cb.block_until_complete(poll_period=1.0)

@@ -43,7 +43,7 @@ class BasicUnitTests(unittest.TestCase):
         self.assertEqual(msg, str(ex))
         ex = IaaSException(Exception("test"))
         print ex
-        ex = MultilevelException([ex], [ex], 5)                
+        ex = MultilevelException([ex], [ex], 5)
         print ex
         fakesvc = FakeSvc("name")
         ex = ServiceException(Exception("tester"), fakesvc, msg="msg")

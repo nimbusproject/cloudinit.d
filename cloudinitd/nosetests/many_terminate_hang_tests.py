@@ -45,7 +45,7 @@ class ManyTerminateHangTests(unittest.TestCase):
             file.close()
 
     def _dump_output(self, filename):
-        file = open(filename, "r")  
+        file = open(filename, "r")
         print file.readlines()
         file.close()
 

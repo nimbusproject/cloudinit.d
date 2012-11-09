@@ -44,7 +44,7 @@ class SingleVMTests(unittest.TestCase):
         cb.block_until_complete(poll_period=1.0)
 
 
-    # this test should be taken with a grain of salt.  It will fail if you 
+    # this test should be taken with a grain of salt.  It will fail if you
     # are doin anything else with you account
     def test_only_one_launched(self):
         if 'CLOUDINITD_CLEAN_ACCOUNT' not in os.environ:

@@ -30,7 +30,7 @@ class BasicUserAPITests(unittest.TestCase):
     def test_lotsonlevel(self):
         tst_name = "lotsonlevel"
         self._start_one(tst_name)
-        
+
     def test_multileveldeps(self):
         tst_name = "multileveldeps"
         self._start_one(tst_name)

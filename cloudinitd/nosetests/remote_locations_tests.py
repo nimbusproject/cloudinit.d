@@ -52,7 +52,7 @@ class RemoteDirInspectionTests(unittest.TestCase):
 
         rc = os.system(ssh_cmd)
         self.assertEquals(rc, 0)
-        
+
         cb = CloudInitD(dir, db_name=cb.run_name, terminate=True, boot=False, ready=False)
         cb.shutdown()
         cb.block_until_complete(poll_period=1.0)
