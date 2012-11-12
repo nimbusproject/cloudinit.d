@@ -704,10 +704,10 @@ class SVCContainer(Pollable):
         if not self._boot_output_file:
             return
         try:
-            f = open(self._boot_output_file, "r")
-            j_doc = json.load(f)
+            with open(self._boot_output_file, "r") as f:
+                j_doc = json.load(f)
         except Exception, ex:
-            cloudinitd.log(self._log, logging.WARN, "No output read from the boot program %s" % (str(ex)))
+            cloudinitd.log(self._log, logging.DEBUG, "No output read from the boot program %s" % (str(ex)))
             return
         for k in j_doc.keys():
             self._attr_bag[k] = j_doc[k]
