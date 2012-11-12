@@ -1,21 +1,22 @@
 
 import pipes
 import shlex
-import shutil
 import traceback
 import urllib
 import re
+import tempfile
+import string
+
+import simplejson as json
+
 import cb_iaas
 from cloudinitd.global_deps import get_global
 from cloudinitd.persistence import BagAttrsObject, IaaSHistoryObject
 from cloudinitd.pollables import MultiLevelPollable, InstanceHostnamePollable, PopenExecutablePollable, InstanceTerminatePollable, PortPollable, Pollable
 import bootfabtasks
-import tempfile
-import string
 from cloudinitd.exceptions import APIUsageException, ConfigException, ServiceException, MultilevelException
 from cloudinitd.statics import *
 from cloudinitd.cb_iaas import *
-import simplejson as json
 
 
 class BootTopLevel(object):
@@ -105,7 +106,7 @@ class BootTopLevel(object):
     def find_dep(self, svc_name, attr):
         try:
             svc = self.services[svc_name]
-        except KeyError, ex:
+        except KeyError:
             raise APIUsageException("service %s not found" % (svc_name))
         return svc.get_dep(attr)
 
@@ -194,12 +195,10 @@ class SVCContainer(Pollable):
         self.exception_list = []
         self._port_poller = None
 
-
     @cloudinitd.LogEntryDecorator
     def _validate_and_reinit(self, boot=True, ready=True, terminate=False, callback=None, repair=False):
         if boot and self._s.state == cloudinitd.service_state_contextualized and not terminate:
             raise APIUsageException("trying to boot an already contextualized service and not terminating %s %s %s" % (str(boot), str(self._s.state), str(terminate)))
-
 
         #if self._s.contextualized == 0 and not boot and not terminate and repair:
         #    cloudinitd.log(self._log, logging.WARN, "%s was asked not to boot but it has not yet been booted.  We are automatically changing this to boot.  We are also turning on terminate in case an iaas handle is associate with this" % (self.name))
@@ -248,7 +247,6 @@ class SVCContainer(Pollable):
         if not self._hostname_poller:
             return None
         return self._hostname_poller.get_status()
-
 
     @cloudinitd.LogEntryDecorator
     def _make_first_pollers(self):
@@ -401,7 +399,7 @@ class SVCContainer(Pollable):
     @cloudinitd.LogEntryDecorator
     def get_scp_command(self, src, dst, upload=False, recursive=False, forcehost=None):
         scpexec = "scp"
-        if os.environ.has_key('CLOUDINITD_SCP'):
+        if 'CLOUDINITD_SCP' in os.environ:
             scpexec = os.environ['CLOUDINITD_SCP']
         if recursive:
             scpexec += " -r"
@@ -481,7 +479,7 @@ class SVCContainer(Pollable):
     @cloudinitd.LogEntryDecorator
     def get_dep_keys(self):
         # first parse through the known ones, then hit the attr bag
-        keys = ["hostname", "instance_id"] + self._attr_bag.keys()# + self._s.__dict__.keys()
+        keys = ["hostname", "instance_id"] + self._attr_bag.keys()
         return keys
 
     @cloudinitd.LogEntryDecorator
@@ -636,7 +634,7 @@ class SVCContainer(Pollable):
                 stdout = self._terminate_poller.get_stdout()
                 stderr = self._terminate_poller.get_stderr()
 
-            if self._port_poller  in multiex.pollable_list:
+            if self._port_poller in multiex.pollable_list:
                 msg = "the poller that attempted to connect to the ssh port on %s failed for %s\n%s" % (self._s.hostname, self._myname, msg)
                 stdout = ""
                 stderr = ""
@@ -684,7 +682,7 @@ class SVCContainer(Pollable):
             rc = self._pollables.poll()
             if rc:
                 self._running = False
-                self._execute_done_cb() # on parent object for timings mostly
+                self._execute_done_cb()  # on parent object for timings mostly
                 self._execute_callback(cloudinitd.callback_action_complete, "Service Complete")
                 poller_list = [self._ssh_poller, self._ssh_poller2, self._boot_poller, ]
                 for p in poller_list:
@@ -727,7 +725,7 @@ class SVCContainer(Pollable):
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()
         self._db.db_commit()
-        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" %(self._s.hostname))
+        self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" % self._s.hostname)
         cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
 
     @cloudinitd.LogEntryDecorator
@@ -750,15 +748,6 @@ class SVCContainer(Pollable):
         cmd = self._get_ssh_command(self._s.hostname) + " " + true_pgm
         cloudinitd.log(self._log, logging.DEBUG, "Using ssh command %s" % (cmd))
         return cmd
-
-    def _copy_local_file(self):
-        rel_pgm = os.path.basename(pgm)
-        dst = os.path.join(self._stagedir, rel_pgm)
-        shutil.copyfile(pgm, dst)
-
-        idx = rel_pgm.rfind('.tar.gz')
-        if idx > 0:
-            pass
 
     @cloudinitd.LogEntryDecorator
     def _get_readypgm_cmd(self):
@@ -821,7 +810,7 @@ class SVCContainer(Pollable):
         template = string.Template(doc_tpl)
         try:
             document = template.substitute(self._attr_bag)
-        except Exception,e:
+        except Exception, e:
             raise ConfigException("The file '%s' has a variable that could not be found: %s" % (path, str(e)))
 
         # having the template name in the temp file name makes it easier
