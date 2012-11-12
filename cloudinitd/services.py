@@ -233,14 +233,14 @@ class SVCContainer(Pollable):
 
     @cloudinitd.LogEntryDecorator
     def _teminate_done(self, poller):
-        cloudinitd.log(self._log, logging.INFO, "%s hit terminate done callback" % (self.name))
+        cloudinitd.log(self._log, logging.DEBUG, "%s hit terminate done callback" % (self.name))
 
         self._s.state = cloudinitd.service_state_terminated
         if self._s.image:
             self._s.hostname = None
 #        self._s.instance_id = None
         self._db.db_commit()
-        cloudinitd.log(self._log, logging.INFO, "%s terminate done callback completed" % (self.name))
+        cloudinitd.log(self._log, logging.DEBUG, "%s terminate done callback completed" % (self.name))
 
     @cloudinitd.LogEntryDecorator
     def get_iaas_status(self):
@@ -719,14 +719,14 @@ class SVCContainer(Pollable):
         self._read_boot_output()
         self._s.state = cloudinitd.service_state_contextualized
         self._db.db_commit()
-        cloudinitd.log(self._log, logging.INFO, "%s hit context_done_cb callback" % (self.name))
+        cloudinitd.log(self._log, logging.DEBUG, "%s hit context_done_cb callback" % (self.name))
 
     @cloudinitd.LogEntryDecorator
     def _hostname_poller_done(self, poller):
         self._s.hostname = self._hostname_poller.get_hostname()
         self._db.db_commit()
         self._execute_callback(cloudinitd.callback_action_transition, "Have hostname %s" % self._s.hostname)
-        cloudinitd.log(self._log, logging.INFO, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
+        cloudinitd.log(self._log, logging.DEBUG, "%s hit _hostname_poller_done callback instance %s" % (self.name, self._s.instance_id))
 
     @cloudinitd.LogEntryDecorator
     def get_ssh_command(self):
