@@ -778,7 +778,11 @@ class SVCContainer(Pollable):
         bootenv_file = None
         if self._s.bootconf:
             bootconf = self._fill_template(self._s.bootconf)
-            bootenv_file = self._json_file_to_env(bootconf)
+            try:
+                bootenv_file = self._bootconf_to_env(bootconf)
+            except Exception:
+                cloudinitd.log(self._log, logging.WARN, "Failed to convert bootconf to env file", tb=traceback)
+                bootenv_file = None
 
         cmd = self._get_fab_command() + " 'bootpgm:hosts=%s,pgm=%s,args=%s,conf=%s,env_conf=%s,output=%s,stagedir=%s,remotedir=%s,local_exe=%s'" % (host, bootpgm, bootpgm_args,  bootconf, bootenv_file, self._boot_output_file, self._stagedir, get_remote_working_dir(), str(self._s.local_exe))
         cloudinitd.log(self._log, logging.DEBUG, "Using boot pgm command %s" % (cmd))
@@ -832,12 +836,11 @@ class SVCContainer(Pollable):
         return newpath
 
     @cloudinitd.LogEntryDecorator
-    def _json_file_to_env(self, jsonfile):
-        f = open(jsonfile, "r")
-        vals_dict = json.load(f)
-        f.close()
+    def _bootconf_to_env(self, path):
 
-        prefix = os.path.basename(jsonfile)
+        vals_dict = self._load_dict_from_file(path)
+
+        prefix = os.path.basename(path)
         prefix += "_"
         if self._logfile is None:
             dir = None
@@ -853,6 +856,14 @@ class SVCContainer(Pollable):
         outf.close()
 
         return newpath
+
+    def _load_dict_from_file(self, path):
+
+        #TODO support yaml directly?
+        with open(path, "r") as f:
+            d = json.load(f)
+
+        return d
 
     @cloudinitd.LogEntryDecorator
     def cancel(self):
