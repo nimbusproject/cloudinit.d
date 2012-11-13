@@ -20,9 +20,12 @@ if 'CLOUDINITD_IAAS_ACCESS_KEY' not in os.environ and 'CLOUDINITD_IAAS_SECRET_KE
     os.environ['CLOUDINITD_IAAS_IMAGE'] = "NOTHING"
     #os.environ['CLOUDINITD_IAAS_TYPE'] =
     os.environ['CLOUDINITD_IAAS_ALLOCATION'] = "NOTHING"
-    os.environ['CLOUDINITD_IAAS_SSHKEYNAME'] ="NOTHING"
-    os.environ['CLOUDINITD_IAAS_SSHKEY'] = "/etc/group"
+    os.environ['CLOUDINITD_IAAS_SSHKEYNAME'] = "NOTHING"
+
+    # keep this one if it is set. for localhost tests.
+    os.environ['CLOUDINITD_IAAS_SSHKEY'] = os.environ.get('CLOUDINITD_IAAS_SSHKEY', "/etc/group")
     os.environ['CLOUDINITD_SSH_USERNAME'] = "NOTHING"
+
 
 def is_a_test():
     return 'CLOUDINITD_TESTENV' in os.environ and os.environ['CLOUDINITD_TESTENV'] == "1"

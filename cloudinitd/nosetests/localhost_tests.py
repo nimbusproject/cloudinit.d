@@ -50,7 +50,7 @@ class CloudInitDLocalhostTests(unittest.TestCase):
         file.close()
 
     def _tst_local_host(self):
-        cmd = "ssh  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no localhost /bin/true"
+        cmd = "ssh  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no localhost true"
         rc = os.system(cmd)
         if rc != 0:
             raise SkipTest()
