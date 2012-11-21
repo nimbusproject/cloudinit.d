@@ -245,7 +245,7 @@ def reload_conf(options, args):
     Reload the configuration into this runs data base.  This is typically followed by a repair
     """
     if len(args) < 2:
-        print "The boot command requires a top level file.  See --help"
+        print "The reload command requires a top level file.  See --help"
         return 1
 
     config_file = args[1]
