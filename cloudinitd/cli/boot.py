@@ -242,7 +242,7 @@ def service_callback(cb, cloudservice, action, msg):
 
 def reload_conf(options, args):
     """
-    Reload the configuration into this runs data base.  This is typically followed by a repair
+    Reload an updated launch plan configuration into the database of the run name supplied with --name.  This is typically followed by a repair of the same run name.
     """
     if len(args) < 2:
         print "The reload command requires a top level file.  See --help"
