@@ -12,8 +12,10 @@ import ConfigParser
 from sqlalchemy import types
 from datetime import datetime
 import os
+
 import cloudinitd
 from cloudinitd.exceptions import APIUsageException
+from cloudinitd.global_deps import set_global_var, global_merge_down
 
 
 metadata = MetaData()
@@ -129,6 +131,17 @@ def _resolve_file_or_none(context_dir, conf, conf_file, has_args=False):
         raise Exception("File does not exist: '%s'.  This was "
                         "referenced in the file '%s'." % (path, conf_file))
     return path
+
+
+def _load_globals_from_config(config_parser):
+        # load global variables
+        if config_parser.has_section("globals"):
+            for key, val in config_parser.items("globals"):
+                # globals from top level config get "rank" 1 --
+                # overridden by command line files and args
+                set_global_var(key, val, 1)
+            global_merge_down()
+
 
 class BootObject(object):
 
@@ -391,7 +404,6 @@ class CloudInitDDB(object):
         self._Session = sessionmaker(bind=self._engine)
         self._session = self._Session()
 
-
     def db_obj_add(self, obj):
         self._session.add(obj)
 
@@ -400,6 +412,11 @@ class CloudInitDDB(object):
 
     def load_from_db(self):
         bo = self._session.query(BootObject).first()
+
+        # need to re-read topconf to get globals. should these go to DB instead?
+        parser = ConfigParser.ConfigParser()
+        parser.read(bo.topconf)
+        _load_globals_from_config(parser)
         return bo
 
     def load_from_conf(self, conf_file):
@@ -446,6 +463,7 @@ class CloudInitDDB(object):
                 cloudconf = CloudConfSection(parser, s)
                 self._cloudconf_sections[s] = cloudconf
 
+        _load_globals_from_config(parser)
 
         lvl_dict = {}
         levels = parser.items("runlevels")
