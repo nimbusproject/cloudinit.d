@@ -516,7 +516,7 @@ class SVCContainer(Pollable):
                 subs = self.get_dep(attr_name)
 
             ndx = val.find(match.group(0)) + len(match.group(0))
-            if subs:
+            if subs is not None:
                 val = val.replace(match.group(0), subs)
             match = pattern.search(val[ndx:])
         return val
