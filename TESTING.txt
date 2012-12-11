@@ -10,7 +10,7 @@ Setup cloudinit.d with:
 
 Then use pip to install additional testing dependencies:
 
-    pip install cloudinit[test]
+    pip install cloudinitd[test]
 
 Finally, run basic tests with:
 
