@@ -2,6 +2,7 @@
 
 set -e
 source bootenv.sh
+apt-get update
 apt-get install -y sshfs
 
 mkdir -p $SSHFS_MOUNTDIR
