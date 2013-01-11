@@ -105,7 +105,8 @@ class CloudInitD(object):
             db_name = str(uuid.uuid4()).split("-")[0]
 
         db_file = "cloudinitd-%s.db" % db_name
-        db_path = os.path.join(db_dir, db_file)
+        db_path = os.path.join("/", db_dir, db_file)
+        print db_path
         self._db_path = db_path
         if config_file is None:
             if not os.path.exists(db_path):
@@ -118,7 +119,7 @@ class CloudInitD(object):
 
         self._started = False
         self.run_name = db_name
-        dburl = "sqlite://%s" % (db_path)
+        dburl = "sqlite:///%s" % (db_path)
 
         self._db = CloudInitDDB(dburl)
         os.chmod(db_path, stat.S_IRUSR | stat.S_IWUSR)
