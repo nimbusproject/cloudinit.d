@@ -104,7 +104,8 @@ class CloudInitD(object):
         if not db_name:
             db_name = str(uuid.uuid4()).split("-")[0]
 
-        db_path = "/%s/cloudinitd-%s.db" % (db_dir, db_name)
+        db_file = "cloudinitd-%s.db" % db_name
+        db_path = os.path.join(db_dir, db_file)
         self._db_path = db_path
         if config_file is None:
             if not os.path.exists(db_path):
