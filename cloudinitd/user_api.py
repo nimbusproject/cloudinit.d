@@ -106,7 +106,6 @@ class CloudInitD(object):
 
         db_file = "cloudinitd-%s.db" % db_name
         db_path = os.path.join("/", db_dir, db_file)
-        print db_path
         self._db_path = db_path
         if config_file is None:
             if not os.path.exists(db_path):
