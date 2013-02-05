@@ -217,10 +217,21 @@ class InstanceHostnamePollable(Pollable):
         state = self._instance.get_state()
         cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in poll for %s is %s" % (self.get_instance_id(), state))
         if state == "running":
-            self._done = True
-            self._thread.join()
-            self._execute_done_cb()
-            return True
+            # Workaround for OpenStack sending the internal hostname as the
+            # public hostname: we wait until the hostname can be resolved
+            hostname = self.get_hostname()
+            try:
+                socket.gethostbyname(hostname)
+            except socket.gaierror as e:
+                cloudinitd.log(self._log, logging.WARN, "Hostname %s fails to resolve, continuing iaas poll: %s" % (hostname, e))
+                return False
+            except Exception:
+                raise
+            else:
+                self._done = True
+                self._thread.join()
+                self._execute_done_cb()
+                return True
         if state not in self._ok_states:
             msg = "The current state is %s.  Never reached state running" % (state)
             cloudinitd.log(self._log, logging.DEBUG, msg, tb=traceback)
@@ -263,14 +274,9 @@ class InstanceHostnamePollable(Pollable):
         done = False
         while not self._done and not done:
             try:
-                if self._instance.get_state() not in self._ok_states:
-                    cloudinitd.log(self._log, logging.DEBUG, "%s polling thread done" % (self.get_instance_id()))
-                    done = True
-                # because update is called in start we will sleep first
-                else:
-                    time.sleep(poll_period)
-                    self._update()
-                    cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in thread for %s is %s" % (self.get_instance_id(), self._instance.get_state()))
+                time.sleep(poll_period)
+                self._update()
+                cloudinitd.log(self._log, logging.DEBUG, "Current iaas state in thread for %s is %s" % (self.get_instance_id(), self._instance.get_state()))
             except Exception, ex:
                 cloudinitd.log(self._log, logging.ERROR, str(ex), tb=traceback)
                 self.exception = IaaSException(ex)
