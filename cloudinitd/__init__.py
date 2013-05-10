@@ -11,7 +11,7 @@ service_state_terminated = 6
 
 g_open_loggers = []
 
-Version = "1.2"
+Version = "1.3"
 
 def find_true():
     cmds = [
