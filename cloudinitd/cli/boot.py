@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 from datetime import datetime
 
 import sys
@@ -91,6 +91,9 @@ Run with the command 'commands' to see a list of all possible commands
     opt.add_opt(parser)
     all_opts.append(opt)
     opt = bootOpts("noclean", "c", "Do not delete the database, only relevant for the terminate command", False, flag=True)
+    opt.add_opt(parser)
+    all_opts.append(opt)
+    opt = bootOpts("safeclean", "C", "Do not delete the database on failed terminate, only relevant for the terminate command", False, flag=True)
     opt.add_opt(parser)
     all_opts.append(opt)
     opt = bootOpts("kill", "k", "This option only applies to the iceage command.  When on it will terminate all VMs started with IaaS associated with this run to date.  This should be considered an extreme measure to prevent IaaS resource leaks.", False, flag=True)
@@ -450,10 +453,14 @@ def terminate(options, args):
             cb.block_until_complete(poll_period=0.1)
             if not options.noclean:
                 path = "%s/cloudinitd-%s.db" % (options.database, dbname)
-                print_chars(1, "deleting the db file %s\n" % (path))
                 if not os.path.exists(path):
                     raise Exception("That DB does not seem to exist: %s" % (path))
-                os.remove(path)
+                if not options.safeclean and cb.get_exception() is None and not cb.get_all_exceptions():
+                    print_chars(1, "Deleting the db file %s\n" % (path))
+                    os.remove(path)
+                else:
+                    print_chars(4, "There were errors when terminating %s, keeping db\n" % (cb.run_name))
+
             ex = cb.get_exception()
             if ex is None:
                 ex_list = cb.get_all_exceptions()
