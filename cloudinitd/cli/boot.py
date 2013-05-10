@@ -455,7 +455,7 @@ def terminate(options, args):
                 path = "%s/cloudinitd-%s.db" % (options.database, dbname)
                 if not os.path.exists(path):
                     raise Exception("That DB does not seem to exist: %s" % (path))
-                if not options.safeclean and cb.get_exception() is None and not cb.get_all_exceptions():
+                if not options.safeclean or (cb.get_exception() is None and not cb.get_all_exceptions()):
                     print_chars(1, "Deleting the db file %s\n" % (path))
                     os.remove(path)
                 else:
