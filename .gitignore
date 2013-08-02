@@ -4,3 +4,4 @@ build/
 *.pyc
 *.pyo
 /docs/plans/common/cookbooks.tar.gz
+.coverage
