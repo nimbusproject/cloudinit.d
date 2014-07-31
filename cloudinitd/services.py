@@ -407,7 +407,7 @@ class SVCContainer(Pollable):
         if self._s.localkey:
             key_str = "-i %s" % (self._s.localkey)
 
-        cmd = scpexec + " -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s " % (key_str)
+        cmd = scpexec + " -o BatchMode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s " % (key_str)
         hostname = self._expand_attr(self._s.hostname)
         if forcehost:
             hostname = forcehost
@@ -442,7 +442,7 @@ class SVCContainer(Pollable):
         key_str = ""
         if self._s.localkey:
             key_str = "-i %s" % (self._s.localkey)
-        cmd = sshexec + "  -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s %s%s" % (key_str, user, host)
+        cmd = sshexec + "  -n -T -o BatchMode=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o PasswordAuthentication=no %s %s%s" % (key_str, user, host)
         return cmd
 
     @cloudinitd.LogEntryDecorator
