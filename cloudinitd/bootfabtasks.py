@@ -45,7 +45,7 @@ def _make_ssh(pgm, args="", local_exe=None):
         cmd = "%s %s" % (pgm, args)
         return cmd
 
-    ssh_opts = "-A -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no"
+    ssh_opts = "-A -n -T -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no"
     try:
         if 'CLOUDINITD_SSH_OPTS' in os.environ:
             ssh_opts = os.environ['CLOUDINITD_SSH_OPTS']
