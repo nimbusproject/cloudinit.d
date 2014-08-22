@@ -56,6 +56,10 @@ class ServiceException(PollableException):
 
     def __str__(self):
         s = "Error while processing the service: %s" % (self._svc.name)
+        return s
+
+    def get_output(self):
+        s = ""
         if self.msg:
             s = s + os.linesep + self.msg
         try:

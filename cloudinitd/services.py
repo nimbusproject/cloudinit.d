@@ -644,7 +644,7 @@ class SVCContainer(Pollable):
                 raise ServiceException(multiex, self, msg, stdout, stderr)
             return False
         except Exception, ex:
-            cloudinitd.log(self._log, logging.ERROR, "%s" %(str(ex)), traceback)
+            cloudinitd.log(self._log, logging.ERROR, "%s" % (str(ex)), traceback)
             self._s.last_error = str(ex)
             self._db.db_commit()
             self._running = False

@@ -681,9 +681,20 @@ def main(argv=sys.argv[1:]):
             print_chars(0,  "Check your launch plan and associated environment variables for the above listed errors.\n")
             options.logger.error("A configuration error occured.  Please check your launch plan and its associated environment variables")
             rc = 1
+        except ServiceException, ex:
+            print_chars(0, str(ex))
+            if g_verbose > 2:
+                print_chars(2, ex.get_output())
+                print_chars(2, "\n")
+            print_chars(0, "see ")
+            print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
+            print_chars(0,  " for more details\n")
+            if options.verbose > 1:
+                raise
+            rc = 1
         except Exception, ex:
-            print_chars(2, str(ex))
-            print_chars(2, "\n")
+            print_chars(0, str(ex))
+            print_chars(0, "\n")
             print_chars(0, "see ")
             print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
             print_chars(0,  " for more details\n")
