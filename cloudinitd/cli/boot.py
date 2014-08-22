@@ -9,7 +9,7 @@ import logging
 from cloudinitd.cli.cmd_opts import bootOpts
 from cloudinitd.global_deps import set_global_var, set_global_var_file, global_merge_down
 from cloudinitd.user_api import CloudInitD, CloudServiceException
-from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException
+from cloudinitd.exceptions import MultilevelException, APIUsageException, ConfigException, ServiceException
 import cloudinitd
 import os
 import cloudinitd.cli.output
@@ -682,8 +682,8 @@ def main(argv=sys.argv[1:]):
             options.logger.error("A configuration error occured.  Please check your launch plan and its associated environment variables")
             rc = 1
         except Exception, ex:
-            print_chars(0, str(ex))
-            print_chars(0, "\n")
+            print_chars(2, str(ex))
+            print_chars(2, "\n")
             print_chars(0, "see ")
             print_chars(0, "%s" % (options.logdir), inverse=True, color="red")
             print_chars(0,  " for more details\n")
