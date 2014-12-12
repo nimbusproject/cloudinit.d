@@ -32,7 +32,7 @@ test_plans = plans_list_dirs(os.path.join(basepath, "tests/plans"))
 install_requires = [
         "boto >= 2.6",
         "sqlalchemy >= 0.7.6",
-        "fabric == 1.3",
+        "fabric == 1.10",
         "simplejson >= 2.1",
         "apache-libcloud >= 0.11.1",
         "uuid",
